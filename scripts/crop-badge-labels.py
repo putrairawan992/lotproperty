@@ -53,7 +53,7 @@ def process(path: Path) -> tuple[int, int, int, int]:
     crop_h = find_crop_height(arr)
     cropped = trim_transparent(arr[:crop_h, :, :])
     out = Image.fromarray(cropped, "RGBA")
-    out.save(path, format="PNG", optimize=True)
+    out.save(path, format="PNG")
     return old_w, old_h, cropped.shape[1], cropped.shape[0]
 
 
