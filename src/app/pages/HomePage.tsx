@@ -12,10 +12,7 @@ import EventBannerSlider from "../components/EventBannerSlider";
 import { T, Page } from "../types";
 import { useTabQuery } from "../routes";
 import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
-<<<<<<< HEAD
 import { getLevelTierColor } from "../badgeAssets";
-=======
->>>>>>> c6e417e229740cd9fe94a5b1167ea713707fbd62
 import HofBadgeRow from "../components/HofBadgeRow";
 import PodiumAvatarGlow from "../components/PodiumAvatarGlow";
 import padiLeft from "@/imports/icon-padi-left.png";
@@ -110,7 +107,6 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
 
         {/* Middle: Medallion & XP Progress */}
         <div className="flex flex-1 items-center gap-4 min-w-0 w-full md:w-auto">
-<<<<<<< HEAD
           <div className="flex items-center gap-2.5 flex-shrink-0">
             <LevelBadge title="Senior Agent" size={52} />
             <div>
@@ -118,9 +114,6 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
               <p className="font-bold leading-tight" style={{ fontFamily: "var(--font-display)", fontSize: 14, color: getLevelTierColor("Senior Agent") }}>Senior Agent</p>
             </div>
           </div>
-=======
-          <LevelBadge title="Senior Agent" size={52} />
->>>>>>> c6e417e229740cd9fe94a5b1167ea713707fbd62
           {/* XP progress */}
           <div className="flex-1 min-w-0">
             <XPBar value={24680} max={30000} height={10} />
@@ -371,11 +364,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                   }}>
                   {agent.rank}
                 </div>
-<<<<<<< HEAD
                 {agent.level && <LevelBadge title={agent.level} size={62} />}
-=======
-                {agent.level && <LevelBadge title={agent.level} size={36} />}
->>>>>>> c6e417e229740cd9fe94a5b1167ea713707fbd62
                 <div className="flex-1 min-w-0">
                   {agent.level && (
                     <p className="text-xs font-bold mb-0.5 truncate" style={{ color: getLevelTierColor(agent.level), fontFamily: "'Rajdhani',sans-serif", letterSpacing: "0.02em" }}>
@@ -423,11 +412,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
               <LevelBadge title="Senior Agent" size={56} />
             </div>
             <div className="flex items-center justify-between mb-1.5">
-<<<<<<< HEAD
               <div><p className="text-xs" style={{ color: T.text3 }}>Next Rank</p><p className="font-bold" style={{ fontFamily: "var(--font-display)", fontSize: 15, color: getLevelTierColor("Elite Agent") }}>Elite Agent</p></div>
-=======
-              <div><p className="text-xs" style={{ color: T.text3 }}>Next Rank</p><p className="font-bold" style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "#7040D0" }}>Elite Agent</p></div>
->>>>>>> c6e417e229740cd9fe94a5b1167ea713707fbd62
               <LevelBadge title="Elite Agent" size={56} />
             </div>
             <XPBar value={648450} max={800000} height={10} />

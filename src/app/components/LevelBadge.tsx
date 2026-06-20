@@ -1,16 +1,8 @@
-<<<<<<< HEAD
-import { LEVEL_ASSETS, getLevelTierColor } from "../badgeAssets";
-import { useTheme } from "../types";
-
-function levelColor(title: string): string {
-  return getLevelTierColor(title);
-=======
 import { LEVEL_ASSETS, LEVEL_TIERS } from "../badgeAssets";
 import { useTheme } from "../types";
 
 function levelColor(title: string): string {
   return LEVEL_TIERS.find((t) => t.title === title)?.color ?? "#E8A500";
->>>>>>> c6e417e229740cd9fe94a5b1167ea713707fbd62
 }
 
 export default function LevelBadge({
