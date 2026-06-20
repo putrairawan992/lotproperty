@@ -7,12 +7,13 @@ import XPBar from "../components/XPBar";
 import AgentAvatar from "../components/AgentAvatar";
 import { HomePageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
-import GoldParticlesCanvas from "../components/GoldParticlesCanvas";
+import HofFallingStars from "../components/HofFallingStars";
 import EventBannerSlider from "../components/EventBannerSlider";
-import { T, Page, Rarity } from "../types";
+import { T, Page } from "../types";
 import { useTabQuery } from "../routes";
 import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
-import { BADGE_ASSETS, RARITY_CFG, LEVEL_ASSETS } from "../badgeAssets";
+import { LEVEL_ASSETS } from "../badgeAssets";
+import HofBadgeCoin, { hofBadgeSize } from "../components/HofBadgeCoin";
 import padiLeft from "@/imports/icon-padi-left.png";
 import padiRight from "@/imports/icon-padi-right.png";
 
@@ -64,12 +65,24 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const hofNext = () => { const ni = Math.min(HOF_TABS.length - 1, hofIdx + 1); setHofTab(HOF_TABS[ni]); };
 
   if (loading) return <HomePageSkeleton />;
-  const podiumBg = isDark ? "linear-gradient(180deg,#0A0A0A 0%,#1A1410 100%)" : "linear-gradient(180deg,#FFFCF0 0%,#FFF8EF 100%)";
+  const podiumBg = isDark
+    ? "linear-gradient(180deg, rgba(10,10,10,0.55) 0%, rgba(26,20,16,0.72) 100%)"
+    : "linear-gradient(180deg, rgba(255,252,240,0.75) 0%, rgba(255,248,239,0.88) 100%)";
 
   return (
     <div className="p-4 lg:p-6 space-y-4 max-w-7xl mx-auto">
       {/* Full-width Profile Widget */}
-      <Card className="p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6 shadow-md transition-all duration-300">
+      <Card
+        className="relative overflow-hidden shadow-md transition-all duration-300"
+        style={{
+          background: isDark
+            ? "linear-gradient(135deg, rgba(20,16,12,0.78), rgba(28,22,14,0.62))"
+            : "linear-gradient(135deg, rgba(255,252,248,0.9), rgba(255,246,235,0.78))",
+          borderColor: isDark ? "rgba(200,146,42,0.22)" : T.border,
+        }}
+      >
+        <HofFallingStars isDark={isDark} />
+        <div className="relative z-[1] p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
         {/* Left: User Avatar + Name */}
         <div className="flex items-center gap-4 w-full md:w-auto">
           <div className="relative flex-shrink-0">
@@ -119,26 +132,27 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             <ChevronRight size={16} style={{ color: "#E8A500" }} />
           </div>
         </div>
+        </div>
       </Card>
 
       {/* Event Banner Slider — auto-play setiap 3 detik */}
       <EventBannerSlider isDark={isDark} onNav={onNav} />
 
       {/* HALL OF FAME — dark cinematic */}
-      <div className="overflow-hidden rounded-2xl border" style={{ borderColor: T.border, backgroundColor: T.card }}>
+      <div className="overflow-hidden rounded-2xl border relative" style={{ borderColor: T.border, backgroundColor: T.card }}>
+        <HofFallingStars isDark={isDark} />
         {/* Header */}
-        <div className="flex flex-col items-center py-5 px-4 relative overflow-hidden" style={{ background: isDark ? "linear-gradient(135deg,#0A0A0A,#15120D)" : "linear-gradient(135deg,#1A1200,#0D1520)" }}>
+        <div className="flex flex-col items-center py-5 px-4 relative overflow-hidden z-[1]" style={{ background: isDark ? "linear-gradient(135deg, rgba(10,10,10,0.72), rgba(21,18,13,0.55))" : "linear-gradient(135deg, rgba(26,18,0,0.88), rgba(13,21,32,0.75))" }}>
           <div className="flex items-center gap-3 w-full justify-between mb-2 relative z-10">
             <div className="flex-1" />
             <div className="flex flex-col items-center relative py-1 px-4">
-              <GoldParticlesCanvas width={360} height={90} />
               <div className="flex items-center gap-3 relative z-10">
-                <img src={padiLeft} alt="" className="w-16 h-16 object-contain" />
+                <img src={padiLeft} alt="" className="w-20 h-20 object-contain shrink-0" style={{ imageRendering: "auto" }} />
                 <div className="text-center">
                   <h2 className="text-gradient-gold drop-shadow-[0_0_15px_rgba(232,165,0,0.65)]" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 22, letterSpacing: "0.1em" }}>HALL OF FAME</h2>
                   <p style={{ color: "#E8A500", fontSize: 12, fontFamily: "var(--font-display)", letterSpacing: "0.15em" }}>{hofCat}</p>
                 </div>
-                <img src={padiRight} alt="" className="w-16 h-16 object-contain" />
+                <img src={padiRight} alt="" className="w-20 h-20 object-contain shrink-0" style={{ imageRendering: "auto" }} />
               </div>
               <p className="relative z-10" style={{ color: T.text3, fontSize: 11, letterSpacing: "0.12em" }}>JULY 2026</p>
             </div>
@@ -157,7 +171,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
 
         {/* Podium */}
-        <div className="relative px-2 pb-0 pt-2 podium-area" style={{ background: podiumBg }}>
+        <div className="relative px-2 pb-0 pt-2 podium-area z-[1]" style={{ background: podiumBg }}>
           <button onClick={hofPrev} disabled={hofIdx === 0}
             className="absolute left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
             style={{ backgroundColor: T.card, color: hofIdx === 0 ? T.text3 : "#E8A500", border: `1px solid ${T.border}` }}>
@@ -292,47 +306,18 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                       </div>
 
                       {/* Badges */}
-                      <div className="flex items-center justify-center gap-1 mt-2.5" style={{ height: 30 }}>
-                        {(() => {
-                          const podiumBadges = getAgentPodiumBadges(agent);
-                          return podiumBadges.map((b: any, ci: number) => {
-                            const badgeName = b[1];
-                            const asset = BADGE_ASSETS[badgeName];
-                            const coinSz = isMobile ? (isFirst ? 22 : 18) : (isFirst ? 32 : 26);
-                            const c = RARITY_CFG[b[0] as Rarity] || RARITY_CFG.common;
-
-                            if (!asset) return null;
-
-                            return (
-                              <motion.div key={ci}
-                                initial={{ scale: 0, rotate: -30 }} animate={{ scale: 1, rotate: 0 }}
-                                transition={{ delay: delay + 0.3 + ci * 0.06, type: "spring", stiffness: 300 }}
-                                style={{
-                                  width: coinSz,
-                                  height: coinSz,
-                                  borderRadius: "50%",
-                                  background: isDark ? "rgba(255, 248, 230, 0.15)" : "rgba(255, 248, 230, 0.85)",
-                                  border: isDark ? "1.5px solid rgba(232, 165, 0, 0.6)" : "1.5px solid rgba(200, 146, 42, 0.7)",
-                                  display: "flex",
-                                  alignItems: "center",
-                                  justifyContent: "center",
-                                  boxShadow: "0 2px 6px rgba(0,0,0,0.35)",
-                                }}
-                                className="relative hover:scale-115 transition-transform duration-200 cursor-pointer"
-                                title={badgeName}
-                              >
-                                <img
-                                  src={asset}
-                                  alt={badgeName}
-                                  className="w-[85%] h-[85%] object-contain"
-                                  style={{
-                                    filter: `drop-shadow(0 0 4px ${c.glow})`,
-                                  }}
-                                />
-                              </motion.div>
-                            );
-                          });
-                        })()}
+                      <div className="flex items-center justify-center gap-2 mt-3" style={{ minHeight: hofBadgeSize(isMobile, isFirst) + 6 }}>
+                        {getAgentPodiumBadges(agent).map((b: [string, string], ci: number) => (
+                          <HofBadgeCoin
+                            key={`${b[1]}-${ci}`}
+                            rarity={b[0]}
+                            badgeName={b[1]}
+                            size={hofBadgeSize(isMobile, isFirst)}
+                            isDark={isDark}
+                            delay={delay + 0.3}
+                            index={ci}
+                          />
+                        ))}
                       </div>
                     </motion.div>
                   );

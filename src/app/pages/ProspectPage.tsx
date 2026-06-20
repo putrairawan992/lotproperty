@@ -5,6 +5,7 @@ import {
   MoreHorizontal, Eye, Trash2, Check, Home, FileText, Trophy, XCircle, Clock,
 } from "lucide-react";
 import Card from "../components/Card";
+import { DateInput, TimeInput } from "../components/DateTimeInput";
 import { ProspectPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { T } from "../types";
@@ -126,7 +127,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 export default function ProspectPage() {
   const loading = useLoading(1100);
   const [filter, setFilter] = useTabQuery("filter", "All");
-  const { getQueryParam, navigate } = useLocation();
+  const { getQueryParam, navigate, search } = useLocation();
   const detailId = getQueryParam("detail");
   const editMode = getQueryParam("edit") === "1";
 
@@ -139,8 +140,9 @@ export default function ProspectPage() {
   const [editForm, setEditForm] = useState<Prospect | null>(null);
 
   const [newForm, setNewForm] = useState({
-    name: "", phone: "", note: "", status: "New Lead",
-    followUpDate: "", showingDate: "", akadDate: "",
+    name: "", phone: "", note: "",
+    nextAction: "Follow Up",
+    reminderDate: "", reminderTime: "",
   });
 
   useEffect(() => {
@@ -160,10 +162,21 @@ export default function ProspectPage() {
     }
   }, [detailId, prospects]);
 
+  useEffect(() => {
+    if (getQueryParam("create") === "1") {
+      setShowAdd(true);
+      navigate("/prospect");
+    }
+  }, [search]);
+
   if (loading) return <ProspectPageSkeleton />;
 
   const detailProspect = detailId !== null ? prospects.find(p => p.id === Number(detailId)) : null;
   const needsReminder = editForm && ["Follow Up", "Showing", "Akad"].includes(editForm.nextAction);
+  const newNeedsReminder = ["Follow Up", "Showing", "Akad"].includes(newForm.nextAction);
+  const canSaveNew =
+    Boolean(newForm.name.trim() && newForm.phone.trim()) &&
+    (!newNeedsReminder || Boolean(newForm.reminderDate && newForm.reminderTime));
 
   const triggerToast = (msg: string) => {
     setSuccessToast(msg);
@@ -186,28 +199,40 @@ export default function ProspectPage() {
 
   const handleSave = () => {
     if (!newForm.name.trim() || !newForm.phone.trim()) return;
+    if (newNeedsReminder && (!newForm.reminderDate || !newForm.reminderTime)) {
+      triggerToast("Tanggal dan jam reminder wajib diisi!");
+      return;
+    }
+
     const initials = newForm.name.trim().split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
     const today = new Date();
     const dateStr = `${today.getDate()} ${MONTH_NAMES[today.getMonth()].slice(0, 3)} ${today.getFullYear()}`;
+    const reminderStr = newForm.reminderDate
+      ? ` Reminder: ${formatDateDisplay(newForm.reminderDate)} ${newForm.reminderTime}`
+      : "";
+    const logTime = nowLogTime();
 
     setProspects(prev => [...prev, {
       id: prev.length,
       name: newForm.name.trim(),
       phone: newForm.phone.trim(),
-      status: newForm.status,
+      status: newForm.nextAction,
       date: dateStr,
       note: newForm.note.trim() || "—",
       initials,
-      nextAction: newForm.status === "New Lead" ? "Follow Up" : newForm.status,
-      reminderDate: newForm.followUpDate || newForm.showingDate || newForm.akadDate || "",
-      reminderTime: "09:00",
-      followUpDate: newForm.followUpDate,
-      showingDate: newForm.showingDate,
-      akadDate: newForm.akadDate,
-      activityLog: [{ text: "Prospect ditambahkan", datetime: nowLogTime() }],
+      nextAction: newForm.nextAction,
+      reminderDate: newForm.reminderDate,
+      reminderTime: newForm.reminderTime,
+      followUpDate: newForm.nextAction === "Follow Up" ? newForm.reminderDate : "",
+      showingDate: newForm.nextAction === "Showing" ? newForm.reminderDate : "",
+      akadDate: newForm.nextAction === "Akad" ? newForm.reminderDate : "",
+      activityLog: [
+        { text: "New Lead dibuat", datetime: logTime },
+        { text: `Status diubah ke ${newForm.nextAction}.${reminderStr}`, datetime: logTime },
+      ],
     }]);
 
-    setNewForm({ name: "", phone: "", note: "", status: "New Lead", followUpDate: "", showingDate: "", akadDate: "" });
+    setNewForm({ name: "", phone: "", note: "", nextAction: "Follow Up", reminderDate: "", reminderTime: "" });
     setShowAdd(false);
     triggerToast("Prospect baru berhasil ditambahkan!");
   };
@@ -409,9 +434,8 @@ export default function ProspectPage() {
                         {formatDateDisplay(editForm.reminderDate) || "—"}
                       </p>
                     ) : (
-                      <input type="date" value={editForm.reminderDate}
+                      <DateInput value={editForm.reminderDate}
                         onChange={e => setEditForm(f => f ? { ...f, reminderDate: e.target.value } : f)}
-                        className="w-full px-3 py-2.5 rounded-xl border bg-card text-sm outline-none"
                         style={{ borderColor: T.border, color: T.text1 }} />
                     )}
                   </div>
@@ -422,12 +446,9 @@ export default function ProspectPage() {
                         <Clock size={14} style={{ color: T.text3 }} /> {editForm.reminderTime || "—"}
                       </p>
                     ) : (
-                      <div className="relative">
-                        <input type="time" value={editForm.reminderTime}
-                          onChange={e => setEditForm(f => f ? { ...f, reminderTime: e.target.value } : f)}
-                          className="w-full px-3 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                          style={{ borderColor: T.border, color: T.text1 }} />
-                      </div>
+                      <TimeInput value={editForm.reminderTime}
+                        onChange={e => setEditForm(f => f ? { ...f, reminderTime: e.target.value } : f)}
+                        style={{ borderColor: T.border, color: T.text1 }} />
                     )}
                   </div>
                 </div>
@@ -514,7 +535,7 @@ export default function ProspectPage() {
                 transition={{ type: "spring", stiffness: 280, damping: 26 }}>
                 <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0" style={{ borderColor: T.border }}>
                   <h3 className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 18, color: T.text1 }}>Tambah Prospect Baru</h3>
-                  <button onClick={() => setShowAdd(false)} style={{ color: T.text3 }}><X size={20} /></button>
+                  <button onClick={() => { setShowAdd(false); setNewForm({ name: "", phone: "", note: "", nextAction: "Follow Up", reminderDate: "", reminderTime: "" }); }} style={{ color: T.text3 }}><X size={20} /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto p-5 space-y-4 min-h-0">
                   <div>
@@ -542,19 +563,80 @@ export default function ProspectPage() {
                       className="w-full px-4 py-3 rounded-xl border outline-none bg-card resize-none text-sm"
                       style={{ borderColor: T.border, minHeight: 96, color: T.text1 }} />
                   </div>
+
+                  <div>
+                    <SectionLabel>Next Action (Wajib)</SectionLabel>
+                    <div className="grid grid-cols-5 gap-2">
+                      {NEXT_ACTIONS.map(action => {
+                        const active = newForm.nextAction === action.id;
+                        const Icon = action.icon;
+                        return (
+                          <button
+                            key={action.id}
+                            type="button"
+                            onClick={() => setNewForm(f => ({ ...f, nextAction: action.id }))}
+                            className="flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all"
+                            style={{
+                              borderColor: active ? action.activeBorder : T.border,
+                              backgroundColor: active ? `${action.color}15` : "transparent",
+                            }}
+                          >
+                            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                              style={{ backgroundColor: active ? `${action.color}25` : "var(--muted)", color: active ? action.color : T.text3 }}>
+                              <Icon size={18} />
+                            </div>
+                            <span className="text-[9px] font-semibold text-center leading-tight"
+                              style={{ color: active ? action.color : T.text3 }}>
+                              {action.id}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {newNeedsReminder && (
+                    <div>
+                      <SectionLabel>Reminder (Wajib untuk Follow Up / Showing / Akad)</SectionLabel>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-[10px] mb-1" style={{ color: T.text3 }}>Tanggal</p>
+                          <DateInput
+                            value={newForm.reminderDate}
+                            onChange={e => setNewForm(f => ({ ...f, reminderDate: e.target.value }))}
+                            style={{ borderColor: T.border, color: T.text1 }}
+                          />
+                        </div>
+                        <div>
+                          <p className="text-[10px] mb-1" style={{ color: T.text3 }}>Jam</p>
+                          <TimeInput
+                            value={newForm.reminderTime}
+                            onChange={e => setNewForm(f => ({ ...f, reminderTime: e.target.value }))}
+                            style={{ borderColor: T.border, color: T.text1 }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {(!newForm.name.trim() || !newForm.phone.trim()) && (
                     <p className="text-xs flex items-center gap-1.5" style={{ color: T.text3 }}>
                       <AlertCircle size={12} /> Nama dan Nomor HP wajib diisi
                     </p>
                   )}
+                  {newNeedsReminder && (!newForm.reminderDate || !newForm.reminderTime) && (
+                    <p className="text-xs flex items-center gap-1.5" style={{ color: T.text3 }}>
+                      <AlertCircle size={12} /> Tanggal dan jam reminder wajib diisi
+                    </p>
+                  )}
                 </div>
                 <div className="flex-shrink-0 p-5 border-t" style={{ borderColor: T.border }}>
-                  <button onClick={handleSave} disabled={!newForm.name.trim() || !newForm.phone.trim()}
+                  <button onClick={handleSave} disabled={!canSaveNew}
                     className="w-full py-3 rounded-xl font-bold transition-all text-center text-white"
                     style={{
-                      backgroundColor: newForm.name.trim() && newForm.phone.trim() ? "#E8A500" : "var(--border)",
+                      backgroundColor: canSaveNew ? "#E8A500" : "var(--border)",
                       fontFamily: "'Rajdhani', sans-serif", fontSize: 16,
-                      cursor: newForm.name.trim() && newForm.phone.trim() ? "pointer" : "not-allowed",
+                      cursor: canSaveNew ? "pointer" : "not-allowed",
                     }}>
                     Simpan Prospect
                   </button>

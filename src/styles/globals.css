@@ -3,6 +3,28 @@
    Animations, gradients, gamification utilities
    ═══════════════════════════════════════════════════════════════════ */
 
+/* ── Date / Time input — ikon Lucide + native picker tersembunyi ── */
+.datetime-field__input {
+  color-scheme: light;
+}
+
+.dark .datetime-field__input {
+  color-scheme: dark;
+}
+
+/* Sembunyikan ikon native browser; area kanan tetap bisa diklik */
+.datetime-field__input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 2.75rem;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+}
+
 /* ── Gradient Text Utility ─────────────────────────────────────── */
 .text-gradient-gold {
   background: var(--gradient-gold-text);

@@ -76,7 +76,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
 export default function ListingPage() {
   const loading = useLoading(1100);
   const [tab, setTab] = useTabQuery("tab", "All");
-  const { getQueryParam, setQueryParam, navigate } = useLocation();
+  const { getQueryParam, setQueryParam, navigate, search: urlSearch } = useLocation();
   const detailId = getQueryParam("detail");
 
   const [search, setSearch] = useState("");
@@ -97,6 +97,13 @@ export default function ListingPage() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    if (getQueryParam("create") === "1") {
+      setShowPanel(true);
+      navigate("/listing");
+    }
+  }, [urlSearch]);
 
   if (loading) return <ListingPageSkeleton />;
 

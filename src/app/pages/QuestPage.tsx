@@ -8,6 +8,7 @@ import { QuestPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { T, Page, ThemeCtx } from "../types";
 import { BADGE_ASSETS } from "../badgeAssets";
+import { useLocation } from "../routes";
 
 interface QuestItem {
   name: string;
@@ -23,6 +24,7 @@ interface QuestItem {
 export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const loading = useLoading(1200);
   const { isDark } = useTheme();
+  const { navigate } = useLocation();
 
   // Quest states
   const [dailyQuests, setDailyQuests] = useState<QuestItem[]>([
@@ -70,12 +72,16 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       setScanning(true);
     } else if (q.id === "new_content") {
       setShowContentModal(true);
-    } else if (q.id === "new_prospect" || q.id === "prospect_clearance") {
-      onNav?.("prospect");
+    } else if (q.id === "new_prospect") {
+      navigate("/prospect?create=1");
+    } else if (q.id === "prospect_clearance") {
+      navigate("/prospect");
     } else if (q.id === "academy") {
       onNav?.("academy");
-    } else if (q.id === "new_listing" || q.id === "listing_promo") {
-      onNav?.("listing");
+    } else if (q.id === "new_listing") {
+      navigate("/listing?create=1");
+    } else if (q.id === "listing_promo") {
+      navigate("/listing");
     }
   };
 

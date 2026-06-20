@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
+import { DateInput } from "../../components/DateTimeInput";
 import { T } from "../../types";
 
 export default function AdminEventsPage() {
@@ -186,14 +187,14 @@ export default function AdminEventsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Tanggal Mulai</label>
-                    <input type="date" value={start} onChange={e => setStart(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none cursor-pointer"
+                    <DateInput value={start} onChange={e => setStart(e.target.value)}
+                      className="cursor-pointer"
                       style={{ borderColor: T.border }} />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Tanggal Selesai</label>
-                    <input type="date" value={end} onChange={e => setEnd(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none cursor-pointer"
+                    <DateInput value={end} onChange={e => setEnd(e.target.value)}
+                      className="cursor-pointer"
                       style={{ borderColor: T.border }} />
                   </div>
                   <div>

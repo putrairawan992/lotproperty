@@ -1,5 +1,9 @@
-import lotLogoImg from "@/imports/PHOTO-2021-03-09-22-22-41.png";
-import lotLogoWhiteImg from "@/imports/LOT_PROPERTY_logo_white_text.png";
+import lotLogoLightImg from "@/imports/PHOTO-2021-03-09-22-22-41.png";
+import lotLogoDarkImg from "@/imports/LOT_PROPERTY_logo_white_text.png";
+
+// Backward-compatible aliases
+const lotLogoImg = lotLogoLightImg;
+const lotLogoWhiteImg = lotLogoDarkImg;
 
 // MYTHIC
 import badge01 from "@/imports/01-billionaire-club.png";
@@ -52,7 +56,7 @@ import xpProspect from "@/imports/xp_prospect_berkualitas.svg";
 import xpRekrut from "@/imports/xp_rekrut_agent.svg";
 import xpUnit from "@/imports/xp_unit_tersewa_terjual.svg";
 
-export { lotLogoImg, lotLogoWhiteImg };
+export { lotLogoImg, lotLogoWhiteImg, lotLogoLightImg, lotLogoDarkImg };
 
 export const BADGE_ASSETS: Record<string, string> = {
   "Billionaire Club":    badge01,

@@ -16,6 +16,7 @@ import LevelUpModal from "./components/LevelUpModal";
 // Pages (Agent)
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import PendingPage from "./pages/PendingPage";
 import HomePage from "./pages/HomePage";
 import QuestPage from "./pages/QuestPage";
@@ -35,7 +36,7 @@ import AdminApp from "./pages/Admin/AdminApp";
 
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const [authView, setAuthView] = useState<"login" | "register" | "pending" | "admin">("login");
+  const [authView, setAuthView] = useState<"login" | "register" | "pending" | "forgot" | "admin">("login");
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
@@ -114,6 +115,7 @@ export default function App() {
     const renderAuth = () => {
       if (authView === "admin") return <AdminLoginPage onBack={() => { setAuthView("login"); navigate("/"); }} onLogin={r => setAdminRole(r)} />;
       if (authView === "register") return <RegisterPage onBack={() => setAuthView("login")} onSubmit={() => setAuthView("pending")} />;
+      if (authView === "forgot") return <ForgotPasswordPage onBack={() => setAuthView("login")} />;
       if (authView === "pending") return <PendingPage onBack={() => setAuthView("login")} />;
       return <LoginPage onLogin={() => {
         const todayStr = new Date().toDateString();
@@ -122,7 +124,7 @@ export default function App() {
           localStorage.setItem("lotproperty-show-attendance-popup", "true");
         }
         setLoggedIn(true);
-      }} onRegister={() => setAuthView("register")} onAdminLogin={() => { setAuthView("admin"); navigate("/admin"); }} />;
+      }} onRegister={() => setAuthView("register")} onForgotPassword={() => setAuthView("forgot")} onAdminLogin={() => { setAuthView("admin"); navigate("/admin"); }} />;
     };
     return (
       <ThemeCtx.Provider value={{ isDark, toggle: toggleDark }}>

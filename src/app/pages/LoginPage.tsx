@@ -2,17 +2,15 @@ import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import Card from "../components/Card";
 import AuthInput from "../components/AuthInput";
-import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
-import { lotLogoImg, lotLogoWhiteImg } from "../badgeAssets";
-import { T, useTheme } from "../types";
+import { T } from "../types";
 import Logo from "../components/Logo";
 
-export default function LoginPage({ onLogin, onRegister, onAdminLogin }: {
+export default function LoginPage({ onLogin, onRegister, onForgotPassword, onAdminLogin }: {
   onLogin: () => void;
   onRegister: () => void;
+  onForgotPassword: () => void;
   onAdminLogin: () => void;
 }) {
-  const { isDark } = useTheme();
   const [showPass, setShowPass] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -49,7 +47,7 @@ export default function LoginPage({ onLogin, onRegister, onAdminLogin }: {
               <input type="checkbox" className="w-4 h-4 rounded" style={{ accentColor: "#E8A500" }} />
               <span style={{ color: T.text2, fontSize: 14 }}>Remember me</span>
             </label>
-            <button style={{ color: "#E8A500", fontSize: 14, fontWeight: 500 }}>Lupa Password?</button>
+            <button onClick={onForgotPassword} style={{ color: "#E8A500", fontSize: 14, fontWeight: 500 }}>Lupa Password?</button>
           </div>
 
           <button onClick={onLogin}
