@@ -78,23 +78,23 @@ function TreeNode({
   const isMatch = search && node.name.toLowerCase().includes(search.toLowerCase());
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center flex-shrink-0">
       <div
-        className={`p-4 rounded-2xl border text-center transition-all duration-300 min-w-[160px] max-w-[200px] flex flex-col items-center shadow-md relative ${
+        className={`p-4 rounded-2xl border text-center transition-all duration-300 w-[168px] flex-shrink-0 flex flex-col items-center gap-2 shadow-md relative ${
           isMatch
             ? "ring-2 ring-[#E8A500] shadow-[0_0_20px_rgba(232,165,0,0.5)] bg-[#E8A500]/10 scale-105"
             : "bg-card border-border/80 hover:border-[#C8922A]/50"
         }`}
       >
-        <div className="w-10 h-10 rounded-full overflow-hidden border border-border mb-2">
+        <div className="w-10 h-10 rounded-full overflow-hidden border border-border flex-shrink-0">
           {node.photo ? (
             <img src={node.photo} alt={node.name} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center bg-muted text-xs font-bold">{node.initials}</div>
           )}
         </div>
-        <p className="font-bold text-xs text-foreground truncate w-full">{node.name}</p>
-        <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider mt-0.5">{node.level}</p>
+        <p className="font-bold text-xs text-foreground truncate w-full px-0.5 leading-snug">{node.name}</p>
+        <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider leading-snug">{node.level}</p>
         {node.recruitsCount > 0 && (
           <button
             type="button"
@@ -111,7 +111,7 @@ function TreeNode({
         <div className="flex flex-col items-center w-full mt-6 relative">
           <div className="w-0.5 h-6 bg-border absolute top-0 -translate-y-6" style={{ backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)" }} />
 
-          <div className="flex justify-center gap-6 pt-6 relative w-full">
+          <div className="flex justify-center gap-6 pt-6 relative w-max mx-auto">
             {node.children.length > 1 && (
               <div
                 className="absolute top-0 h-0.5 bg-border"
@@ -124,7 +124,7 @@ function TreeNode({
             )}
 
             {node.children.map((child, idx) => (
-              <div key={idx} className="relative flex flex-col items-center">
+              <div key={idx} className="relative flex flex-col items-center flex-shrink-0">
                 <div className="w-0.5 h-6 bg-border absolute top-0 -translate-y-6" style={{ backgroundColor: isDark ? "rgba(255,255,255,0.12)" : "rgba(0,0,0,0.08)" }} />
                 <TreeNode node={child} search={search} isDark={isDark} onShowRecruits={onShowRecruits} />
               </div>
@@ -278,9 +278,14 @@ export default function AdminAgentsPage() {
               </div>
               
               {/* Tree scroll window wrapper */}
-              <div className="w-full overflow-x-auto py-8 px-4 flex justify-center bg-card/40 rounded-2xl border min-h-[500px]" style={{ borderColor: T.border }}>
-                <div className="flex flex-col items-center">
-                  <TreeNode node={TREE_ROOT} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
+              <div
+                className="w-full overflow-x-auto overscroll-x-contain py-8 bg-card/40 rounded-2xl border min-h-[500px]"
+                style={{ borderColor: T.border, WebkitOverflowScrolling: "touch" }}
+              >
+                <div className="w-max min-w-full mx-auto px-8 sm:px-12">
+                  <div className="flex flex-col items-center flex-shrink-0">
+                    <TreeNode node={TREE_ROOT} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
+                  </div>
                 </div>
               </div>
             </Card>
