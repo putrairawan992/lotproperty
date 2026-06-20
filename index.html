@@ -13,8 +13,7 @@
         // Prevent theme flash — apply saved theme before render
         (function() {
           var saved = localStorage.getItem('lotquest-theme');
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (saved === 'dark' || (!saved && prefersDark)) {
+          if (saved !== 'light') {
             document.documentElement.classList.add('dark');
           }
         })();
