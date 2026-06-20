@@ -12,8 +12,8 @@ import EventBannerSlider from "../components/EventBannerSlider";
 import { T, Page } from "../types";
 import { useTabQuery } from "../routes";
 import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
-import { LEVEL_ASSETS } from "../badgeAssets";
-import HofBadgeCoin, { hofBadgeSize } from "../components/HofBadgeCoin";
+import HofBadgeRow from "../components/HofBadgeRow";
+import PodiumAvatarGlow from "../components/PodiumAvatarGlow";
 import padiLeft from "@/imports/icon-padi-left.png";
 import padiRight from "@/imports/icon-padi-right.png";
 
@@ -106,10 +106,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
 
         {/* Middle: Medallion & XP Progress */}
         <div className="flex flex-1 items-center gap-4 min-w-0 w-full md:w-auto">
-          {/* Medallion */}
-          <div className="flex-shrink-0 w-12 h-12">
-            <img src={LEVEL_ASSETS["Senior Agent"]} alt="Senior Agent" className="w-full h-full object-contain" />
-          </div>
+          <LevelBadge title="Senior Agent" size={52} />
           {/* XP progress */}
           <div className="flex-1 min-w-0">
             <XPBar value={24680} max={30000} height={10} />
@@ -126,9 +123,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 15 }}>Senior Elite</p>
           </div>
           <div className="flex items-center gap-1">
-            <div className="w-10 h-10 flex items-center justify-center rounded-xl" style={{ backgroundColor: isDark ? "rgba(112,64,208,0.1)" : "#F5F0FD" }}>
-              <img src={LEVEL_ASSETS["Elite Agent"]} alt="Elite Agent" className="w-8 h-8 object-contain" />
-            </div>
+            <LevelBadge title="Elite Agent" size={48} />
             <ChevronRight size={16} style={{ color: "#E8A500" }} />
           </div>
         </div>
@@ -171,7 +166,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
 
         {/* Podium */}
-        <div className="relative px-2 pb-0 pt-2 podium-area z-[1]" style={{ background: podiumBg }}>
+        <div className="relative px-2 pb-3 pt-2 podium-area z-[1]" style={{ background: podiumBg }}>
           <button onClick={hofPrev} disabled={hofIdx === 0}
             className="absolute left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
             style={{ backgroundColor: T.card, color: hofIdx === 0 ? T.text3 : "#E8A500", border: `1px solid ${T.border}` }}>
@@ -206,7 +201,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                   const pedPill = rank === 1 ? "linear-gradient(135deg,#FFE08A,#E8A500)" : rank === 2 ? "linear-gradient(135deg,#EDEDED,#B8B8B8)" : rank === 3 ? "linear-gradient(135deg,#E8B88A,#CD7F32)" : "linear-gradient(135deg,#AEB4BC,#6B7280)";
                   const delay = colI * 0.08;
                   return (
-                    <motion.div key={rank} className="flex flex-col items-center flex-1 min-w-0"
+                    <motion.div key={rank} className="flex flex-col items-center flex-1 min-w-0 overflow-hidden"
                       style={{ maxWidth: isMobile ? (isFirst ? 96 : isTop3 ? 80 : 60) : (isFirst ? 150 : isTop3 ? 112 : 90) }}
                       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                       whileHover={{ scale: 1.04 }}
@@ -239,6 +234,12 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                           initial={{ scale: 0.3, opacity: 0 }}
                           animate={{ scale: 1, opacity: 1 }}
                           transition={{ delay: delay + 0.12, type: "spring", stiffness: 200 }}>
+                          <PodiumAvatarGlow
+                            color={ringColor}
+                            width={avatarSz + (isMobile ? 24 : 36)}
+                            height={Math.round(avatarSz * (isMobile ? 0.4 : 0.46))}
+                            intensity={isFirst ? 1.15 : isTop3 ? 0.9 : 0.65}
+                          />
                           {isFirst && (
                             <svg className="absolute" style={{ width: avatarSz + 28, height: avatarSz + 28, top: -14, left: -14, zIndex: 0, pointerEvents: "none" }} viewBox="0 0 120 120">
                               <g opacity="0.9">
@@ -306,19 +307,13 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                       </div>
 
                       {/* Badges */}
-                      <div className="flex items-center justify-center gap-2 mt-3" style={{ minHeight: hofBadgeSize(isMobile, isFirst) + 6 }}>
-                        {getAgentPodiumBadges(agent).map((b: [string, string], ci: number) => (
-                          <HofBadgeCoin
-                            key={`${b[1]}-${ci}`}
-                            rarity={b[0]}
-                            badgeName={b[1]}
-                            size={hofBadgeSize(isMobile, isFirst)}
-                            isDark={isDark}
-                            delay={delay + 0.3}
-                            index={ci}
-                          />
-                        ))}
-                      </div>
+                      <HofBadgeRow
+                        badges={getAgentPodiumBadges(agent)}
+                        isMobile={isMobile}
+                        isFirst={isFirst}
+                        isDark={isDark}
+                        delay={delay}
+                      />
                     </motion.div>
                   );
                 })}
@@ -362,7 +357,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                   }}>
                   {agent.rank}
                 </div>
-                {agent.level && <LevelBadge title={agent.level} size={26} />}
+                {agent.level && <LevelBadge title={agent.level} size={36} />}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate" style={{ color: T.text1 }}>{agent.isMe ? "Anda" : agent.name}</span>
@@ -399,7 +394,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             </div>
             <div className="flex items-center justify-between mb-1.5">
               <div><p className="text-xs" style={{ color: T.text3 }}>Next Rank</p><p className="font-bold" style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "#7040D0" }}>Elite Agent</p></div>
-              <LevelBadge title="Elite Agent" size={40} />
+              <LevelBadge title="Elite Agent" size={56} />
             </div>
             <XPBar value={648450} max={800000} height={10} />
             <p className="text-xs mt-1 text-gradient-gold font-bold" style={{ fontFamily: "var(--font-numeric)" }}>648,450 / 800,000 XP</p>
