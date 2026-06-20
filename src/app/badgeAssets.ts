@@ -107,6 +107,10 @@ export const LEVEL_TIERS = [
   { title: "LOT Legendary", range: "99",    xp: "5.000.000+", color: "#C0392B", asset: pngLegendary },
 ] as const;
 
+export function getLevelTierColor(title: string): string {
+  return LEVEL_TIERS.find((t) => t.title === title)?.color ?? "#E8A500";
+}
+
 export const XP_CARDS = [
   { label: "Login Harian",          xp: "+100 XP",  asset: xpLogin,   color: "#C07000" },
   { label: "Listing Property",      xp: "+100 XP",  asset: xpListing, color: "#C07000" },

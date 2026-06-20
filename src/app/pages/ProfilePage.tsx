@@ -3,11 +3,12 @@ import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
+import LevelBadge from "../components/LevelBadge";
 import XPBar from "../components/XPBar";
 import { ProfilePageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { T, Rarity, ThemeCtx } from "../types";
-import { BADGE_ASSETS, RARITY_CFG, LEVEL_ASSETS } from "../badgeAssets";
+import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
 
 export const ALL_BADGES: { name: string; rarity: Rarity; locked: boolean; req: string }[] = [
@@ -387,7 +388,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
                   style={{ borderColor: "#E8A50030", backgroundColor: isDark ? "rgba(232,165,0,0.06)" : "#FFFAED" }}>
-                  <img src={LEVEL_ASSETS["Elite Agent"]} className="w-9 h-9 object-contain" alt="Elite Agent" />
+                  <LevelBadge title="Elite Agent" size={40} />
                   <p className="font-bold text-lg mt-1 text-[#E8A500]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>23</p>
                   <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider">LEVEL</p>
                 </div>
@@ -470,7 +471,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             <div className="grid grid-cols-3 gap-3 mb-5">
               <div className="flex items-center gap-3.5 p-4 rounded-2xl border"
                 style={{ borderColor: "#E8A50030", backgroundColor: isDark ? "rgba(232,165,0,0.06)" : "#FFFAED" }}>
-                <img src={LEVEL_ASSETS["Elite Agent"]} className="w-11 h-11 object-contain" alt="Elite Agent" />
+                <LevelBadge title="Elite Agent" size={48} />
                 <div>
                   <p className="font-bold text-2xl text-[#E8A500]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1.1 }}>23</p>
                   <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Level 23</p>

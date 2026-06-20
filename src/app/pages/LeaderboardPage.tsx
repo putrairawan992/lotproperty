@@ -11,7 +11,8 @@ import HofFallingStars from "../components/HofFallingStars";
 import { T, Rarity, useTheme } from "../types";
 import { useTabQuery } from "../routes";
 import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
-import HofBadgeCoin, { hofBadgeSize } from "../components/HofBadgeCoin";
+import HofBadgeRow from "../components/HofBadgeRow";
+import PodiumAvatarGlow from "../components/PodiumAvatarGlow";
 import padiLeft from "@/imports/icon-padi-left.png";
 import padiRight from "@/imports/icon-padi-right.png";
 
@@ -136,7 +137,7 @@ export default function LeaderboardPage() {
               </div>
 
               {/* Podium */}
-              <div className="relative px-3 sm:px-8 pt-2 pb-5 z-[1]"
+              <div className="relative px-3 sm:px-8 pt-2 pb-6 z-[1]"
                 style={{ background: isDark ? "linear-gradient(180deg, rgba(10,10,10,0.55) 0%, rgba(26,20,16,0.72) 100%)" : "linear-gradient(180deg, rgba(255,253,247,0.75) 0%, rgba(255,246,232,0.88) 100%)" }}>
 
                 <button onClick={hofPrev} disabled={hofIdx === 0}
@@ -175,7 +176,7 @@ export default function LeaderboardPage() {
                         const pedBorder = isDark ? `${ringColor}55` : "#E2E2E8";
                         const delay = colI * 0.08;
                         return (
-                          <motion.div key={rank} className="flex flex-col items-center flex-1 min-w-0"
+                          <motion.div key={rank} className="flex flex-col items-center flex-1 min-w-0 overflow-hidden"
                             style={{ maxWidth: isMobile ? (isFirst ? 104 : isTop3 ? 86 : 68) : (isFirst ? 180 : isTop3 ? 132 : 104) }}
                             initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                             whileHover={{ scale: 1.04 }}
@@ -206,6 +207,12 @@ export default function LeaderboardPage() {
                               <motion.div className="relative flex-shrink-0"
                                 initial={{ scale: 0.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                                 transition={{ delay: delay + 0.12, type: "spring", stiffness: 200 }}>
+                                <PodiumAvatarGlow
+                                  color={ringColor}
+                                  width={avatarSz + (isMobile ? 28 : 40)}
+                                  height={Math.round(avatarSz * (isMobile ? 0.42 : 0.48))}
+                                  intensity={isFirst ? 1.15 : isTop3 ? 0.9 : 0.65}
+                                />
                                 {isFirst && (
                                   <svg className="absolute" style={{ width: avatarSz + 36, height: avatarSz + 36, top: -18, left: -18, zIndex: 0, pointerEvents: "none" }} viewBox="0 0 120 120">
                                     <g opacity="0.85">
@@ -262,19 +269,13 @@ export default function LeaderboardPage() {
                             </div>
 
                             {/* Badges */}
-                            <div className="flex items-center justify-center gap-2 mt-3" style={{ minHeight: hofBadgeSize(isMobile, isFirst) + 6 }}>
-                              {getAgentPodiumBadges(agent).map((b: [string, string], ci: number) => (
-                                <HofBadgeCoin
-                                  key={`${b[1]}-${ci}`}
-                                  rarity={b[0]}
-                                  badgeName={b[1]}
-                                  size={hofBadgeSize(isMobile, isFirst)}
-                                  isDark={isDark}
-                                  delay={delay + 0.3}
-                                  index={ci}
-                                />
-                              ))}
-                            </div>
+                            <HofBadgeRow
+                              badges={getAgentPodiumBadges(agent)}
+                              isMobile={isMobile}
+                              isFirst={isFirst}
+                              isDark={isDark}
+                              delay={delay}
+                            />
                           </motion.div>
                         );
                       })}
@@ -316,7 +317,7 @@ export default function LeaderboardPage() {
                           </span>
 
                           {/* Level badge */}
-                          <LevelBadge title={agent.level || "Senior Agent"} size={36} />
+                          <LevelBadge title={agent.level || "Senior Agent"} size={40} />
 
                           {/* Name + subtitle */}
                           <div className="flex-1 min-w-0">
