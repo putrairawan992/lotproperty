@@ -1,0 +1,32 @@
+
+  <!DOCTYPE html>
+  <html lang="en">
+    <head>
+      
+      <meta charset="UTF-8" />
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <title>LotProperty Agent Platform</title>
+      <meta name="description" content="LOT Quest is a property agent platform that enhances agent productivity through quest-based learning, progress tracking, and streamlined listings management." />
+      <meta name="robots" content="noindex, nofollow" />
+      <style>html, body { height: 100%; margin: 0; } #root { height: 100%; }</style>
+      <script>
+        // Prevent theme flash — apply saved theme before render
+        (function() {
+          var saved = localStorage.getItem('lotquest-theme');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (saved === 'dark' || (!saved && prefersDark)) {
+            document.documentElement.classList.add('dark');
+          }
+        })();
+      </script>
+      
+    </head>
+
+    <body>
+      
+      <div id="root"></div>
+      <script type="module" src="/src/main.tsx"></script>
+      
+    </body>
+  </html>
+  

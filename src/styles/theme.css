@@ -1,0 +1,279 @@
+@custom-variant dark (&:is(.dark *));
+
+/* ═══════════════════════════════════════════════════════════════════
+   LOT QUEST — Gaming Premium Theme System
+   Dark + Light mode tokens with warm-tinted colors
+   
+   CRITICAL: No pure black (#000) in dark mode — use warm-tinted #0A0A0A / #15120D
+   CRITICAL: No pure white (#FFF) in light mode — use warm #F7F7F5 / #FAFAF8
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* === LIGHT MODE (default CSS vars) === */
+:root {
+  --font-size: 16px;
+  --font-display: 'Rajdhani', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-numeric: 'Rajdhani', 'Barlow Condensed', sans-serif;
+
+  /* Page & Surface — warm cream/white, NOT pure white */
+  --background: #F7F7F5;
+  --foreground: #1A1A1A;
+  --card: #FEFEFE;
+  --card-foreground: #1A1A1A;
+  --popover: #FEFEFE;
+  --popover-foreground: #1A1A1A;
+
+  /* Brand */
+  --primary: #E8A500;
+  --primary-foreground: #ffffff;
+  --secondary: #FFF3E0;
+  --secondary-foreground: #1A1A1A;
+  --muted: #F3F1EE;
+  --muted-foreground: #9C9484;
+  --accent: #FFF8F0;
+  --accent-foreground: #E8A500;
+  --destructive: #DC2626;
+  --destructive-foreground: #ffffff;
+
+  /* Borders */
+  --border: #E5E0D5;
+  --border-gold: #D4A843;
+  --input: transparent;
+  --input-background: #FAFAF8;
+  --switch-background: #E5E7EB;
+
+  /* Typography */
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #E8A500;
+
+  /* Charts */
+  --chart-1: #E8A500;
+  --chart-2: #C8922A;
+  --chart-3: #16A34A;
+  --chart-4: #7B2FBE;
+  --chart-5: #1A6FC4;
+  --radius: 0.875rem;
+
+  /* Sidebar */
+  --sidebar: #FEFEFE;
+  --sidebar-foreground: #1A1A1A;
+  --sidebar-primary: #E8A500;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #FFF3E0;
+  --sidebar-accent-foreground: #E8A500;
+  --sidebar-border: #E5E0D5;
+  --sidebar-ring: #E8A500;
+
+  /* LOT Quest Gamification — Light */
+  --bg-surface-2: #FAFAF8;
+  --bg-podium-area: #FFF8EF;
+  --text-secondary: #5C5547;
+
+  /* Gradients */
+  --gradient-xp: linear-gradient(90deg, #C8922A 0%, #E8A500 60%, #FFD700 100%);
+  --gradient-gold-text: linear-gradient(135deg, #D4A843 0%, #B8860B 100%);
+  --gradient-cta: linear-gradient(135deg, #E8A500 0%, #C8922A 100%);
+  --gradient-podium-glow: transparent;
+  --gradient-banner: linear-gradient(135deg, #FFF3E0 0%, #FFE4C4 50%, #FFF3E0 100%);
+
+  /* Rarity — Light */
+  --color-mythic: #C0392B;
+  --color-mythic-bg: #FDEEEC;
+  --color-legendary: #C8922A;
+  --color-legendary-bg: #FDF6E3;
+  --color-epic: #7B2FBE;
+  --color-epic-bg: #F3EAFD;
+  --color-rare: #1A6FC4;
+  --color-rare-bg: #E6F1FB;
+  --color-common: #6B7280;
+  --color-common-bg: #F3F4F6;
+
+  /* Shadows — Light */
+  --shadow-card: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-glow-gold: 0 0 16px rgba(212,168,67,0.25);
+  --shadow-glow-orange: 0 0 14px rgba(232,165,0,0.25);
+
+  /* Bottom nav & surface helpers */
+  --bottom-nav-bg: #FEFEFE;
+  --skeleton-base: #E8E4DE;
+  --skeleton-shine: #F5F2ED;
+}
+
+/* === DARK MODE — warm-tinted dark brown, NOT pure black === */
+.dark {
+  --background: #0A0A0A;
+  --foreground: #F5F0E8;
+  --card: #15120D;
+  --card-foreground: #F5F0E8;
+  --popover: #1C1812;
+  --popover-foreground: #F5F0E8;
+
+  --primary: #E8A500;
+  --primary-foreground: #0A0A0A;
+  --secondary: #1C1812;
+  --secondary-foreground: #F5F0E8;
+  --muted: #1C1812;
+  --muted-foreground: #6B6354;
+  --accent: #1A1410;
+  --accent-foreground: #E8A500;
+  --destructive: #EF4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #2A2218;
+  --border-gold: #C8922A;
+  --input: transparent;
+  --input-background: #1C1812;
+  --switch-background: #2A2218;
+
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: #E8A500;
+
+  --chart-1: #E8A500;
+  --chart-2: #C8922A;
+  --chart-3: #22C55E;
+  --chart-4: #A855F7;
+  --chart-5: #3B82F6;
+
+  --sidebar: #0D0B08;
+  --sidebar-foreground: #F5F0E8;
+  --sidebar-primary: #E8A500;
+  --sidebar-primary-foreground: #0A0A0A;
+  --sidebar-accent: rgba(232,165,0,0.15);
+  --sidebar-accent-foreground: #E8A500;
+  --sidebar-border: #2A2218;
+  --sidebar-ring: #E8A500;
+
+  /* LOT Quest Gamification — Dark */
+  --bg-surface-2: #1C1812;
+  --bg-podium-area: #1A1410;
+  --text-secondary: #B8AFA0;
+
+  /* Gradients — Dark */
+  --gradient-xp: linear-gradient(90deg, #C8922A 0%, #E8A500 60%, #FFD700 100%);
+  --gradient-gold-text: linear-gradient(135deg, #FFD700 0%, #C8922A 100%);
+  --gradient-cta: linear-gradient(135deg, #E8A500 0%, #C8922A 100%);
+  --gradient-podium-glow: transparent;
+  --gradient-banner: linear-gradient(135deg, #1A0F08 0%, #2D1810 50%, #1A0F08 100%);
+
+  /* Rarity — Dark (brighter for visibility on dark bg) */
+  --color-mythic: #E74C3C;
+  --color-mythic-bg: rgba(231,76,60,0.12);
+  --color-legendary: #FFD700;
+  --color-legendary-bg: rgba(255,215,0,0.10);
+  --color-epic: #A855F7;
+  --color-epic-bg: rgba(168,85,247,0.12);
+  --color-rare: #3B82F6;
+  --color-rare-bg: rgba(59,130,246,0.12);
+  --color-common: #9CA3AF;
+  --color-common-bg: rgba(156,163,175,0.10);
+
+  /* Shadows — Dark (deeper, more dramatic) */
+  --shadow-card: 0 4px 24px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-glow-gold: 0 0 24px rgba(255,184,0,0.35);
+  --shadow-glow-orange: 0 0 20px rgba(232,165,0,0.4);
+
+  /* Bottom nav & surface helpers — dark */
+  --bottom-nav-bg: #0D0B08;
+  --skeleton-base: #1C1812;
+  --skeleton-shine: #2A2218;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    transition: background-color 300ms ease, color 300ms ease;
+  }
+
+  html {
+    font-size: var(--font-size);
+  }
+
+  h1 {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h2 {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h3 {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  h4 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  label {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  button {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.5;
+  }
+
+  input {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-normal);
+    line-height: 1.5;
+  }
+}
