@@ -1,5 +1,4 @@
 import { motion, AnimatePresence } from "motion/react";
-import { Crown } from "lucide-react";
 import AgentAvatar from "./AgentAvatar";
 import SwipeCarouselZone from "./SwipeCarouselZone";
 import { HOF_TABS } from "../appData";
@@ -11,23 +10,28 @@ const HOF_SLIDE_VARIANTS = {
 };
 
 const TIER = {
-  1: { color: "#f3dca0", glow: "rgba(232,194,103,0.55)", border: "rgba(243,220,160,0.45)", bg: "rgba(202,165,76,0.15)" },
-  2: { color: "#eef1f5", glow: "rgba(199,206,219,0.45)", border: "rgba(238,241,245,0.35)", bg: "rgba(157,163,173,0.12)" },
-  3: { color: "#e6b487", glow: "rgba(207,142,87,0.45)",  border: "rgba(230,180,135,0.35)", bg: "rgba(163,103,60,0.12)"  },
+  1: { color: "#f3dca0", glow: "rgba(232,194,103,0.55)", border: "#caa54c", badgeBg: "#caa54c", badgeText: "#1a1208" },
+  2: { color: "#eef1f5", glow: "rgba(199,206,219,0.45)", border: "#9da3ad", badgeBg: "#d4dae3", badgeText: "#1a1a1e" },
+  3: { color: "#e6b487", glow: "rgba(207,142,87,0.45)",  border: "#a3673c", badgeBg: "#cf8e57", badgeText: "#1a0e06" },
 };
 
 function RankBadge({ rank }: { rank: number }) {
   const t = TIER[rank as 1 | 2 | 3] ?? TIER[3];
   return (
     <div
-      className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 rounded-full text-[10px] font-black tracking-wider"
+      className="absolute left-1/2 -translate-x-1/2 z-20 flex items-center justify-center rounded-full font-black"
       style={{
-        background: t.bg,
-        border: `1px solid ${t.border}`,
-        color: t.color,
+        bottom: -6,
+        minWidth: 26,
+        height: 22,
+        padding: "0 7px",
+        background: t.badgeBg,
+        border: `2px solid ${t.border}`,
+        color: t.badgeText,
         fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif",
-        fontSize: 11,
-        letterSpacing: "0.08em",
+        fontSize: 12,
+        letterSpacing: "0.06em",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.55), 0 0 0 2px rgba(13,13,16,0.95)",
       }}
     >
       #{rank}
@@ -62,10 +66,23 @@ function PodiumTop3({ agents, isMobile }: { agents: any[]; isMobile: boolean }) 
           >
             {/* Crown for #1 */}
             {rank === 1 && (
-              <Crown size={14} style={{ color: "#f3dca0", filter: "drop-shadow(0 0 6px rgba(232,194,103,0.8))" }} />
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0, y: 6 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 16 }}
+                style={{ filter: "drop-shadow(0 0 10px rgba(243,220,160,0.9))" }}
+              >
+                <svg width={28} height={28} viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M2 18h20v2H2v-2Z" fill="#f3dca0" />
+                  <path d="M3 17l2.5-9L9 13l3-8 3 8 3.5-5L21 17H3Z" fill="#f3dca0" />
+                  <circle cx="3" cy="8" r="1.5" fill="#f3dca0" />
+                  <circle cx="21" cy="8" r="1.5" fill="#f3dca0" />
+                  <circle cx="12" cy="5" r="1.5" fill="#f3dca0" />
+                </svg>
+              </motion.div>
             )}
             {/* Avatar + rank badge */}
-            <div className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0 pb-2">
               <div
                 className="rounded-full"
                 style={{
@@ -163,23 +180,28 @@ export default function HofSection({
       />
 
       {/* ── Header ── */}
-      <div className="relative z-[1] px-4 pt-4 pb-0 flex items-start justify-between gap-2">
+      <div className="relative z-[1] px-4 pt-5 pb-0 flex items-start justify-between gap-2">
         <div>
-          <p className="text-[9px] tracking-[0.38em] uppercase font-semibold mb-1" style={{ color: "rgba(255,255,255,0.3)", fontFamily: "'Inter', sans-serif" }}>
-            Official Selection
+          <p className="text-[9px] tracking-[0.42em] uppercase font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.32)", fontFamily: "'Inter', sans-serif" }}>
+            Official Selection · July 2026
           </p>
           <motion.h2
-            className="font-normal uppercase tracking-[0.06em] leading-none"
-            style={{ fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif", fontSize: isMobile ? 26 : 32, color: "#f3f2ee" }}
-            initial={{ opacity: 0, y: 8 }}
+            className="font-normal uppercase leading-none m-0"
+            style={{
+              fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif",
+              fontSize: isMobile ? 32 : 40,
+              letterSpacing: "0.05em",
+              background: "linear-gradient(135deg, #f3dca0 0%, #e8c267 40%, #caa54c 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              filter: "drop-shadow(0 0 14px rgba(232,194,103,0.35))",
+            }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
             Hall of Fame
           </motion.h2>
-          <p className="text-[10px] mt-0.5 tracking-[0.18em] uppercase" style={{ color: "rgba(255,255,255,0.25)", fontFamily: "'Inter', sans-serif" }}>
-            July 2026
-          </p>
         </div>
         {/* Dot nav indicator */}
         <div className="flex gap-1 flex-wrap justify-end max-w-[120px] mt-1">
@@ -189,9 +211,9 @@ export default function HofSection({
               onClick={() => onGoTab(HOF_TABS[i])}
               className="rounded-full transition-all"
               style={{
-                width: hofIdx === i ? 12 : 4,
+                width: hofIdx === i ? 14 : 4,
                 height: 4,
-                background: hofIdx === i ? "rgba(243,220,160,0.8)" : "rgba(255,255,255,0.18)",
+                background: hofIdx === i ? "#f3dca0" : "rgba(255,255,255,0.18)",
               }}
             />
           ))}
@@ -237,17 +259,31 @@ export default function HofSection({
               className="px-4 pt-4"
             >
               <AnimatePresence mode="wait">
-                <motion.p
+                <motion.div
                   key={hofCat}
-                  className="text-center text-[10px] font-semibold tracking-[0.15em] uppercase mb-3"
-                  style={{ color: "rgba(243,220,160,0.6)", fontFamily: "'Inter', sans-serif" }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2 }}
+                  className="flex items-center justify-center gap-3 mb-4 px-4"
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
                 >
-                  {hofCat}
-                </motion.p>
+                  <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(243,220,160,0.55))" }} />
+                  <p
+                    className="text-center font-normal uppercase whitespace-nowrap"
+                    style={{
+                      fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif",
+                      fontSize: 16,
+                      letterSpacing: "0.24em",
+                      background: "linear-gradient(135deg, #fff8e7 0%, #f3dca0 35%, #e8c267 70%, #caa54c 100%)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      filter: "drop-shadow(0 0 10px rgba(243,220,160,0.45))",
+                    }}
+                  >
+                    {hofCat}
+                  </p>
+                  <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, rgba(243,220,160,0.55), transparent)" }} />
+                </motion.div>
               </AnimatePresence>
 
               <PodiumTop3 agents={hofAgents} isMobile={isMobile} />
