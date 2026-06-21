@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight } from "lucide-react";
 import Card from "./Card";
+import SwipeCarouselZone from "./SwipeCarouselZone";
 import { T, Page } from "../types";
 import { EVENT_DATA, formatEventPeriod, EventItem } from "../appData";
 
@@ -147,6 +148,7 @@ function EventBannerSlide({
 
 export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }: EventBannerSliderProps) {
   const [current, setCurrent] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setInterval>>();
 
   const goTo = useCallback((index: number) => {
     setCurrent(index % events.length);
@@ -156,16 +158,37 @@ export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }
     setCurrent((prev) => (prev + 1) % events.length);
   }, [events.length]);
 
-  useEffect(() => {
-    const timer = setInterval(next, AUTO_PLAY_MS);
-    return () => clearInterval(timer);
+  const prev = useCallback(() => {
+    setCurrent((prev) => (prev - 1 + events.length) % events.length);
+  }, [events.length]);
+
+  const resetAutoplay = useCallback(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(next, AUTO_PLAY_MS);
   }, [next]);
+
+  useEffect(() => {
+    resetAutoplay();
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [resetAutoplay]);
+
+  const handlePrev = useCallback(() => {
+    prev();
+    resetAutoplay();
+  }, [prev, resetAutoplay]);
+
+  const handleNext = useCallback(() => {
+    next();
+    resetAutoplay();
+  }, [next, resetAutoplay]);
 
   const activeEvent = events[current];
 
   return (
     <div className="space-y-1">
-      <div className="relative overflow-hidden">
+      <SwipeCarouselZone onPrev={handlePrev} onNext={handleNext} className="relative overflow-hidden">
         <AnimatePresence mode="wait">
           <motion.div
             key={activeEvent.id}
@@ -177,13 +200,16 @@ export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }
             <EventBannerSlide event={activeEvent} isDark={isDark} onNav={onNav} />
           </motion.div>
         </AnimatePresence>
-      </div>
+      </SwipeCarouselZone>
 
       <div className="flex justify-center gap-2 mt-1">
         {events.map((ev, i) => (
           <button
             key={ev.id}
-            onClick={() => goTo(i)}
+            onClick={() => {
+              goTo(i);
+              resetAutoplay();
+            }}
             aria-label={`Slide event ${i + 1}`}
             className="w-2 h-2 rounded-full transition-all duration-300"
             style={{

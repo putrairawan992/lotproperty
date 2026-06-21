@@ -13,6 +13,7 @@ import { useTabQuery } from "../routes";
 import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
 import HofBadgeRow from "../components/HofBadgeRow";
 import PodiumAvatarGlow from "../components/PodiumAvatarGlow";
+import SwipeCarouselZone from "../components/SwipeCarouselZone";
 import padiLeft from "@/imports/icon-padi-left.png";
 import padiRight from "@/imports/icon-padi-right.png";
 
@@ -171,6 +172,11 @@ export default function LeaderboardPage() {
                   <ChevronRight size={18} />
                 </button>
 
+                <SwipeCarouselZone
+                  className="relative"
+                  onPrev={hofIdx > 0 ? hofPrev : undefined}
+                  onNext={hofIdx < HOF_TABS.length - 1 ? hofNext : undefined}
+                >
                 <AnimatePresence custom={slideDir} initial={false} mode="popLayout">
                   <motion.div
                     key={hofCat}
@@ -304,6 +310,7 @@ export default function LeaderboardPage() {
                     </div>
                   </motion.div>
                 </AnimatePresence>
+                </SwipeCarouselZone>
               </div>
             </div>
 

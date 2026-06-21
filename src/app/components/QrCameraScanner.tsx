@@ -82,10 +82,14 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
   const [cameraOn, setCameraOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const onScanRef = useRef(onScan);
+  onScanRef.current = onScan;
 
   const stopCamera = useCallback(() => {
     sessionRef.current += 1;
     cancelAnimationFrame(rafRef.current);
+
+    const hadStream = Boolean(streamRef.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
@@ -95,9 +99,13 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
       video.pause();
       video.srcObject = null;
     }
+
+    const wasActive = hadStream || startingRef.current;
     startingRef.current = false;
-    setCameraOn(false);
-    setLoading(false);
+    if (wasActive) {
+      setCameraOn(false);
+      setLoading(false);
+    }
   }, []);
 
   const scanFrame = useCallback(() => {
@@ -124,12 +132,12 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
     if (code?.data) {
       scannedRef.current = true;
       stopCamera();
-      onScan(code.data);
+      onScanRef.current(code.data);
       return;
     }
 
     rafRef.current = requestAnimationFrame(scanFrame);
-  }, [onScan, stopCamera]);
+  }, [stopCamera]);
 
   const startCamera = useCallback(async () => {
     if (scannedRef.current || startingRef.current || streamRef.current) return;
@@ -180,8 +188,10 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
 
   useEffect(() => {
     if (!active) {
-      stopCamera();
       scannedRef.current = false;
+      if (streamRef.current || startingRef.current) {
+        stopCamera();
+      }
       return;
     }
 
