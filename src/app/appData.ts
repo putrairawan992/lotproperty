@@ -97,21 +97,22 @@ export const LOG_DATA_LIST = [
 ];
 
 // Agent profile photos — using randomuser.me for realistic demo photos
+// Agent profile photos — using high-quality formal business suit Unsplash photos
 export const AGENT_PHOTOS: Record<string, string> = {
-  "RP": "https://randomuser.me/api/portraits/men/32.jpg",
-  "SF": "https://randomuser.me/api/portraits/women/44.jpg",
-  "BS": "https://randomuser.me/api/portraits/men/55.jpg",
-  "DR": "https://randomuser.me/api/portraits/women/67.jpg",
-  "AF": "https://randomuser.me/api/portraits/men/45.jpg",
-  "EP": "https://randomuser.me/api/portraits/men/28.jpg",
-  "AW": "https://randomuser.me/api/portraits/men/36.jpg",
-  "LK": "https://randomuser.me/api/portraits/women/23.jpg",
-  "RS": "https://randomuser.me/api/portraits/men/19.jpg",
-  "MP": "https://randomuser.me/api/portraits/women/31.jpg",
-  "FH": "https://randomuser.me/api/portraits/women/15.jpg",
-  "DS": "https://randomuser.me/api/portraits/men/12.jpg",
-  "PA": "https://randomuser.me/api/portraits/women/52.jpg",
-  "FI": "https://randomuser.me/api/portraits/women/41.jpg",
+  "RP": "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&q=80&w=400&h=400", // Man in suit, dark bg
+  "SF": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400&h=400", // Woman in suit, dark bg
+  "BS": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400&h=400", // Man in suit, office bg
+  "DR": "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?auto=format&fit=crop&q=80&w=400&h=400", // Woman in suit, grey bg
+  "AF": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=400&h=400", // Man in suit, neutral bg
+  "EP": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400&h=400", // Man in suit, grey bg
+  "AW": "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&q=80&w=400&h=400", // Man in suit, dark grey bg
+  "LK": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=400&h=400", // Woman, professional jacket
+  "RS": "https://images.unsplash.com/photo-1500048993953-d23a436266cf?auto=format&fit=crop&q=80&w=400&h=400", // Man, dark suit, dark bg
+  "MP": "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400&h=400", // Woman, professional, grey bg
+  "FH": "https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=400&h=400", // Woman, professional, dark bg
+  "DS": "https://images.unsplash.com/photo-1531427186611-ecfd6d936c79?auto=format&fit=crop&q=80&w=400&h=400", // Man, formal suit, dark bg
+  "PA": "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&q=80&w=400&h=400", // Woman in suit, office bg
+  "FI": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400&h=400", // Woman in suit, grey bg
 };
 
 export const HOF_TABS = [
@@ -133,6 +134,8 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:4, name:"Dewi R.",       initials:"DR", photo:AGENT_PHOTOS["DR"], level:"Senior Agent", subtitle:"Senior Agent · Lv 44", value:"Rp 51.200.000" },
     { rank:5, name:"Ahmad Fadhil",  initials:"AF", photo:AGENT_PHOTOS["AF"], level:"Senior Agent", subtitle:"Senior Agent · Lv 45", value:"Rp 44.800.000",  isMe:true, xpLabel:"+1.620 XP pekan ini" },
     { rank:6, name:"Eko P.",        initials:"EP", photo:AGENT_PHOTOS["EP"], level:"Junior Agent", subtitle:"Junior Agent · Lv 38", value:"Rp 39.500.000" },
+    { rank:7, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"Rp 32.100.000" },
+    { rank:8, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"Rp 28.400.000" },
   ],
   "Top 5 By Unit": [
     { rank:1, name:"Siti F.",       initials:"SF", photo:AGENT_PHOTOS["SF"], level:"Elite Agent", subtitle:"Elite Agent · Lv 62",  value:"31 Unit", badges:[["epic","Certified Agent"],["rare","Prospect Hunter"]] },
@@ -141,6 +144,8 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:4, name:"Dewi R.",       initials:"DR", photo:AGENT_PHOTOS["DR"], level:"Senior Agent", subtitle:"Senior Agent · Lv 44", value:"19 Unit" },
     { rank:5, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"17 Unit" },
     { rank:6, name:"Eko P.",        initials:"EP", photo:AGENT_PHOTOS["EP"], level:"Junior Agent", subtitle:"Junior Agent · Lv 38", value:"15 Unit" },
+    { rank:7, name:"Budi S.",       initials:"BS", photo:AGENT_PHOTOS["BS"], level:"Senior Agent", subtitle:"Senior Agent · Lv 51", value:"13 Unit" },
+    { rank:8, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"11 Unit" },
   ],
   "Top 5 Primary": [
     { rank:1, name:"Budi S.",       initials:"BS", photo:AGENT_PHOTOS["BS"], level:"Senior Agent", subtitle:"Senior Agent · Lv 51", value:"12 Unit KPR", badges:[["epic","Listing Distributor"],["rare","Listing Supplier"]] },
@@ -149,6 +154,8 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:4, name:"Eko P.",        initials:"EP", photo:AGENT_PHOTOS["EP"], level:"Junior Agent", subtitle:"Junior Agent · Lv 38", value:"6 Unit KPR" },
     { rank:5, name:"Ahmad Fadhil",  initials:"AF", photo:AGENT_PHOTOS["AF"], level:"Senior Agent", subtitle:"Senior Agent · Lv 45", value:"5 Unit KPR",  isMe:true, xpLabel:"+1.620 XP pekan ini" },
     { rank:6, name:"Dewi R.",       initials:"DR", photo:AGENT_PHOTOS["DR"], level:"Senior Agent", subtitle:"Senior Agent · Lv 44", value:"4 Unit KPR" },
+    { rank:7, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"3 Unit KPR" },
+    { rank:8, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"2 Unit KPR" },
   ],
   "Rising Star": [
     { rank:1, name:"Linda K.",      initials:"LK", photo:AGENT_PHOTOS["LK"], level:"Junior Agent", subtitle:"Junior Agent · Lv 22", value:"First Closing", badges:[["common","First Deal"],["common","First Listing"]] },
@@ -156,6 +163,9 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:3, name:"Maya P.",       initials:"MP", photo:AGENT_PHOTOS["MP"], level:"Rookie Agent", subtitle:"Rookie Agent · Lv 12", value:"First Closing", badges:[["common","First Listing"],["common","First Prospect"]] },
     { rank:4, name:"Fitri H.",      initials:"FH", photo:AGENT_PHOTOS["FH"], level:"Rookie Agent", subtitle:"Rookie Agent · Lv 9",  value:"First Closing" },
     { rank:5, name:"Doni S.",       initials:"DS", photo:AGENT_PHOTOS["DS"], level:"Rookie Agent", subtitle:"Rookie Agent · Lv 7",  value:"First Closing" },
+    { rank:6, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"First Closing" },
+    { rank:7, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"First Closing" },
+    { rank:8, name:"Fitri H.",      initials:"FI", photo:AGENT_PHOTOS["FI"], level:"Rookie Agent", subtitle:"Rookie Agent · Lv 14", value:"First Closing" },
   ],
   "Content Creator": [
     { rank:1, name:"Siti F.",       initials:"SF", photo:AGENT_PHOTOS["SF"], level:"Elite Agent", subtitle:"Elite Agent · Lv 62",  value:"47 Konten", badges:[["epic","Content Creator"],["rare","Prospect Hunter"]] },
@@ -163,6 +173,9 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:3, name:"Ahmad Fadhil",  initials:"AF", photo:AGENT_PHOTOS["AF"], level:"Senior Agent", subtitle:"Senior Agent · Lv 45", value:"31 Konten", badges:[["epic","Content Creator"],["common","First Listing"]], isMe:true, xpLabel:"#3 bulan ini" },
     { rank:4, name:"Dewi R.",       initials:"DR", photo:AGENT_PHOTOS["DR"], level:"Senior Agent", subtitle:"Senior Agent · Lv 44", value:"24 Konten" },
     { rank:5, name:"Eko P.",        initials:"EP", photo:AGENT_PHOTOS["EP"], level:"Junior Agent", subtitle:"Junior Agent · Lv 38", value:"18 Konten" },
+    { rank:6, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"14 Konten" },
+    { rank:7, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"11 Konten" },
+    { rank:8, name:"Fitri H.",      initials:"FI", photo:AGENT_PHOTOS["FI"], level:"Rookie Agent", subtitle:"Rookie Agent · Lv 14", value:"9 Konten" },
   ],
   "Listing Hunter": [
     { rank:1, name:"Budi S.",       initials:"BS", photo:AGENT_PHOTOS["BS"], level:"Senior Agent", subtitle:"Senior Agent · Lv 51", value:"54 Listing", badges:[["epic","Listing Distributor"],["rare","Listing Supplier"]] },
@@ -170,6 +183,9 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:3, name:"Rizki P.",      initials:"RP", photo:AGENT_PHOTOS["RP"], level:"Elite Agent", subtitle:"Elite Agent · Lv 67",  value:"41 Listing", badges:[["legendary","100M Club"],["epic","Dedicated Agent"]] },
     { rank:4, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"33 Listing" },
     { rank:5, name:"Ahmad Fadhil",  initials:"AF", photo:AGENT_PHOTOS["AF"], level:"Senior Agent", subtitle:"Senior Agent · Lv 45", value:"29 Listing", isMe:true, xpLabel:"+1.620 XP pekan ini" },
+    { rank:6, name:"Eko P.",        initials:"EP", photo:AGENT_PHOTOS["EP"], level:"Junior Agent", subtitle:"Junior Agent · Lv 38", value:"24 Listing" },
+    { rank:7, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"20 Listing" },
+    { rank:8, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"16 Listing" },
   ],
   "Prospecting Master": [
     { rank:1, name:"Siti F.",       initials:"SF", photo:AGENT_PHOTOS["SF"], level:"Elite Agent", subtitle:"Elite Agent · Lv 62",  value:"312 Prospek", badges:[["epic","Certified Agent"],["rare","Prospect Hunter"]] },
@@ -177,6 +193,9 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:3, name:"Eko P.",        initials:"EP", photo:AGENT_PHOTOS["EP"], level:"Junior Agent", subtitle:"Junior Agent · Lv 38", value:"241 Prospek", badges:[["rare","Prospect Hunter"],["common","First Prospect"]] },
     { rank:4, name:"Maya P.",       initials:"MP", photo:AGENT_PHOTOS["MP"], level:"Rookie Agent", subtitle:"Rookie Agent · Lv 12", value:"198 Prospek" },
     { rank:5, name:"Ahmad Fadhil",  initials:"AF", photo:AGENT_PHOTOS["AF"], level:"Senior Agent", subtitle:"Senior Agent · Lv 45", value:"176 Prospek", isMe:true, xpLabel:"+1.620 XP pekan ini" },
+    { rank:6, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"154 Prospek" },
+    { rank:7, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"128 Prospek" },
+    { rank:8, name:"Fitri H.",      initials:"FI", photo:AGENT_PHOTOS["FI"], level:"Rookie Agent", subtitle:"Rookie Agent · Lv 14", value:"94 Prospek" },
   ],
   "Top Recruiter": [
     { rank:1, name:"Rizki P.",      initials:"RP", photo:AGENT_PHOTOS["RP"], level:"Elite Agent", subtitle:"Elite Agent · Lv 67",  value:"8 Rekrutan", badges:[["legendary","100M Club"],["epic","Team Builder"]] },
@@ -184,6 +203,9 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:3, name:"Siti F.",       initials:"SF", photo:AGENT_PHOTOS["SF"], level:"Elite Agent", subtitle:"Elite Agent · Lv 62",  value:"5 Rekrutan", badges:[["rare","Talent Scout"],["common","First Recruit"]] },
     { rank:4, name:"Ahmad Fadhil",  initials:"AF", photo:AGENT_PHOTOS["AF"], level:"Senior Agent", subtitle:"Senior Agent · Lv 45", value:"3 Rekrutan", isMe:true, xpLabel:"+1.620 XP pekan ini" },
     { rank:5, name:"Dewi R.",       initials:"DR", photo:AGENT_PHOTOS["DR"], level:"Senior Agent", subtitle:"Senior Agent · Lv 44", value:"2 Rekrutan" },
+    { rank:6, name:"Andi W.",       initials:"AW", photo:AGENT_PHOTOS["AW"], level:"Senior Agent", subtitle:"Senior Agent · Lv 40", value:"2 Rekrutan" },
+    { rank:7, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"1 Rekrutan" },
+    { rank:8, name:"Fitri H.",      initials:"FI", photo:AGENT_PHOTOS["FI"], level:"Rookie Agent", subtitle:"Rookie Agent · Lv 14", value:"1 Rekrutan" },
   ],
 };
 

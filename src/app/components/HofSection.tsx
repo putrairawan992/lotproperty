@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import SwipeCarouselZone from "./SwipeCarouselZone";
 import { HOF_TABS } from "../appData";
+import HofFallingStars from "./HofFallingStars";
 
 const HOF_SLIDE_VARIANTS = {
   enter: (dir: number) => ({ opacity: 0, x: dir >= 0 ? 40 : -40 }),
@@ -77,19 +78,131 @@ function reorderToPodium(arr: any[]): any[] {
   return [...arr];
 }
 
+function getCategoryEmblem(category: string): {
+  color: string;
+  label: string;
+  icon: React.ReactNode;
+} {
+  const norm = (category || "").toLowerCase();
+  if (norm.includes("commission")) {
+    return {
+      color: "#ffd700", // Bright gold
+      label: "COMMISSION MASTER",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+      )
+    };
+  }
+  if (norm.includes("unit")) {
+    return {
+      color: "#00e5ff", // Electric cyan
+      label: "UNIT CHAMPION",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+          <line x1="9" y1="22" x2="9" y2="16"></line>
+          <line x1="15" y1="22" x2="15" y2="16"></line>
+          <line x1="9" y1="16" x2="15" y2="16"></line>
+          <path d="M8 6h2v2H8V6zm6 0h2v2h-2V6zm-6 4h2v2H8v-2zm6 0h2v2h-2v-2z"></path>
+        </svg>
+      )
+    };
+  }
+  if (norm.includes("primary")) {
+    return {
+      color: "#00e676", // Neon emerald green
+      label: "PRIMARY ELITE",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+      )
+    };
+  }
+  if (norm.includes("rising")) {
+    return {
+      color: "#ff5722", // Neon orange/red
+      label: "RISING STAR",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+        </svg>
+      )
+    };
+  }
+  if (norm.includes("content")) {
+    return {
+      color: "#e040fb", // Bright magenta/purple
+      label: "CONTENT CREATOR",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <path d="M23 7l-7 5 7 5V7z"></path>
+          <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+        </svg>
+      )
+    };
+  }
+  if (norm.includes("hunter") || norm.includes("listing")) {
+    return {
+      color: "#ffc107", // Amber yellow
+      label: "LISTING HUNTER",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="6"></circle>
+          <circle cx="12" cy="12" r="2"></circle>
+        </svg>
+      )
+    };
+  }
+  if (norm.includes("prospect") || norm.includes("master")) {
+    return {
+      color: "#ff4081", // Bright pink
+      label: "PROSPECT MASTER",
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+      )
+    };
+  }
+  // Default/Recruiter
+  return {
+    color: "#7c4dff", // Bright violet/indigo
+    label: "TOP RECRUITER",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
+        <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"></path>
+        <path d="M3 20h18"></path>
+      </svg>
+    )
+  };
+}
+
 function PortraitCard({
   agent,
   rank,
   isMobile,
+  category = "Top 5 Commission",
 }: {
   agent: any;
   rank: number;
   isMobile: boolean;
+  category?: string;
 }) {
+  const [hovered, setHovered] = useState(false);
   const w = isMobile ? 200 : rank === 1 ? 190 : rank <= 3 ? 170 : 150;
   const h = Math.round(w * 1.5);
   const isWinner = rank === 1;
   const theme = RANK_THEMES[rank] || RANK_THEMES[5];
+  const emblem = getCategoryEmblem(category);
 
   return (
     <motion.div
@@ -97,10 +210,12 @@ function PortraitCard({
       style={{ width: w }}
       whileHover={isMobile ? {} : { y: -6, scale: 1.03 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
     >
       {/* Portrait card wrapper */}
       <motion.div
-        className="relative overflow-hidden w-full"
+        className="relative overflow-hidden w-full animate-fadeIn"
         style={{
           height: h,
           borderRadius: 20,
@@ -115,19 +230,22 @@ function PortraitCard({
       >
         {/* Glow behind photo */}
         <div
-          className="absolute inset-0 pointer-events-none mix-blend-screen opacity-60"
+          className="absolute inset-0 pointer-events-none mix-blend-screen opacity-60 z-10"
           style={{
             background: `radial-gradient(circle at 50% 30%, ${theme.glowColor}, transparent 80%)`,
           }}
         />
 
-        {/* Photo */}
-        <div className="absolute inset-0 w-full h-full">
+        {/* Photo with neutral backdrop */}
+        <div className="absolute inset-0 w-full h-full bg-[#121115]">
           {agent.photo ? (
             <img
               src={agent.photo}
               alt={agent.name}
               className="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-105"
+              style={{
+                filter: "brightness(1.05) contrast(1.02)",
+              }}
               draggable={false}
             />
           ) : (
@@ -145,8 +263,87 @@ function PortraitCard({
           )}
         </div>
 
+        {/* Category watermark overlay on top of photo (low opacity screen blend) */}
+        <div
+          className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-[0.06] transition-transform duration-700"
+          style={{
+            color: emblem.color,
+            mixBlendMode: "screen",
+            transform: hovered ? "scale(1.2)" : "scale(1)",
+          }}
+        >
+          <div className="scale-[3.5] filter drop-shadow(0 0 10px currentColor)">
+            {emblem.icon}
+          </div>
+        </div>
+
+        {/* Cinematic Vignette Overlay to merge and matching background */}
+        <div
+          className="absolute inset-0 pointer-events-none z-10"
+          style={{
+            background: "radial-gradient(circle at 50% 35%, transparent 30%, rgba(0,0,0,0.35) 80%, rgba(0,0,0,0.7) 100%)",
+          }}
+        />
+
+        {/* Metallic inner frame line */}
+        <div
+          className="absolute inset-2 pointer-events-none z-10 rounded-xl"
+          style={{
+            border: `1px solid ${rank === 1 ? "rgba(255, 215, 0, 0.25)" : rank === 2 ? "rgba(229, 231, 235, 0.2)" : rank === 3 ? "rgba(251, 146, 60, 0.2)" : "rgba(255, 255, 255, 0.05)"}`,
+          }}
+        />
+
+        {/* Dynamic Diagonal Shimmer Sweep on Hover */}
+        <div
+          className="absolute inset-0 pointer-events-none z-10 transition-transform duration-1000 ease-out"
+          style={{
+            background: "linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.02) 30%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.02) 70%, rgba(255,255,255,0) 100%)",
+            transform: hovered ? "translateX(120%)" : "translateX(-120%)",
+          }}
+        />
+
+        {/* Corner brackets frame overlay for Top 3 */}
+        {rank <= 3 && (
+          <div className="absolute inset-3.5 pointer-events-none z-20">
+            {/* Top-Left */}
+            <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l" style={{ borderColor: theme.borderColor, opacity: 0.75 }} />
+            {/* Top-Right */}
+            <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r" style={{ borderColor: theme.borderColor, opacity: 0.75 }} />
+            {/* Bottom-Left */}
+            <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l" style={{ borderColor: theme.borderColor, opacity: 0.75 }} />
+            {/* Bottom-Right */}
+            <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r" style={{ borderColor: theme.borderColor, opacity: 0.75 }} />
+          </div>
+        )}
+
+        {/* Floating Congratulations text overlay on hover */}
+        <div
+          className="absolute inset-x-0 top-1/2 -translate-y-1/2 pointer-events-none z-20 flex flex-col items-center justify-center transition-all duration-500 ease-out px-2"
+          style={{
+            opacity: hovered ? 1 : 0,
+            transform: hovered ? "translateY(-50%) scale(1)" : "translateY(-40%) scale(0.85)",
+          }}
+        >
+          <p
+            className="text-[9px] tracking-[0.24em] font-black uppercase text-center text-white/50 mb-1"
+            style={{ fontFamily: "'Inter', sans-serif" }}
+          >
+            CONGRATULATIONS
+          </p>
+          <p
+            className="text-[14px] tracking-[0.12em] font-bold uppercase text-center leading-tight"
+            style={{
+              fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif",
+              color: emblem.color,
+              textShadow: `0 0 12px ${emblem.color}a0, 0 1px 4px rgba(0,0,0,0.8)`,
+            }}
+          >
+            {emblem.label}
+          </p>
+        </div>
+
         {/* Bottom subtle gradient shadow overlay */}
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/85 to-transparent pointer-events-none z-10" />
 
         {/* Rank pill */}
         <div
@@ -160,6 +357,19 @@ function PortraitCard({
           }}
         >
           {rank === 1 ? "🥇 #1" : rank === 2 ? "🥈 #2" : rank === 3 ? "🥉 #3" : `#${rank}`}
+        </div>
+
+        {/* Category emblem stamp at bottom-right */}
+        <div
+          className="absolute bottom-3 right-3 z-20 w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300 pointer-events-none"
+          style={{
+            borderColor: `${emblem.color}40`,
+            background: `radial-gradient(circle, ${emblem.color}25 0%, rgba(10,8,12,0.92) 100%)`,
+            boxShadow: `0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)`,
+            color: emblem.color,
+          }}
+        >
+          {emblem.icon}
         </div>
 
         {/* YOU label */}
@@ -210,9 +420,9 @@ function PortraitCard({
   );
 }
 
-/** All 5 agents in a podium layout (Desktop) or auto-sliding slideshow (Mobile) */
-function PortraitPodium({ agents, isMobile }: { agents: any[]; isMobile: boolean }) {
-  const lineup = agents.slice(0, 5);
+/** All 5 agents in a single podium row layout (Desktop: [Rank 5, Rank 3, Rank 1, Rank 2, Rank 4]) or auto-sliding slideshow (Mobile) */
+function PortraitPodium({ agents, isMobile, category }: { agents: any[]; isMobile: boolean; category: string }) {
+  const lineup = agents.slice(0, 5); // Slice up to 5 slots
   const [activeIdx, setActiveIdx] = useState(0);
   const [slideDir, setSlideDir] = useState(1);
 
@@ -264,7 +474,7 @@ function PortraitPodium({ agents, isMobile }: { agents: any[]; isMobile: boolean
               transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="flex justify-center w-full"
             >
-              <PortraitCard agent={activeAgent} rank={activeAgent.rank} isMobile={true} />
+              <PortraitCard agent={activeAgent} rank={activeAgent.rank} isMobile={true} category={category} />
             </motion.div>
           </AnimatePresence>
         </SwipeCarouselZone>
@@ -294,9 +504,9 @@ function PortraitPodium({ agents, isMobile }: { agents: any[]; isMobile: boolean
   const orderedLineup = reorderToPodium(lineup);
 
   return (
-    <div className="flex items-end justify-center gap-4 px-2 pt-3 pb-2">
+    <div className="flex items-end justify-center gap-4 px-2 pt-3 pb-2 w-full">
       {orderedLineup.map((agent) => (
-        <PortraitCard key={agent.rank} agent={agent} rank={agent.rank} isMobile={false} />
+        <PortraitCard key={agent.rank} agent={agent} rank={agent.rank} isMobile={false} category={category} />
       ))}
     </div>
   );
@@ -315,14 +525,50 @@ export default function HofSection({
     <div
       className="relative overflow-hidden rounded-[30px]"
       style={{
-        background: "radial-gradient(ellipse 900px 280px at 50% -20%, rgba(255,255,255,0.08), transparent 70%), linear-gradient(180deg, #111216 0%, #09090d 45%, #080707 100%)",
-        border: "1px solid rgba(255,255,255,0.1)",
-        boxShadow: "0 30px 90px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.06)",
+        background: "linear-gradient(180deg, #090303 0%, #150505 35%, #0d0404 70%, #000000 100%)",
+        border: "1px solid rgba(255, 30, 30, 0.16)",
+        boxShadow: "0 30px 90px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255, 50, 50, 0.08)",
       }}
     >
-      <div className="absolute inset-x-0 top-0 h-20 pointer-events-none"
-        style={{ background: "radial-gradient(ellipse 60% 100% at 50% -5%, rgba(202,165,76,0.16), transparent 70%)" }} />
-      <div className="absolute inset-0 pointer-events-none opacity-[0.04] mix-blend-overlay"
+      {/* 3D Ember Sparks Rising Background (Three.js canvas) */}
+      <HofFallingStars isDark={true} mode="embers" />
+
+      {/* Cinematic Crystal Shards Background Overlay */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        {/* Red radial ambient glow at top */}
+        <div 
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[300px] rounded-full filter blur-[80px] opacity-[0.28]"
+          style={{ background: "radial-gradient(circle, #ff1a1a 0%, #660000 65%, transparent 100%)" }}
+        />
+        
+        {/* Geometric shard shapes SVG for cracked glass look */}
+        <svg className="absolute top-0 left-0 w-full h-full opacity-[0.08]" viewBox="0 0 1000 600" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="shardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#ff3333" stopOpacity="0.8" />
+              <stop offset="100%" stopColor="#000000" stopOpacity="0.1" />
+            </linearGradient>
+          </defs>
+          <polygon points="0,0 220,0 130,220" fill="url(#shardGrad)" />
+          <polygon points="190,0 410,0 320,290" fill="url(#shardGrad)" />
+          <polygon points="380,0 580,0 500,340" fill="url(#shardGrad)" />
+          <polygon points="530,0 750,0 640,310" fill="url(#shardGrad)" />
+          <polygon points="700,0 900,0 810,230" fill="url(#shardGrad)" />
+          <polygon points="870,0 1000,0 960,180" fill="url(#shardGrad)" />
+          
+          <polygon points="90,0 270,0 190,120" fill="url(#shardGrad)" />
+          <polygon points="450,0 650,0 530,200" fill="url(#shardGrad)" />
+          <polygon points="780,0 940,0 860,130" fill="url(#shardGrad)" />
+        </svg>
+
+        {/* Ambient shadow gradient */}
+        <div 
+          className="absolute inset-0"
+          style={{ background: "linear-gradient(to bottom, transparent 30%, rgba(0,0,0,0.85) 100%)" }}
+        />
+      </div>
+
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
         style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")" }} />
 
       {/* Header */}
@@ -401,7 +647,7 @@ export default function HofSection({
                 </motion.div>
               </AnimatePresence>
 
-              <PortraitPodium agents={hofAgents} isMobile={isMobile} />
+              <PortraitPodium agents={hofAgents} isMobile={isMobile} category={hofCat} />
             </motion.div>
           </AnimatePresence>
         </SwipeCarouselZone>

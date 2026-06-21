@@ -12,7 +12,13 @@ interface Star {
   len: number;
 }
 
-export default function HofFallingStars({ isDark = true }: { isDark?: boolean }) {
+export default function HofFallingStars({
+  isDark = true,
+  mode = "stars",
+}: {
+  isDark?: boolean;
+  mode?: "stars" | "embers";
+}) {
   const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,8 +39,9 @@ export default function HofFallingStars({ isDark = true }: { isDark?: boolean })
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
-    const starColor = isDark ? 0xffe08a : 0xffd54f;
-    const dustColor = isDark ? 0xfff4c2 : 0xffe9a8;
+    // Embers mode: Orange/Red burning sparks. Stars mode: Gold/Yellow stars.
+    const starColor = mode === "embers" ? 0xff4500 : (isDark ? 0xffe08a : 0xffd54f);
+    const dustColor = mode === "embers" ? 0xff8800 : (isDark ? 0xfff4c2 : 0xffe9a8);
 
     const linePositions = new Float32Array(STAR_COUNT * 2 * 3);
     const lineGeo = new THREE.BufferGeometry();
@@ -43,7 +50,7 @@ export default function HofFallingStars({ isDark = true }: { isDark?: boolean })
     const lineMat = new THREE.LineBasicMaterial({
       color: starColor,
       transparent: true,
-      opacity: isDark ? 0.75 : 0.55,
+      opacity: mode === "embers" ? 0.85 : (isDark ? 0.75 : 0.55),
       blending: THREE.AdditiveBlending,
     });
 
@@ -52,11 +59,26 @@ export default function HofFallingStars({ isDark = true }: { isDark?: boolean })
 
     const stars: Star[] = [];
 
-    const spawnStar = (fromTop = false) => {
+    const spawnStar = (fromEdge = false) => {
       const x = (Math.random() - 0.5) * width * 1.1;
-      const y = fromTop ? height / 2 + Math.random() * 40 : (Math.random() - 0.5) * height;
+      let y = (Math.random() - 0.5) * height;
+      
+      if (fromEdge) {
+        if (mode === "embers") {
+          // Embers rise from bottom
+          y = -height / 2 - Math.random() * 40;
+        } else {
+          // Stars fall from top
+          y = height / 2 + Math.random() * 40;
+        }
+      }
+
       const speed = Math.random() * 2.8 + 1.8;
-      const angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.55;
+      
+      // Embers angle is upwards (PI/2), Stars angle is downwards (-PI/2)
+      const baseAngle = mode === "embers" ? Math.PI / 2 : -Math.PI / 2;
+      const angle = baseAngle + (Math.random() - 0.5) * 0.55;
+      
       return {
         x,
         y,
@@ -74,9 +96,11 @@ export default function HofFallingStars({ isDark = true }: { isDark?: boolean })
       dustPositions[i * 3] = (Math.random() - 0.5) * width;
       dustPositions[i * 3 + 1] = (Math.random() - 0.5) * height;
       dustPositions[i * 3 + 2] = 0;
+      
+      const vyFactor = mode === "embers" ? 1 : -1; // up for embers, down for stars
       dustVel.push({
         vx: (Math.random() - 0.5) * 0.35,
-        vy: -Math.random() * 0.9 - 0.25,
+        vy: vyFactor * (Math.random() * 0.9 + 0.25),
       });
     }
 
@@ -85,9 +109,9 @@ export default function HofFallingStars({ isDark = true }: { isDark?: boolean })
 
     const dustMat = new THREE.PointsMaterial({
       color: dustColor,
-      size: isDark ? 2.2 : 1.8,
+      size: mode === "embers" ? 3.0 : (isDark ? 2.2 : 1.8),
       transparent: true,
-      opacity: isDark ? 0.55 : 0.4,
+      opacity: mode === "embers" ? 0.8 : (isDark ? 0.55 : 0.4),
       blending: THREE.AdditiveBlending,
       sizeAttenuation: false,
     });
@@ -112,7 +136,12 @@ export default function HofFallingStars({ isDark = true }: { isDark?: boolean })
         posAttr.setXYZ(i * 2, tailX, tailY, 0);
         posAttr.setXYZ(i * 2 + 1, s.x, s.y, 0);
 
-        if (s.y < -height / 2 - 60 || s.x > width / 2 + 80 || s.x < -width / 2 - 80) {
+        // Check bounds based on direction
+        const outOfBounds = mode === "embers"
+          ? (s.y > height / 2 + 60 || s.x > width / 2 + 80 || s.x < -width / 2 - 80)
+          : (s.y < -height / 2 - 60 || s.x > width / 2 + 80 || s.x < -width / 2 - 80);
+
+        if (outOfBounds) {
           stars[i] = spawnStar(true);
         }
       }
@@ -122,8 +151,14 @@ export default function HofFallingStars({ isDark = true }: { isDark?: boolean })
       for (let i = 0; i < DUST_COUNT; i++) {
         let x = dustAttr.getX(i) + dustVel[i].vx;
         let y = dustAttr.getY(i) + dustVel[i].vy;
-        if (y < -height / 2 - 10) {
-          y = height / 2 + Math.random() * 20;
+        
+        // Reset bounds based on direction
+        const resetBound = mode === "embers"
+          ? (y > height / 2 + 10)
+          : (y < -height / 2 - 10);
+
+        if (resetBound) {
+          y = mode === "embers" ? -height / 2 - Math.random() * 20 : height / 2 + Math.random() * 20;
           x = (Math.random() - 0.5) * width;
         }
         dustAttr.setXYZ(i, x, y, 0);
@@ -161,7 +196,7 @@ export default function HofFallingStars({ isDark = true }: { isDark?: boolean })
         container.removeChild(renderer.domElement);
       }
     };
-  }, [isDark]);
+  }, [isDark, mode]);
 
   return (
     <div
