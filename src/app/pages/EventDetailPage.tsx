@@ -56,38 +56,46 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
             style={{ background: "radial-gradient(ellipse at 80% 20%, rgba(232,165,0,0.18) 0%, transparent 60%)" }} />
         )}
 
-        <div className="p-6 relative z-10">
-          <span
-            className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold mb-3 border"
-            style={{ backgroundColor: hero.badgeBg, color: hero.badgeColor, borderColor: isDark ? "rgba(232,165,0,0.25)" : "rgba(217,119,6,0.2)" }}
-          >
-            <Flame size={12} /> EVENT AKTIF · 16 Jun – 16 Sep 2025
-          </span>
+        <div className="p-5 sm:p-6 relative z-10">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex-1 min-w-0 pr-2">
+              <span
+                className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold mb-3 border"
+                style={{ backgroundColor: hero.badgeBg, color: hero.badgeColor, borderColor: isDark ? "rgba(232,165,0,0.25)" : "rgba(217,119,6,0.2)" }}
+              >
+                <Flame size={12} /> EVENT AKTIF · 16 Jun – 16 Sep 2025
+              </span>
 
-          <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 28, color: hero.title, lineHeight: 1.2 }}>
-            Grand LOT Challenge 2025
-          </h1>
-          <p className="font-bold mt-1" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 40, color: "#E8A500", lineHeight: 1.1 }}>
-            Rp 150 Juta
-          </p>
-          <p className="text-sm mt-2" style={{ color: hero.subtitle }}>
-            Raih 50 unit dalam 3 bulan dan menangkan hadiah eksklusif
-          </p>
-          <div className="flex items-center gap-4 mt-4">
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: hero.subtitle }}>
-              <Users size={13} /> 127 Peserta
+              <h1
+                className="break-words"
+                style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: "clamp(22px, 5vw, 28px)", color: hero.title, lineHeight: 1.2 }}
+              >
+                Grand LOT Challenge 2025
+              </h1>
+              <p className="font-bold mt-1" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: "clamp(28px, 7vw, 40px)", color: "#E8A500", lineHeight: 1.1 }}>
+                Rp 150 Juta
+              </p>
+              <p className="text-sm mt-2" style={{ color: hero.subtitle }}>
+                Raih 50 unit dalam 3 bulan dan menangkan hadiah eksklusif
+              </p>
+              <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4">
+                <div className="flex items-center gap-1.5 text-xs" style={{ color: hero.subtitle }}>
+                  <Users size={13} /> 127 Peserta
+                </div>
+                <div className="flex items-center gap-1.5 text-xs" style={{ color: hero.subtitle }}>
+                  <Calendar size={13} /> 89 hari tersisa
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5 text-xs" style={{ color: hero.subtitle }}>
-              <Calendar size={13} /> 89 hari tersisa
+
+            <div
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center border flex-shrink-0"
+              style={{ backgroundColor: hero.trophyBg, borderColor: hero.trophyBorder }}
+            >
+              <Trophy size={28} className="sm:hidden" style={{ color: "#C8922A" }} />
+              <Trophy size={32} className="hidden sm:block" style={{ color: "#C8922A" }} />
             </div>
           </div>
-        </div>
-
-        <div
-          className="absolute top-5 right-5 w-16 h-16 rounded-2xl flex items-center justify-center border"
-          style={{ backgroundColor: hero.trophyBg, borderColor: hero.trophyBorder }}
-        >
-          <Trophy size={32} style={{ color: "#C8922A" }} />
         </div>
       </motion.div>
 

@@ -39,10 +39,16 @@ const getAgentPodiumBadges = (agent: any) => {
   return [["common", "First Listing"]];
 };
 
+const HOF_SLIDE_VARIANTS = {
+  enter: (dir: number) => ({ opacity: 0, x: dir >= 0 ? 56 : -56 }),
+  center: { opacity: 1, x: 0 },
+  exit: (dir: number) => ({ opacity: 0, x: dir >= 0 ? -56 : 56 }),
+};
+
 export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) => void; onShowLevelUp?: () => void }) {
   const loading = useLoading(1400);
   const { isDark } = useTheme();
-  const [hofKey, setHofKey] = useState(0);
+  const [slideDir, setSlideDir] = useState(0);
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -54,16 +60,22 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   }, []);
 
   // Sync HoF tab to URL query parameters '?hof=...'
-  const [hofTab, setHofTab] = useTabQuery("hof", HOF_TABS[0], () => setHofKey(k => k + 1));
+  const [hofTab, setHofTab] = useTabQuery("hof", HOF_TABS[0]);
 
   const hofTabIdx = HOF_TABS.indexOf(hofTab as typeof HOF_TABS[number]);
   const hofIdx = hofTabIdx === -1 ? 0 : hofTabIdx;
   const hofCat = HOF_TABS[hofIdx];
   const hofAgents = (HOF_CAT_DATA[hofCat] || []) as any[];
 
-  const switchHofCat = (cat: string) => { setHofTab(cat); };
-  const hofPrev = () => { const ni = Math.max(0, hofIdx - 1); setHofTab(HOF_TABS[ni]); };
-  const hofNext = () => { const ni = Math.min(HOF_TABS.length - 1, hofIdx + 1); setHofTab(HOF_TABS[ni]); };
+  const goHofTab = (cat: string) => {
+    const nextIdx = HOF_TABS.indexOf(cat as typeof HOF_TABS[number]);
+    if (nextIdx === -1) return;
+    setSlideDir(nextIdx === hofIdx ? 0 : nextIdx > hofIdx ? 1 : -1);
+    setHofTab(cat);
+  };
+  const switchHofCat = (cat: string) => { goHofTab(cat); };
+  const hofPrev = () => { const ni = Math.max(0, hofIdx - 1); setSlideDir(-1); setHofTab(HOF_TABS[ni]); };
+  const hofNext = () => { const ni = Math.min(HOF_TABS.length - 1, hofIdx + 1); setSlideDir(1); setHofTab(HOF_TABS[ni]); };
 
   if (loading) return <HomePageSkeleton />;
   const podiumBg = isDark
@@ -124,16 +136,22 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
 
         {/* Right: Next Rank info */}
-        <div className="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0 w-full md:w-auto" style={{ borderColor: T.border }}>
-          <div className="text-left md:text-right">
+        <button
+          type="button"
+          onClick={() => onNav("profile")}
+          className="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0 w-full md:w-auto text-left md:text-right transition-opacity hover:opacity-85 active:opacity-75 cursor-pointer"
+          style={{ borderColor: T.border }}
+          aria-label="Lihat detail profil dan progress rank"
+        >
+          <div>
             <p style={{ fontSize: 10, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Next Rank</p>
             <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 15 }}>Senior Elite</p>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             <LevelBadge title="Elite Agent" size={48} />
             <ChevronRight size={16} style={{ color: "#E8A500" }} />
           </div>
-        </div>
+        </button>
         </div>
       </Card>
 
@@ -148,15 +166,64 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
           <div className="flex items-center gap-3 w-full justify-between mb-2 relative z-10">
             <div className="flex-1" />
             <div className="flex flex-col items-center relative py-1 px-4">
-              <div className="flex items-center gap-3 relative z-10">
-                <img src={padiLeft} alt="" className="w-20 h-20 object-contain shrink-0" style={{ imageRendering: "auto" }} />
-                <div className="text-center">
-                  <h2 className="text-gradient-gold drop-shadow-[0_0_15px_rgba(232,165,0,0.65)]" style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 22, letterSpacing: "0.1em" }}>HALL OF FAME</h2>
-                  <p style={{ color: "#E8A500", fontSize: 12, fontFamily: "var(--font-display)", letterSpacing: "0.15em" }}>{hofCat}</p>
+              <div className="flex items-center gap-2 sm:gap-3 relative z-10">
+                <motion.img
+                  src={padiLeft}
+                  alt=""
+                  className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0 padi-sway-left"
+                  style={{ imageRendering: "auto" }}
+                  initial={{ opacity: 0, x: -24, scale: 0.85 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{ delay: 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                />
+                <div className="text-center min-w-0">
+                  <motion.h2
+                    className="text-gradient-gold whitespace-nowrap title-shimmer-gold title-glow-breathe"
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      fontWeight: 800,
+                      fontSize: isMobile ? 28 : 36,
+                      letterSpacing: "0.05em",
+                      lineHeight: 1.15,
+                    }}
+                    initial={{ opacity: 0, y: 18, scale: 0.92 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    HALL OF FAME
+                  </motion.h2>
+                  <AnimatePresence mode="wait">
+                    <motion.p
+                      key={hofCat}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.28 }}
+                      style={{ color: "#E8A500", fontSize: isMobile ? 11 : 13, fontFamily: "var(--font-display)", letterSpacing: "0.12em", fontWeight: 600 }}
+                    >
+                      {hofCat}
+                    </motion.p>
+                  </AnimatePresence>
                 </div>
-                <img src={padiRight} alt="" className="w-20 h-20 object-contain shrink-0" style={{ imageRendering: "auto" }} />
+                <motion.img
+                  src={padiRight}
+                  alt=""
+                  className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0 padi-sway-right"
+                  style={{ imageRendering: "auto" }}
+                  initial={{ opacity: 0, x: 24, scale: 0.85 }}
+                  animate={{ opacity: 1, x: 0, scale: 1 }}
+                  transition={{ delay: 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                />
               </div>
-              <p className="relative z-10" style={{ color: T.text3, fontSize: 11, letterSpacing: "0.12em" }}>JULY 2026</p>
+              <motion.p
+                className="relative z-10"
+                style={{ color: T.text3, fontSize: 11, letterSpacing: "0.12em" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.35, duration: 0.4 }}
+              >
+                JULY 2026
+              </motion.p>
             </div>
             <div className="flex-1" />
           </div>
@@ -173,7 +240,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
 
         {/* Podium */}
-        <div className="relative px-2 pb-3 pt-2 podium-area z-[1]" style={{ background: podiumBg }}>
+        <div className="relative px-2 pb-3 pt-2 podium-area z-[1] overflow-hidden" style={{ background: podiumBg }}>
           <button onClick={hofPrev} disabled={hofIdx === 0}
             className="absolute left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
             style={{ backgroundColor: T.card, color: hofIdx === 0 ? T.text3 : "#E8A500", border: `1px solid ${T.border}` }}>
@@ -185,8 +252,16 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             <ChevronRight size={16} />
           </button>
 
-          <AnimatePresence mode="wait">
-            <motion.div key={hofKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+          <AnimatePresence custom={slideDir} initial={false} mode="popLayout">
+            <motion.div
+              key={hofCat}
+              custom={slideDir}
+              variants={HOF_SLIDE_VARIANTS}
+              initial="enter"
+              animate="center"
+              exit="exit"
+              transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+            >
               {/* ── HoF Podium with real photos ── */}
               <div className="flex items-end justify-center gap-1 sm:gap-2 px-1 sm:px-6">
                 {([3, 1, 0, 2, 4] as const).map((idx, colI) => {
@@ -210,9 +285,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                   return (
                     <motion.div key={rank} className="flex flex-col items-center flex-1 min-w-0 overflow-hidden"
                       style={{ maxWidth: isMobile ? (isFirst ? 96 : isTop3 ? 80 : 60) : (isFirst ? 150 : isTop3 ? 112 : 90) }}
-                      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                      initial={false}
                       whileHover={{ scale: 1.04 }}
-                      transition={{ delay, duration: 0.4, type: "spring", stiffness: 180 }}>
+                      transition={{ type: "spring", stiffness: 260, damping: 22 }}>
 
                       {/* Floating Wrapper for Crown & Avatar */}
                       <motion.div
@@ -229,18 +304,14 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                         {/* Crown for #1 */}
                         <div style={{ height: isFirst ? (isMobile ? 20 : 28) : 0, overflow: "hidden" }} className="flex items-end justify-center w-full">
                           {isFirst && (
-                            <motion.span className="crown-bounce" style={{ fontSize: isMobile ? 18 : 24, lineHeight: 1, filter: "drop-shadow(0 2px 6px rgba(200,146,42,0.8))" }}
-                              initial={{ scale: 0, y: -10 }} animate={{ scale: 1, y: 0 }}
-                              transition={{ delay: 0.5, type: "spring", stiffness: 280, damping: 12 }}>👑</motion.span>
+                            <motion.span className="crown-bounce" style={{ fontSize: isMobile ? 18 : 24, lineHeight: 1, filter: "drop-shadow(0 2px 6px rgba(200,146,42,0.8))" }}>👑</motion.span>
                           )}
                         </div>
 
                         {/* Photo frame */}
                         <motion.div
                           className="relative flex-shrink-0"
-                          initial={{ scale: 0.3, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ delay: delay + 0.12, type: "spring", stiffness: 200 }}>
+                          initial={false}>
                           <PodiumAvatarGlow
                             color={ringColor}
                             width={avatarSz + (isMobile ? 24 : 36)}
@@ -285,16 +356,14 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                       {/* Pedestal */}
                       <div className="relative flex-shrink-0" style={{ width: isMobile ? (isFirst ? 80 : isTop3 ? 64 : 50) : (isFirst ? 116 : isTop3 ? 92 : 74), marginTop: 8 }}>
                         <div style={{ height: 14, borderRadius: "50%", background: pedTop, boxShadow: `0 0 16px ${ringColor}66`, position: "relative", zIndex: 2 }} />
-                        <motion.div
+                        <div
                           className="flex items-center justify-center"
-                          style={{ marginTop: -7, background: pedBody, borderLeft: `1px solid ${ringColor}55`, borderRight: `1px solid ${ringColor}55`, borderRadius: "0 0 10px 10px", boxShadow: isFirst ? `0 10px 30px ${ringColor}33, inset 0 0 24px rgba(232,165,0,0.08)` : "inset 0 0 16px rgba(0,0,0,0.5)" }}
-                          initial={{ height: 0 }} animate={{ height: pedH }}
-                          transition={{ delay: delay + 0.08, duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}>
+                          style={{ marginTop: -7, height: pedH, background: pedBody, borderLeft: `1px solid ${ringColor}55`, borderRight: `1px solid ${ringColor}55`, borderRadius: "0 0 10px 10px", boxShadow: isFirst ? `0 10px 30px ${ringColor}33, inset 0 0 24px rgba(232,165,0,0.08)` : "inset 0 0 16px rgba(0,0,0,0.5)" }}>
                           <span className="rounded-md font-bold text-center"
                             style={{ background: pedPill, color: "#3A2800", fontSize: isMobile ? (isFirst ? 12 : 10) : (isFirst ? 16 : 13), minWidth: isMobile ? (isFirst ? 30 : 24) : (isFirst ? 40 : 32), padding: "2px 8px", fontFamily: "'Rajdhani',sans-serif", border: `1.5px solid ${ringColor}`, boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }}>
                             #{rank}
                           </span>
-                        </motion.div>
+                        </div>
                       </div>
 
                       {/* Name */}
@@ -331,7 +400,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
               {/* Dot pagination */}
               <div className="flex justify-center gap-1.5 py-3">
                 {HOF_TABS.map((_, i) => (
-                  <button key={i} onClick={() => { setHofTab(HOF_TABS[i]); }}
+                  <button key={i} onClick={() => goHofTab(HOF_TABS[i])}
                     className="rounded-full transition-all"
                     style={{ width: hofIdx === i ? 16 : 6, height: 6, backgroundColor: hofIdx === i ? "#E8A500" : T.border }} />
                 ))}
@@ -346,9 +415,48 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         {/* Weekly LB */}
         <Card className="p-4 lg:col-span-2">
           <div className="flex items-start justify-between mb-3">
-            <div>
-              <h3 className="font-bold" style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 15, color: T.text1 }}>WEEKLY LEADERBOARD</h3>
-              <p className="text-xs" style={{ color: T.text3 }}>Minggu ini · 16–22 Jun 2025</p>
+            <div className="min-w-0">
+              <motion.div
+                className="flex items-center gap-2"
+                initial={{ opacity: 0, x: -16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <motion.div
+                  initial={{ scale: 0, rotate: -20 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{ delay: 0.15, type: "spring", stiffness: 260, damping: 18 }}
+                >
+                  <Trophy size={isMobile ? 22 : 26} style={{ color: "#E8A500", filter: "drop-shadow(0 2px 6px rgba(232,165,0,0.35))" }} />
+                </motion.div>
+                <motion.h3
+                  className="font-bold text-gradient-gold title-shimmer-gold"
+                  style={{
+                    fontFamily: "'Rajdhani', sans-serif",
+                    fontSize: isMobile ? 22 : 28,
+                    letterSpacing: "0.06em",
+                    lineHeight: 1.15,
+                  }}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.08, duration: 0.45 }}
+                >
+                  WEEKLY LEADERBOARD
+                </motion.h3>
+              </motion.div>
+              <div
+                className="weekly-lb-accent-line h-0.5 rounded-full mt-1.5 mb-1"
+                style={{ background: "linear-gradient(90deg, #E8A500, rgba(232,165,0,0.15))", maxWidth: isMobile ? 140 : 180 }}
+              />
+              <motion.p
+                className="text-xs"
+                style={{ color: T.text3 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.35 }}
+              >
+                Minggu ini · 16–22 Jun 2025
+              </motion.p>
             </div>
           </div>
           <div className="space-y-1">

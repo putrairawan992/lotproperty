@@ -51,10 +51,10 @@ export function useLocation() {
     const params = new URLSearchParams(window.location.search);
     params.set(key, value);
     const newSearch = params.toString();
-    const newUrl = `${window.location.pathname}?${newSearch}`;
+    const newUrl = newSearch ? `${window.location.pathname}?${newSearch}` : window.location.pathname;
     window.history.pushState(null, "", newUrl);
     setPath(window.location.pathname);
-    setSearch(`?${newSearch}`);
+    setSearch(window.location.search);
     window.dispatchEvent(new Event("popstate"));
   };
 

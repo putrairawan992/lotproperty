@@ -146,11 +146,11 @@ export default function ProspectPage() {
   });
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -184,8 +184,14 @@ export default function ProspectPage() {
   };
 
   const openDetail = (id: number, edit = false) => {
+    const prospect = prospects.find(p => p.id === id);
+    if (prospect) setEditForm({ ...prospect });
     setOpenMenuId(null);
-    navigate(edit ? `/prospect?detail=${id}&edit=1` : `/prospect?detail=${id}`);
+    const params = new URLSearchParams(window.location.search);
+    params.set("detail", String(id));
+    if (edit) params.set("edit", "1");
+    else params.delete("edit");
+    navigate(`/prospect?${params.toString()}`);
   };
 
   const closeDetail = () => navigate("/prospect");
@@ -282,6 +288,7 @@ export default function ProspectPage() {
   const ActionMenu = ({ prospect }: { prospect: Prospect }) => (
     <div className="relative" ref={openMenuId === prospect.id ? menuRef : undefined}>
       <button
+        type="button"
         onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === prospect.id ? null : prospect.id); }}
         className="p-1.5 rounded-lg hover:bg-muted transition-colors"
         style={{ color: T.text3 }}
@@ -294,8 +301,9 @@ export default function ProspectPage() {
             initial={{ opacity: 0, scale: 0.95, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
-            className="absolute right-0 top-full mt-1 w-40 rounded-xl border shadow-xl z-20 overflow-hidden"
+            className="absolute right-0 top-full mt-1 w-40 rounded-xl border shadow-xl z-50 overflow-hidden"
             style={{ backgroundColor: T.card, borderColor: T.border }}
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             {[
@@ -303,9 +311,16 @@ export default function ProspectPage() {
               { label: "Edit", icon: User, action: () => openDetail(prospect.id, true) },
               { label: "Hapus", icon: Trash2, action: () => deleteProspect(prospect.id), danger: true },
             ].map(item => (
-              <button key={item.label} onClick={item.action}
+              <button
+                key={item.label}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  item.action();
+                }}
                 className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-medium hover:bg-muted transition-colors text-left"
-                style={{ color: item.danger ? "#DC2626" : T.text1 }}>
+                style={{ color: item.danger ? "#DC2626" : T.text1 }}
+              >
                 <item.icon size={14} /> {item.label}
               </button>
             ))}
@@ -315,175 +330,9 @@ export default function ProspectPage() {
     </div>
   );
 
-  /* ── Detail / Edit View ── */
-  if (detailProspect && editForm) {
-    const sc = STATUS_CFG[editForm.status] || STATUS_CFG["New Lead"];
-    const isReadOnly = !editMode;
-
-    return (
-      <div className="p-4 lg:p-6 relative">
-        <Toast />
-        <div className="max-w-lg mx-auto space-y-4">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <button onClick={closeDetail} className="flex items-center gap-1.5 text-sm font-medium" style={{ color: T.text3 }}>
-              <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} />
-            </button>
-            <h1 className="font-bold text-base" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>
-              {editMode ? "Edit Prospect" : "Detail Prospect"}
-            </h1>
-            <div className="flex items-center gap-1">
-              {!editMode && (
-                <button onClick={() => navigate(`/prospect?detail=${editForm.id}&edit=1`)}
-                  className="text-xs font-bold px-3 py-1.5 rounded-lg"
-                  style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani', sans-serif" }}>
-                  Edit
-                </button>
-              )}
-              <button
-                onClick={closeDetail}
-                className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-                style={{ color: T.text3 }}
-                aria-label="Tutup"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          </div>
-
-          <Card className="p-5 space-y-5">
-            {/* Profile */}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0"
-                style={{ backgroundColor: sc.bg, color: sc.color }}>
-                {editForm.initials}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-base truncate" style={{ color: T.text1 }}>{editForm.name}</p>
-                <p className="text-sm flex items-center gap-1" style={{ color: T.text3 }}>
-                  <Phone size={12} /> {editForm.phone}
-                </p>
-              </div>
-              <span className="text-xs px-2.5 py-1 rounded-full font-semibold flex-shrink-0"
-                style={{ backgroundColor: sc.bg, color: sc.color }}>
-                {editForm.status}
-              </span>
-            </div>
-
-            {/* Catatan */}
-            <div>
-              <SectionLabel>Catatan</SectionLabel>
-              {isReadOnly ? (
-                <p className="text-sm p-3 rounded-xl border leading-relaxed" style={{ borderColor: T.border, color: T.text2, backgroundColor: "var(--muted)" }}>
-                  {editForm.note}
-                </p>
-              ) : (
-                <textarea
-                  value={editForm.note}
-                  onChange={e => setEditForm(f => f ? { ...f, note: e.target.value } : f)}
-                  rows={4}
-                  className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none resize-none"
-                  style={{ borderColor: T.border, color: T.text1 }}
-                />
-              )}
-            </div>
-
-            {/* Next Action */}
-            <div>
-              <SectionLabel>Next Action (Wajib)</SectionLabel>
-              <div className="grid grid-cols-5 gap-2">
-                {NEXT_ACTIONS.map(action => {
-                  const active = editForm.nextAction === action.id;
-                  const Icon = action.icon;
-                  return (
-                    <button
-                      key={action.id}
-                      disabled={isReadOnly}
-                      onClick={() => setEditForm(f => f ? { ...f, nextAction: action.id } : f)}
-                      className="flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all"
-                      style={{
-                        borderColor: active ? action.activeBorder : T.border,
-                        backgroundColor: active ? `${action.color}15` : "transparent",
-                        opacity: isReadOnly && !active ? 0.4 : 1,
-                        cursor: isReadOnly ? "default" : "pointer",
-                      }}
-                    >
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                        style={{ backgroundColor: active ? `${action.color}25` : "var(--muted)", color: active ? action.color : T.text3 }}>
-                        <Icon size={18} />
-                      </div>
-                      <span className="text-[9px] font-semibold text-center leading-tight"
-                        style={{ color: active ? action.color : T.text3 }}>
-                        {action.id}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Reminder */}
-            {["Follow Up", "Showing", "Akad"].includes(editForm.nextAction) && (
-              <div>
-                <SectionLabel>Reminder (Wajib untuk Follow Up / Showing / Akad)</SectionLabel>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] mb-1" style={{ color: T.text3 }}>Tanggal</p>
-                    {isReadOnly ? (
-                      <p className="text-sm font-medium px-3 py-2.5 rounded-xl border" style={{ borderColor: T.border, color: T.text1 }}>
-                        {formatDateDisplay(editForm.reminderDate) || "—"}
-                      </p>
-                    ) : (
-                      <DateInput value={editForm.reminderDate}
-                        onChange={e => setEditForm(f => f ? { ...f, reminderDate: e.target.value } : f)}
-                        style={{ borderColor: T.border, color: T.text1 }} />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[10px] mb-1" style={{ color: T.text3 }}>Jam</p>
-                    {isReadOnly ? (
-                      <p className="text-sm font-medium px-3 py-2.5 rounded-xl border flex items-center gap-2" style={{ borderColor: T.border, color: T.text1 }}>
-                        <Clock size={14} style={{ color: T.text3 }} /> {editForm.reminderTime || "—"}
-                      </p>
-                    ) : (
-                      <TimeInput value={editForm.reminderTime}
-                        onChange={e => setEditForm(f => f ? { ...f, reminderTime: e.target.value } : f)}
-                        style={{ borderColor: T.border, color: T.text1 }} />
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Activity Log */}
-            <div>
-              <SectionLabel>Activity Log</SectionLabel>
-              <div className="space-y-3">
-                {editForm.activityLog.map((log, i) => (
-                  <div key={i} className="flex gap-2.5">
-                    <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: T.text3 }} />
-                    <div>
-                      <p className="text-xs leading-relaxed" style={{ color: T.text2 }}>{log.text}</p>
-                      <p className="text-[10px] mt-0.5" style={{ color: T.text3 }}>{log.datetime}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Save */}
-            {editMode && (
-              <button onClick={handleSaveDetail}
-                className="w-full py-3 rounded-xl font-bold text-white transition-all"
-                style={{ backgroundColor: "#E8A500", fontFamily: "'Rajdhani', sans-serif", fontSize: 16, letterSpacing: "0.04em" }}>
-                Simpan Perubahan
-              </button>
-            )}
-          </Card>
-        </div>
-      </div>
-    );
-  }
+  const detailFormData = detailProspect ? (editForm ?? detailProspect) : null;
+  const detailSc = detailFormData ? (STATUS_CFG[detailFormData.status] || STATUS_CFG["New Lead"]) : null;
+  const isDetailReadOnly = !editMode;
 
   /* ── List View ── */
   return (
@@ -528,11 +377,12 @@ export default function ProspectPage() {
         {/* Add panel */}
         <AnimatePresence>
           {showAdd && (
-            <div className="fixed inset-0 z-[60] flex">
-              <div className="flex-1" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} onClick={() => setShowAdd(false)} />
-              <motion.div className="w-full h-full bg-card shadow-2xl flex flex-col" style={{ maxWidth: 420 }}
+            <div className="fixed inset-0 z-[60] flex justify-end">
+              <div className="absolute inset-0 bg-black/45" onClick={() => { setShowAdd(false); setNewForm({ name: "", phone: "", note: "", nextAction: "Follow Up", reminderDate: "", reminderTime: "" }); }} aria-hidden />
+              <motion.div className="relative z-10 w-full h-full bg-card shadow-2xl flex flex-col" style={{ maxWidth: 420 }}
                 initial={{ x: 420 }} animate={{ x: 0 }} exit={{ x: 420 }}
-                transition={{ type: "spring", stiffness: 280, damping: 26 }}>
+                transition={{ type: "spring", stiffness: 280, damping: 26 }}
+                onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0" style={{ borderColor: T.border }}>
                   <h3 className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 18, color: T.text1 }}>Tambah Prospect Baru</h3>
                   <button onClick={() => { setShowAdd(false); setNewForm({ name: "", phone: "", note: "", nextAction: "Follow Up", reminderDate: "", reminderTime: "" }); }} style={{ color: T.text3 }}><X size={20} /></button>
@@ -704,6 +554,184 @@ export default function ProspectPage() {
           )}
         </div>
       </div>
+
+      {/* Detail / Edit modal */}
+      <AnimatePresence>
+        {detailProspect && detailFormData && detailSc && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm"
+            onClick={closeDetail}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 28 }}
+              transition={{ type: "spring", stiffness: 280, damping: 28 }}
+              className="w-full sm:max-w-lg max-h-[92vh] overflow-y-auto bg-card rounded-t-2xl sm:rounded-2xl border shadow-2xl"
+              style={{ borderColor: T.border }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-4 border-b bg-card" style={{ borderColor: T.border }}>
+                <h2 className="font-bold text-base" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>
+                  {editMode ? "Edit Prospect" : "Detail Prospect"}
+                </h2>
+                <div className="flex items-center gap-1">
+                  {!editMode && (
+                    <button
+                      type="button"
+                      onClick={() => openDetail(detailFormData.id, true)}
+                      className="text-xs font-bold px-3 py-1.5 rounded-lg"
+                      style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani', sans-serif" }}
+                    >
+                      Edit
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={closeDetail}
+                    className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                    style={{ color: T.text3 }}
+                    aria-label="Tutup"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-5 space-y-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg flex-shrink-0"
+                    style={{ backgroundColor: detailSc.bg, color: detailSc.color }}>
+                    {detailFormData.initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-base truncate" style={{ color: T.text1 }}>{detailFormData.name}</p>
+                    <p className="text-sm flex items-center gap-1" style={{ color: T.text3 }}>
+                      <Phone size={12} /> {detailFormData.phone}
+                    </p>
+                  </div>
+                  <span className="text-xs px-2.5 py-1 rounded-full font-semibold flex-shrink-0"
+                    style={{ backgroundColor: detailSc.bg, color: detailSc.color }}>
+                    {detailFormData.status}
+                  </span>
+                </div>
+
+                <div>
+                  <SectionLabel>Catatan</SectionLabel>
+                  {isDetailReadOnly ? (
+                    <p className="text-sm p-3 rounded-xl border leading-relaxed" style={{ borderColor: T.border, color: T.text2, backgroundColor: "var(--muted)" }}>
+                      {detailFormData.note}
+                    </p>
+                  ) : (
+                    <textarea
+                      value={detailFormData.note}
+                      onChange={e => setEditForm(f => f ? { ...f, note: e.target.value } : f)}
+                      rows={4}
+                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none resize-none"
+                      style={{ borderColor: T.border, color: T.text1 }}
+                    />
+                  )}
+                </div>
+
+                <div>
+                  <SectionLabel>Next Action (Wajib)</SectionLabel>
+                  <div className="grid grid-cols-5 gap-2">
+                    {NEXT_ACTIONS.map(action => {
+                      const active = detailFormData.nextAction === action.id;
+                      const Icon = action.icon;
+                      return (
+                        <button
+                          key={action.id}
+                          type="button"
+                          disabled={isDetailReadOnly}
+                          onClick={() => setEditForm(f => f ? { ...f, nextAction: action.id } : f)}
+                          className="flex flex-col items-center gap-1.5 p-2 rounded-xl border-2 transition-all"
+                          style={{
+                            borderColor: active ? action.activeBorder : T.border,
+                            backgroundColor: active ? `${action.color}15` : "transparent",
+                            opacity: isDetailReadOnly && !active ? 0.4 : 1,
+                            cursor: isDetailReadOnly ? "default" : "pointer",
+                          }}
+                        >
+                          <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                            style={{ backgroundColor: active ? `${action.color}25` : "var(--muted)", color: active ? action.color : T.text3 }}>
+                            <Icon size={18} />
+                          </div>
+                          <span className="text-[9px] font-semibold text-center leading-tight"
+                            style={{ color: active ? action.color : T.text3 }}>
+                            {action.id}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {["Follow Up", "Showing", "Akad"].includes(detailFormData.nextAction) && (
+                  <div>
+                    <SectionLabel>Reminder (Wajib untuk Follow Up / Showing / Akad)</SectionLabel>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <p className="text-[10px] mb-1" style={{ color: T.text3 }}>Tanggal</p>
+                        {isDetailReadOnly ? (
+                          <p className="text-sm font-medium px-3 py-2.5 rounded-xl border" style={{ borderColor: T.border, color: T.text1 }}>
+                            {formatDateDisplay(detailFormData.reminderDate) || "—"}
+                          </p>
+                        ) : (
+                          <DateInput value={detailFormData.reminderDate}
+                            onChange={e => setEditForm(f => f ? { ...f, reminderDate: e.target.value } : f)}
+                            style={{ borderColor: T.border, color: T.text1 }} />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[10px] mb-1" style={{ color: T.text3 }}>Jam</p>
+                        {isDetailReadOnly ? (
+                          <p className="text-sm font-medium px-3 py-2.5 rounded-xl border flex items-center gap-2" style={{ borderColor: T.border, color: T.text1 }}>
+                            <Clock size={14} style={{ color: T.text3 }} /> {detailFormData.reminderTime || "—"}
+                          </p>
+                        ) : (
+                          <TimeInput value={detailFormData.reminderTime}
+                            onChange={e => setEditForm(f => f ? { ...f, reminderTime: e.target.value } : f)}
+                            style={{ borderColor: T.border, color: T.text1 }} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <SectionLabel>Activity Log</SectionLabel>
+                  <div className="space-y-3">
+                    {detailFormData.activityLog.map((log, i) => (
+                      <div key={i} className="flex gap-2.5">
+                        <div className="w-1.5 h-1.5 rounded-full mt-2 flex-shrink-0" style={{ backgroundColor: T.text3 }} />
+                        <div>
+                          <p className="text-xs leading-relaxed" style={{ color: T.text2 }}>{log.text}</p>
+                          <p className="text-[10px] mt-0.5" style={{ color: T.text3 }}>{log.datetime}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {editMode && (
+                  <button
+                    type="button"
+                    onClick={handleSaveDetail}
+                    className="w-full py-3 rounded-xl font-bold text-white transition-all"
+                    style={{ backgroundColor: "#E8A500", fontFamily: "'Rajdhani', sans-serif", fontSize: 16, letterSpacing: "0.04em" }}
+                  >
+                    Simpan Perubahan
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

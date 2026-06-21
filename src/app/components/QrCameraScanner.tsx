@@ -34,6 +34,37 @@ async function openCameraStream(): Promise<MediaStream> {
   throw lastError ?? new Error("Tidak dapat mengakses kamera.");
 }
 
+async function waitForVideoReady(video: HTMLVideoElement): Promise<void> {
+  if (video.readyState >= HTMLMediaElement.HAVE_METADATA) return;
+
+  await new Promise<void>((resolve, reject) => {
+    const onReady = () => {
+      cleanup();
+      resolve();
+    };
+    const onError = () => {
+      cleanup();
+      reject(new Error("Gagal memuat stream kamera."));
+    };
+    const cleanup = () => {
+      video.removeEventListener("loadedmetadata", onReady);
+      video.removeEventListener("error", onError);
+    };
+    video.addEventListener("loadedmetadata", onReady);
+    video.addEventListener("error", onError);
+  });
+}
+
+async function safePlayVideo(video: HTMLVideoElement): Promise<void> {
+  await waitForVideoReady(video);
+  try {
+    await video.play();
+  } catch (err) {
+    if (err instanceof DOMException && err.name === "AbortError") return;
+    throw err;
+  }
+}
+
 interface QrCameraScannerProps {
   onScan: (data: string) => void;
   active: boolean;
@@ -45,20 +76,26 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const scannedRef = useRef(false);
+  const startingRef = useRef(false);
+  const sessionRef = useRef(0);
 
   const [cameraOn, setCameraOn] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const stopCamera = useCallback(() => {
+    sessionRef.current += 1;
     cancelAnimationFrame(rafRef.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop());
       streamRef.current = null;
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
+    const video = videoRef.current;
+    if (video) {
+      video.pause();
+      video.srcObject = null;
     }
+    startingRef.current = false;
     setCameraOn(false);
     setLoading(false);
   }, []);
@@ -95,24 +132,37 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
   }, [onScan, stopCamera]);
 
   const startCamera = useCallback(async () => {
-    if (scannedRef.current || cameraOn || loading) return;
+    if (scannedRef.current || startingRef.current || streamRef.current) return;
 
+    const session = sessionRef.current + 1;
+    sessionRef.current = session;
+    startingRef.current = true;
     setError("");
     setLoading(true);
 
     try {
       const stream = await openCameraStream();
-      streamRef.current = stream;
+      if (sessionRef.current !== session) {
+        stream.getTracks().forEach(t => t.stop());
+        return;
+      }
 
       const video = videoRef.current;
-      if (!video) throw new Error("Video element tidak tersedia.");
+      if (!video) {
+        stream.getTracks().forEach(t => t.stop());
+        throw new Error("Video element tidak tersedia.");
+      }
 
+      streamRef.current = stream;
       video.srcObject = stream;
-      await video.play();
+      await safePlayVideo(video);
+
+      if (sessionRef.current !== session) return;
 
       setCameraOn(true);
       rafRef.current = requestAnimationFrame(scanFrame);
     } catch (err) {
+      if (sessionRef.current !== session) return;
       const name = err instanceof DOMException ? err.name : "";
       setError(
         name === "NotAllowedError" || name === "PermissionDeniedError"
@@ -121,20 +171,24 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
       );
       stopCamera();
     } finally {
-      setLoading(false);
+      if (sessionRef.current === session) {
+        startingRef.current = false;
+        setLoading(false);
+      }
     }
-  }, [cameraOn, loading, scanFrame, stopCamera]);
+  }, [scanFrame, stopCamera]);
 
   useEffect(() => {
-    if (active) {
-      scannedRef.current = false;
-      startCamera();
-    } else {
+    if (!active) {
       stopCamera();
       scannedRef.current = false;
+      return;
     }
+
+    scannedRef.current = false;
+    startCamera();
     return () => stopCamera();
-  }, [active, startCamera, stopCamera]);
+  }, [active]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="relative flex items-center justify-center overflow-hidden bg-black" style={{ height: 280 }}>
@@ -143,7 +197,6 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
         className="absolute inset-0 w-full h-full object-cover"
         playsInline
         muted
-        autoPlay
         style={{ display: cameraOn ? "block" : "none" }}
       />
       <canvas ref={canvasRef} className="hidden" />
@@ -177,7 +230,12 @@ export default function QrCameraScanner({ onScan, active }: QrCameraScannerProps
             <>
               <p className="text-xs text-red-300 leading-relaxed">{error}</p>
               <button
-                onClick={() => { setError(""); startCamera(); }}
+                type="button"
+                onClick={() => {
+                  stopCamera();
+                  setError("");
+                  startCamera();
+                }}
                 className="mt-1 px-4 py-2 rounded-lg text-xs font-bold bg-[#E8A500] text-white"
               >
                 Coba Lagi

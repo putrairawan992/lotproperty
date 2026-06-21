@@ -117,6 +117,49 @@
   overflow: hidden;
 }
 
+/* ── Section title animations ──────────────────────────────────── */
+@keyframes title-shimmer-gold {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.title-shimmer-gold {
+  background-size: 220% auto;
+  animation: title-shimmer-gold 5s ease-in-out infinite;
+}
+
+@keyframes title-glow-breathe {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(232, 165, 0, 0.25)); }
+  50% { filter: drop-shadow(0 0 14px rgba(232, 165, 0, 0.55)); }
+}
+
+.title-glow-breathe {
+  animation: title-glow-breathe 3.2s ease-in-out infinite;
+}
+
+@keyframes weekly-lb-line-sweep {
+  0% { transform: scaleX(0); opacity: 0; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+
+.weekly-lb-accent-line {
+  transform-origin: left center;
+  animation: weekly-lb-line-sweep 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes padi-sway {
+  0%, 100% { transform: rotate(-3deg) translateY(0); }
+  50% { transform: rotate(3deg) translateY(-2px); }
+}
+
+.padi-sway-left {
+  animation: padi-sway 4.5s ease-in-out infinite;
+}
+
+.padi-sway-right {
+  animation: padi-sway 4.5s ease-in-out infinite reverse;
+}
+
 /* ── Crown Bounce Animation ────────────────────────────────────── */
 @keyframes crown-bounce {
   0%, 100% { transform: translateY(0); }
@@ -413,6 +456,11 @@ html.theme-transitioning *::after {
   .badge-unlock { animation: none; }
   .pulse-glow-gold { animation: none; }
   .notif-pulse { animation: none; }
+  .title-shimmer-gold { animation: none; }
+  .title-glow-breathe { animation: none; filter: none; }
+  .weekly-lb-accent-line { animation: none; transform: scaleX(1); opacity: 1; }
+  .padi-sway-left,
+  .padi-sway-right { animation: none; }
   .card-hover:hover { transform: none; }
   * { transition-duration: 0ms !important; }
 }

@@ -37,11 +37,17 @@ const getAgentPodiumBadges = (agent: any) => {
   return [["common", "First Listing"]];
 };
 
+const HOF_SLIDE_VARIANTS = {
+  enter: (dir: number) => ({ opacity: 0, x: dir >= 0 ? 56 : -56 }),
+  center: { opacity: 1, x: 0 },
+  exit: (dir: number) => ({ opacity: 0, x: dir >= 0 ? -56 : 56 }),
+};
+
 export default function LeaderboardPage() {
   const loading = useLoading(1300);
   const [mode, setMode] = useTabQuery("mode", "hof");
   const [hofCat, setHofCat] = useTabQuery("hofCat", "Top 5 Commission");
-  const [animKey, setAnimKey] = useState(0);
+  const [slideDir, setSlideDir] = useState(0);
   const { isDark } = useTheme();
 
   const [isMobile, setIsMobile] = useState(false);
@@ -58,14 +64,17 @@ export default function LeaderboardPage() {
   const hofAgents = HOF_CAT_DATA[hofCat] || [];
   const rest = hofAgents.slice(5);
 
-  const switchCat = (cat: string) => {
-    setHofCat(cat);
-    setAnimKey(k => k + 1);
-  };
-
   const hofIdx = HOF_TABS.indexOf(hofCat as any);
-  const hofPrev = () => { if (hofIdx > 0) switchCat(HOF_TABS[hofIdx - 1]); };
-  const hofNext = () => { if (hofIdx < HOF_TABS.length - 1) switchCat(HOF_TABS[hofIdx + 1]); };
+
+  const goHofCat = (cat: string) => {
+    const nextIdx = HOF_TABS.indexOf(cat as typeof HOF_TABS[number]);
+    if (nextIdx === -1) return;
+    setSlideDir(nextIdx === hofIdx ? 0 : nextIdx > hofIdx ? 1 : -1);
+    setHofCat(cat);
+  };
+  const switchCat = (cat: string) => { goHofCat(cat); };
+  const hofPrev = () => { if (hofIdx > 0) { setSlideDir(-1); setHofCat(HOF_TABS[hofIdx - 1]); } };
+  const hofNext = () => { if (hofIdx < HOF_TABS.length - 1) { setSlideDir(1); setHofCat(HOF_TABS[hofIdx + 1]); } };
 
   const hofPodiumOrder = [3, 1, 0, 2, 4] as const;
 
@@ -106,16 +115,27 @@ export default function LeaderboardPage() {
                 style={{ background: isDark ? "linear-gradient(135deg, rgba(10,10,10,0.72), rgba(21,18,13,0.55))" : "rgba(255,255,255,0.82)" }}>
 
                 <div className="flex flex-col items-center relative py-1 px-4">
-                  <div className="flex items-center gap-3 relative z-10">
-                    <img src={padiLeft} alt="" className="w-20 h-20 object-contain shrink-0" style={{ imageRendering: "auto" }} />
-                    <div className="text-center">
-                      <h2 className={isDark ? "text-gradient-gold drop-shadow-[0_0_15px_rgba(232,165,0,0.65)]" : ""}
-                        style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 30, letterSpacing: "0.08em", color: T.text1 }}>
+                  <div className="flex items-center gap-2 sm:gap-3 relative z-10">
+                    <img src={padiLeft} alt="" className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0" style={{ imageRendering: "auto" }} />
+                    <div className="text-center min-w-0">
+                      <h2
+                        className={isDark ? "text-gradient-gold whitespace-nowrap" : "whitespace-nowrap"}
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontWeight: 800,
+                          fontSize: isMobile ? 28 : 36,
+                          letterSpacing: "0.05em",
+                          lineHeight: 1.15,
+                          transform: "none",
+                          color: isDark ? undefined : T.text1,
+                        }}
+                      >
                         HALL OF FAME
                       </h2>
-                      <p style={{ color: "#E8A500", fontSize: 14, fontFamily: "var(--font-display)", letterSpacing: "0.25em", fontWeight: 700, marginTop: 2 }}>JULY 2026</p>
+                      <p style={{ color: "#E8A500", fontSize: isMobile ? 11 : 13, fontFamily: "var(--font-display)", letterSpacing: "0.12em", fontWeight: 600, marginTop: 2 }}>{hofCat}</p>
+                      <p style={{ color: T.text3, fontSize: 11, letterSpacing: "0.12em", marginTop: 2 }}>JULY 2026</p>
                     </div>
-                    <img src={padiRight} alt="" className="w-20 h-20 object-contain shrink-0" style={{ imageRendering: "auto" }} />
+                    <img src={padiRight} alt="" className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0" style={{ imageRendering: "auto" }} />
                   </div>
                 </div>
 
@@ -137,7 +157,7 @@ export default function LeaderboardPage() {
               </div>
 
               {/* Podium */}
-              <div className="relative px-3 sm:px-8 pt-2 pb-6 z-[1]"
+              <div className="relative px-3 sm:px-8 pt-2 pb-6 z-[1] overflow-hidden"
                 style={{ background: isDark ? "linear-gradient(180deg, rgba(10,10,10,0.55) 0%, rgba(26,20,16,0.72) 100%)" : "linear-gradient(180deg, rgba(255,253,247,0.75) 0%, rgba(255,246,232,0.88) 100%)" }}>
 
                 <button onClick={hofPrev} disabled={hofIdx === 0}
@@ -151,8 +171,16 @@ export default function LeaderboardPage() {
                   <ChevronRight size={18} />
                 </button>
 
-                <AnimatePresence mode="wait">
-                  <motion.div key={hofCat} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }}>
+                <AnimatePresence custom={slideDir} initial={false} mode="popLayout">
+                  <motion.div
+                    key={hofCat}
+                    custom={slideDir}
+                    variants={HOF_SLIDE_VARIANTS}
+                    initial="enter"
+                    animate="center"
+                    exit="exit"
+                    transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  >
                     <div className="flex items-end justify-center gap-1 sm:gap-3 px-1 sm:px-12">
                       {hofPodiumOrder.map((aIdx, colI) => {
                         const agent = hofAgents[aIdx];
@@ -178,9 +206,9 @@ export default function LeaderboardPage() {
                         return (
                           <motion.div key={rank} className="flex flex-col items-center flex-1 min-w-0 overflow-hidden"
                             style={{ maxWidth: isMobile ? (isFirst ? 104 : isTop3 ? 86 : 68) : (isFirst ? 180 : isTop3 ? 132 : 104) }}
-                            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                            initial={false}
                             whileHover={{ scale: 1.04 }}
-                            transition={{ delay, duration: 0.4, type: "spring", stiffness: 180 }}>
+                            transition={{ type: "spring", stiffness: 260, damping: 22 }}>
 
                             {/* Floating Wrapper for Crown & Avatar */}
                             <motion.div
@@ -197,16 +225,12 @@ export default function LeaderboardPage() {
                               {/* Crown */}
                               <div style={{ height: isFirst ? (isMobile ? 22 : 34) : 0, overflow: "hidden" }} className="flex items-end justify-center w-full">
                                 {isFirst && (
-                                  <motion.span style={{ fontSize: isMobile ? 20 : 30, lineHeight: 1, filter: "drop-shadow(0 2px 6px rgba(200,146,42,0.7))" }}
-                                    initial={{ scale: 0, y: -10 }} animate={{ scale: 1, y: 0 }}
-                                    transition={{ delay: 0.5, type: "spring", stiffness: 280, damping: 12 }}>👑</motion.span>
+                                  <motion.span style={{ fontSize: isMobile ? 20 : 30, lineHeight: 1, filter: "drop-shadow(0 2px 6px rgba(200,146,42,0.7))" }}>👑</motion.span>
                                 )}
                               </div>
 
                               {/* Avatar + ring */}
-                              <motion.div className="relative flex-shrink-0"
-                                initial={{ scale: 0.3, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                                transition={{ delay: delay + 0.12, type: "spring", stiffness: 200 }}>
+                              <motion.div className="relative flex-shrink-0" initial={false}>
                                 <PodiumAvatarGlow
                                   color={ringColor}
                                   width={avatarSz + (isMobile ? 28 : 40)}
@@ -244,14 +268,12 @@ export default function LeaderboardPage() {
                             {/* Pedestal with rank pill */}
                             <div className="relative flex-shrink-0" style={{ width: isMobile ? (isFirst ? 86 : isTop3 ? 68 : 54) : (isFirst ? 132 : isTop3 ? 104 : 84), marginTop: 10 }}>
                               <div style={{ height: 14, borderRadius: "50%", background: pedTop, boxShadow: `0 0 16px ${ringColor}55`, position: "relative", zIndex: 2 }} />
-                              <motion.div className="flex items-start justify-center"
-                                style={{ marginTop: -7, background: pedBody, borderLeft: `1px solid ${pedBorder}`, borderRight: `1px solid ${pedBorder}`, borderRadius: "0 0 12px 12px", boxShadow: isFirst ? `0 12px 32px ${ringColor}33` : "0 6px 18px rgba(0,0,0,0.08)" }}
-                                initial={{ height: 0 }} animate={{ height: pedH }}
-                                transition={{ delay: delay + 0.08, duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}>
+                              <div className="flex items-start justify-center"
+                                style={{ marginTop: -7, height: pedH, background: pedBody, borderLeft: `1px solid ${pedBorder}`, borderRight: `1px solid ${pedBorder}`, borderRadius: "0 0 12px 12px", boxShadow: isFirst ? `0 12px 32px ${ringColor}33` : "0 6px 18px rgba(0,0,0,0.08)" }}>
                                 <span className="rounded-md font-bold text-center" style={{ marginTop: 8, background: pedPill, color: "#3A2800", fontSize: isMobile ? (isFirst ? 13 : 11) : (isFirst ? 18 : 14), minWidth: isMobile ? (isFirst ? 32 : 26) : (isFirst ? 46 : 36), padding: "3px 10px", fontFamily: "'Rajdhani',sans-serif", border: `1.5px solid ${ringColor}`, boxShadow: "0 2px 6px rgba(0,0,0,0.2)" }}>
                                   #{rank}
                                 </span>
-                              </motion.div>
+                              </div>
                             </div>
 
                             {/* Name */}
@@ -287,9 +309,9 @@ export default function LeaderboardPage() {
 
             {/* Remaining list + tips */}
             <AnimatePresence mode="wait">
-              <motion.div key={animKey}
+              <motion.div key={hofCat}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}>
+                transition={{ duration: 0.3 }}>
 
                 {/* Peringkat Lainnya */}
                 {rest.length > 0 && (

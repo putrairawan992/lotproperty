@@ -667,13 +667,21 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 { l: "Total Recruits",    v: "14",                icon: Star,       color: "#C8922A" },
                 { l: "Training Completed",v: "67",                icon: BookOpen,   color: "#308030" },
               ].map((s, i) => (
-                <div key={i} className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-border/30 bg-muted/10 hover:bg-muted/20 transition-all">
+                <div
+                  key={i}
+                  className={`flex items-center gap-3.5 p-3.5 rounded-2xl border border-border/30 bg-muted/10 hover:bg-muted/20 transition-all ${i === 0 ? "col-span-2 sm:col-span-1" : ""}`}
+                >
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: s.color + "15" }}>
                     <s.icon size={18} style={{ color: s.color }} />
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-extrabold leading-tight text-[17px] text-foreground" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{s.v}</p>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-0.5 tracking-wide">{s.l}</p>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="font-extrabold leading-tight text-[15px] sm:text-[17px] text-foreground whitespace-nowrap truncate"
+                      style={{ fontFamily: "'Rajdhani', sans-serif" }}
+                    >
+                      {s.v}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-semibold mt-0.5 tracking-wide whitespace-nowrap truncate">{s.l}</p>
                   </div>
                 </div>
               ))}

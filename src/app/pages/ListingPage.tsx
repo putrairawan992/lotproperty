@@ -76,7 +76,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
 export default function ListingPage() {
   const loading = useLoading(1100);
   const [tab, setTab] = useTabQuery("tab", "All");
-  const { getQueryParam, setQueryParam, navigate, search: urlSearch } = useLocation();
+  const { getQueryParam, navigate, search: urlSearch } = useLocation();
   const detailId = getQueryParam("detail");
 
   const [search, setSearch] = useState("");
@@ -89,13 +89,13 @@ export default function ListingPage() {
   const [form, setForm] = useState(EMPTY_FORM);
 
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    const handleClickOutside = (e: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpenMenuId(null);
       }
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -172,7 +172,10 @@ export default function ListingPage() {
 
   const openDetail = (id: string) => {
     setOpenMenuId(null);
-    setQueryParam("detail", id);
+    const params = new URLSearchParams(window.location.search);
+    params.set("detail", id);
+    const qs = params.toString();
+    navigate(qs ? `${window.location.pathname}?${qs}` : window.location.pathname);
   };
 
   const closeDetail = () => {
@@ -215,6 +218,7 @@ export default function ListingPage() {
   const ActionMenu = ({ listing }: { listing: Listing }) => (
     <div className="relative" ref={openMenuId === listing.id ? menuRef : undefined}>
       <button
+        type="button"
         onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === listing.id ? null : listing.id); }}
         className="p-1.5 rounded-lg hover:bg-muted transition-colors"
         style={{ color: T.text3 }}
@@ -227,8 +231,9 @@ export default function ListingPage() {
             initial={{ opacity: 0, scale: 0.95, y: -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -4 }}
-            className="absolute right-0 top-full mt-1 w-44 rounded-xl border shadow-xl z-20 overflow-hidden"
+            className="absolute right-0 top-full mt-1 w-44 rounded-xl border shadow-xl z-50 overflow-hidden"
             style={{ backgroundColor: T.card, borderColor: T.border }}
+            onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
           >
             {[
@@ -239,7 +244,11 @@ export default function ListingPage() {
             ].filter(a => !a.hide).map(item => (
               <button
                 key={item.label}
-                onClick={item.action}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  item.action();
+                }}
                 className="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-medium hover:bg-muted transition-colors text-left"
                 style={{ color: item.danger ? "#DC2626" : T.text1 }}
               >
@@ -253,111 +262,54 @@ export default function ListingPage() {
     </div>
   );
 
-  if (detailListing) {
-    return (
-      <div className="p-4 lg:p-6 relative">
-        <AnimatePresence>
-          {successToast && (
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-              className="fixed top-16 left-1/2 -translate-x-1/2 z-[70] bg-[#16A34A] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-semibold border border-green-500/20">
-              <Check size={16} /> {successToast}
-            </motion.div>
-          )}
-        </AnimatePresence>
+  const formatArea = (l: Listing) => {
+    const parts: string[] = [];
+    if (l.landArea !== "—") parts.push(`T: ${l.landArea}`);
+    if (l.buildingArea !== "—") parts.push(`B: ${l.buildingArea}`);
+    if (l.floors !== "—") parts.push(`${l.floors} lantai`);
+    return parts.length > 0 ? parts.join(" · ") : "—";
+  };
 
-        <div className="max-w-3xl mx-auto space-y-4">
-          <button onClick={closeDetail} className="flex items-center gap-2 text-sm font-medium" style={{ color: T.text3 }}>
-            <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Kembali ke Daftar
-          </button>
-
-          <Card className="p-5">
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-mono mb-1" style={{ color: T.text3 }}>{detailListing.id}</p>
-                <h1 className="font-bold text-xl" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>
-                  {detailListing.title}
-                </h1>
-                <p className="text-sm flex items-center gap-1 mt-1" style={{ color: T.text3 }}>
-                  <MapPin size={13} /> {detailListing.address}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <StatusChip s={detailListing.status} />
-                <button
-                  onClick={closeDetail}
-                  className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-                  style={{ color: T.text3 }}
-                  aria-label="Tutup"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-            </div>
-
-            <p className="text-2xl font-bold mb-4" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#E8A500" }}>
-              {detailListing.price}
-            </p>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[
-                { label: "Tipe Properti", value: detailListing.type },
-                { label: "Nama Pemilik", value: detailListing.owner },
-                { label: "Nomor HP", value: detailListing.phone },
-                { label: "Luas Tanah", value: detailListing.landArea },
-                { label: "Luas Bangunan", value: detailListing.buildingArea },
-                { label: "Jumlah Lantai", value: detailListing.floors },
-                { label: "Sertifikat", value: detailListing.certificate },
-                { label: "Komisi", value: detailListing.commission },
-                { label: "Dibuat", value: detailListing.createdAt },
-              ].map(item => (
-                <div key={item.label} className="p-3 rounded-xl border" style={{ borderColor: T.border, backgroundColor: "var(--muted)" }}>
-                  <p className="text-[10px] uppercase font-semibold mb-0.5" style={{ color: T.text3 }}>{item.label}</p>
-                  <p className="text-sm font-medium" style={{ color: T.text1 }}>{item.value}</p>
-                </div>
-              ))}
-            </div>
-
-            {detailListing.notes !== "—" && (
-              <div className="mt-4 p-3 rounded-xl border" style={{ borderColor: T.border }}>
-                <p className="text-[10px] uppercase font-semibold mb-1" style={{ color: T.text3 }}>Catatan</p>
-                <p className="text-sm" style={{ color: T.text2 }}>{detailListing.notes}</p>
-              </div>
-            )}
-
-            <div className="flex flex-wrap gap-2 mt-5 pt-4 border-t" style={{ borderColor: T.border }}>
-              <a
-                href={`https://wa.me/${detailListing.phone.replace(/\D/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white"
-                style={{ backgroundColor: "#25D366", fontFamily: "'Rajdhani', sans-serif" }}
-              >
-                <MessageCircle size={14} /> WhatsApp Pemilik
-              </a>
-              {detailListing.status !== "Closed" && (
-                <button
-                  onClick={() => updateStatus(detailListing.id, detailListing.status === "Active" ? "Inactive" : "Active")}
-                  className="px-4 py-2 rounded-xl text-xs font-bold border"
-                  style={{ borderColor: T.border, color: T.text2, fontFamily: "'Rajdhani', sans-serif" }}
-                >
-                  {detailListing.status === "Active" ? "Set Inactive" : "Set Active"}
-                </button>
-              )}
-              {detailListing.status !== "Closed" && (
-                <button
-                  onClick={() => updateStatus(detailListing.id, "Closed")}
-                  className="px-4 py-2 rounded-xl text-xs font-bold"
-                  style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani', sans-serif" }}
-                >
-                  Tandai Closed
-                </button>
-              )}
-            </div>
-          </Card>
+  const ListingMobileCard = ({ listing }: { listing: Listing }) => (
+    <div
+      className="p-4 transition-colors cursor-pointer active:bg-muted/60"
+      onClick={() => openDetail(listing.id)}
+    >
+      <div className="flex items-start justify-between gap-3 mb-2">
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold leading-snug line-clamp-2" style={{ color: T.text1 }}>
+            {listing.title}
+          </p>
+          <p className="text-xs flex items-center gap-1 mt-1 truncate" style={{ color: T.text3 }}>
+            <MapPin size={11} className="flex-shrink-0" />
+            <span className="truncate">{listing.loc} · {listing.owner}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
+          <StatusChip s={listing.status} />
+          <ActionMenu listing={listing} />
         </div>
       </div>
-    );
-  }
+
+      <div className="flex items-center justify-between gap-3 mb-2">
+        <span className="text-xs px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: "var(--muted)", color: T.text2 }}>
+          {listing.type}
+        </span>
+        <p className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#E8A500" }}>
+          {listing.price}
+        </p>
+      </div>
+
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-[11px] leading-snug flex-1 min-w-0" style={{ color: T.text3 }}>
+          {formatArea(listing)}
+        </p>
+        <div className="flex-shrink-0">
+          <RemindBadge r={listing.remind} d={listing.days} />
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 lg:p-6 relative">
@@ -386,27 +338,30 @@ export default function ListingPage() {
         </div>
 
         <Card>
-          <div className="flex flex-wrap items-center gap-3 p-4 border-b" style={{ borderColor: T.border }}>
-            <div className="relative flex-1" style={{ minWidth: 180 }}>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 p-3 sm:p-4 border-b" style={{ borderColor: T.border }}>
+            <div className="relative flex-1 min-w-0 w-full sm:w-auto" style={{ minWidth: 0 }}>
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: T.text3 }} />
               <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari listing..."
                 className="w-full pl-9 pr-4 py-2 rounded-xl border text-sm outline-none"
                 style={{ borderColor: T.border, backgroundColor: T.card, color: T.text1 }} />
             </div>
-            <select className="px-3 py-2 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text2 }}>
-              <option>Semua Tipe</option>
-              {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
-            </select>
-            <button onClick={handleExportExcel}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all border"
-              style={{ borderColor: T.border, color: T.text2, backgroundColor: T.card, fontFamily: "'Rajdhani', sans-serif" }}>
-              <Download size={15} /> Export Excel
-            </button>
-            <button onClick={() => setShowPanel(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all"
-              style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani', sans-serif" }}>
-              <Plus size={15} /> Tambah
-            </button>
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <select className="flex-1 sm:flex-none px-3 py-2 rounded-xl border text-sm outline-none bg-card min-w-0" style={{ borderColor: T.border, color: T.text2 }}>
+                <option>Semua Tipe</option>
+                {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
+              </select>
+              <button onClick={handleExportExcel}
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-sm font-bold transition-all border flex-shrink-0"
+                style={{ borderColor: T.border, color: T.text2, backgroundColor: T.card, fontFamily: "'Rajdhani', sans-serif" }}>
+                <Download size={15} />
+                <span className="hidden sm:inline">Export Excel</span>
+              </button>
+              <button onClick={() => setShowPanel(true)}
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-sm font-bold transition-all flex-shrink-0"
+                style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani', sans-serif" }}>
+                <Plus size={15} /> Tambah
+              </button>
+            </div>
           </div>
 
           <div className="flex border-b overflow-x-auto" style={{ borderColor: T.border }}>
@@ -419,12 +374,25 @@ export default function ListingPage() {
             ))}
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Mobile: card layout */}
+          <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
+            {filtered.map(l => (
+              <ListingMobileCard key={l.id} listing={l} />
+            ))}
+            {filtered.length === 0 && (
+              <p className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
+                Tidak ada listing ditemukan.
+              </p>
+            )}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b" style={{ borderColor: T.border }}>
                   {["LISTING", "TIPE", "LUAS (T / B)", "HARGA", "STATUS", "REMINDER", ""].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: T.text3 }}>{h}</th>
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: T.text3 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -438,21 +406,21 @@ export default function ListingPage() {
                     onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
                     onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 min-w-[220px]">
                       <p className="text-sm font-medium" style={{ color: T.text1 }}>{l.title}</p>
                       <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
                         <MapPin size={10} />{l.loc} · {l.owner}
                       </p>
                     </td>
-                    <td className="px-4 text-sm" style={{ color: T.text2 }}>{l.type}</td>
-                    <td className="px-4 text-xs" style={{ color: T.text2 }}>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: T.text2 }}>{l.type}</td>
+                    <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text2 }}>
                       {l.landArea !== "—" ? `T: ${l.landArea}` : "—"} / {l.buildingArea !== "—" ? `B: ${l.buildingArea}` : "—"}
                       {l.floors !== "—" && <span className="block text-[10px] text-muted-foreground">{l.floors} Lantai</span>}
                     </td>
-                    <td className="px-4 text-sm font-semibold" style={{ color: T.text1 }}>{l.price}</td>
-                    <td className="px-4"><StatusChip s={l.status} /></td>
-                    <td className="px-4"><RemindBadge r={l.remind} d={l.days} /></td>
-                    <td className="px-4" onClick={e => e.stopPropagation()}>
+                    <td className="px-4 py-3 text-sm font-semibold whitespace-nowrap" style={{ color: T.text1 }}>{l.price}</td>
+                    <td className="px-4 py-3"><StatusChip s={l.status} /></td>
+                    <td className="px-4 py-3 whitespace-nowrap"><RemindBadge r={l.remind} d={l.days} /></td>
+                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
                       <ActionMenu listing={l} />
                     </td>
                   </tr>
@@ -472,13 +440,14 @@ export default function ListingPage() {
         {/* Tambah Listing Side Panel */}
         <AnimatePresence>
           {showPanel && (
-            <div className="fixed inset-0 z-[60] flex">
-              <div className="flex-1" style={{ backgroundColor: "rgba(0,0,0,0.45)" }} onClick={() => setShowPanel(false)} />
+            <div className="fixed inset-0 z-[60] flex justify-end">
+              <div className="absolute inset-0 bg-black/45" onClick={() => setShowPanel(false)} aria-hidden />
               <motion.div
-                className="w-full h-full flex flex-col bg-card shadow-2xl"
+                className="relative z-10 w-full h-full flex flex-col bg-card shadow-2xl"
                 style={{ maxWidth: 420 }}
                 initial={{ x: 420 }} animate={{ x: 0 }} exit={{ x: 420 }}
                 transition={{ type: "spring", stiffness: 280, damping: 26 }}
+                onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0" style={{ borderColor: T.border }}>
                   <h3 className="font-bold font-display text-lg" style={{ color: T.text1 }}>Tambah New Listing</h3>
@@ -616,6 +585,123 @@ export default function ListingPage() {
                 </div>
               </motion.div>
             </div>
+          )}
+        </AnimatePresence>
+
+        {/* Detail modal */}
+        <AnimatePresence>
+          {detailListing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 bg-black/50 backdrop-blur-sm"
+              onClick={closeDetail}
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 28 }}
+                transition={{ type: "spring", stiffness: 280, damping: 28 }}
+                className="w-full sm:max-w-3xl max-h-[92vh] overflow-y-auto bg-card rounded-t-2xl sm:rounded-2xl border shadow-2xl"
+                style={{ borderColor: T.border }}
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="sticky top-0 z-10 flex items-center justify-between gap-3 px-5 py-4 border-b bg-card" style={{ borderColor: T.border }}>
+                  <div className="min-w-0">
+                    <p className="text-xs font-mono" style={{ color: T.text3 }}>{detailListing.id}</p>
+                    <h2 className="font-bold text-lg truncate" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>
+                      Detail Listing
+                    </h2>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeDetail}
+                    className="p-1.5 rounded-lg hover:bg-muted transition-colors flex-shrink-0"
+                    style={{ color: T.text3 }}
+                    aria-label="Tutup"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-xl" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>
+                        {detailListing.title}
+                      </h3>
+                      <p className="text-sm flex items-center gap-1 mt-1" style={{ color: T.text3 }}>
+                        <MapPin size={13} /> {detailListing.address}
+                      </p>
+                    </div>
+                    <StatusChip s={detailListing.status} />
+                  </div>
+
+                  <p className="text-2xl font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#E8A500" }}>
+                    {detailListing.price}
+                  </p>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {[
+                      { label: "Tipe Properti", value: detailListing.type },
+                      { label: "Nama Pemilik", value: detailListing.owner },
+                      { label: "Nomor HP", value: detailListing.phone },
+                      { label: "Luas Tanah", value: detailListing.landArea },
+                      { label: "Luas Bangunan", value: detailListing.buildingArea },
+                      { label: "Jumlah Lantai", value: detailListing.floors },
+                      { label: "Sertifikat", value: detailListing.certificate },
+                      { label: "Komisi", value: detailListing.commission },
+                      { label: "Dibuat", value: detailListing.createdAt },
+                    ].map(item => (
+                      <div key={item.label} className="p-3 rounded-xl border" style={{ borderColor: T.border, backgroundColor: "var(--muted)" }}>
+                        <p className="text-[10px] uppercase font-semibold mb-0.5" style={{ color: T.text3 }}>{item.label}</p>
+                        <p className="text-sm font-medium" style={{ color: T.text1 }}>{item.value}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {detailListing.notes !== "—" && (
+                    <div className="p-3 rounded-xl border" style={{ borderColor: T.border }}>
+                      <p className="text-[10px] uppercase font-semibold mb-1" style={{ color: T.text3 }}>Catatan</p>
+                      <p className="text-sm" style={{ color: T.text2 }}>{detailListing.notes}</p>
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap gap-2 pt-4 border-t" style={{ borderColor: T.border }}>
+                    <a
+                      href={`https://wa.me/${detailListing.phone.replace(/\D/g, "")}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white"
+                      style={{ backgroundColor: "#25D366", fontFamily: "'Rajdhani', sans-serif" }}
+                    >
+                      <MessageCircle size={14} /> WhatsApp Pemilik
+                    </a>
+                    {detailListing.status !== "Closed" && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(detailListing.id, detailListing.status === "Active" ? "Inactive" : "Active")}
+                        className="px-4 py-2 rounded-xl text-xs font-bold border"
+                        style={{ borderColor: T.border, color: T.text2, fontFamily: "'Rajdhani', sans-serif" }}
+                      >
+                        {detailListing.status === "Active" ? "Set Inactive" : "Set Active"}
+                      </button>
+                    )}
+                    {detailListing.status !== "Closed" && (
+                      <button
+                        type="button"
+                        onClick={() => updateStatus(detailListing.id, "Closed")}
+                        className="px-4 py-2 rounded-xl text-xs font-bold"
+                        style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani', sans-serif" }}
+                      >
+                        Tandai Closed
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>

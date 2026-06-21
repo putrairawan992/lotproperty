@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 function hexToThree(hex: string): number {
@@ -18,6 +18,13 @@ export default function PodiumAvatarGlow({
   intensity?: number;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setVisible(false);
+    const frame = requestAnimationFrame(() => setVisible(true));
+    return () => cancelAnimationFrame(frame);
+  }, [color, width, height]);
 
   useEffect(() => {
     const container = mountRef.current;
@@ -128,12 +135,13 @@ export default function PodiumAvatarGlow({
   return (
     <div
       ref={mountRef}
-      className="absolute left-1/2 -translate-x-1/2 pointer-events-none"
+      className="absolute left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-500 ease-out"
       style={{
         width,
         height,
         top: -height * 0.52,
         zIndex: 2,
+        opacity: visible ? 1 : 0,
       }}
       aria-hidden
     />
