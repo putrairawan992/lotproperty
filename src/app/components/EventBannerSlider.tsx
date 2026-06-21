@@ -148,7 +148,7 @@ function EventBannerSlide({
 
 export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }: EventBannerSliderProps) {
   const [current, setCurrent] = useState(0);
-  const timerRef = useRef<ReturnType<typeof setInterval>>();
+  const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const goTo = useCallback((index: number) => {
     setCurrent(index % events.length);

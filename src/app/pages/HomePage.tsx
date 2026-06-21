@@ -122,6 +122,10 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
       </Card>
 
+      
+      {/* Event Banner Slider — auto-play setiap 3 detik */}
+      <EventBannerSlider isDark={isDark} onNav={onNav} />
+
       <HofSection
         hofCat={hofCat}
         hofAgents={hofAgents}
@@ -136,8 +140,6 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         onNext={hofNext}
       />
 
-      {/* Event Banner Slider — auto-play setiap 3 detik */}
-      <EventBannerSlider isDark={isDark} onNav={onNav} />
 
       {/* Weekly LB + Progress + Quest */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
