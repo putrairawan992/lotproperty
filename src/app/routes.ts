@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Page, AdminPage } from "./types";
-import { Home, Target, Building2, Users, Trophy, User, HelpCircle, CalendarCheck } from "lucide-react";
+import { Home, Target, Building2, Users, Trophy, User } from "lucide-react";
 
 // Helper to check current pathname and normalize it to our Page type
 export function getPageFromUrl(): Page {
@@ -99,18 +99,14 @@ export const NAV_TABS = [
   { id: "quest" as Page,       label: "Quest",       icon: Target },
   { id: "listing" as Page,     label: "Listing",     icon: Building2 },
   { id: "prospect" as Page,    label: "Prospect",    icon: Users },
-  { id: "attendance" as Page,  label: "Attendance",  icon: CalendarCheck },
-  { id: "help" as Page,        label: "Help",        icon: HelpCircle },
   { id: "profile" as Page,     label: "Profile",     icon: User },
 ];
 
 export const DESKTOP_NAV_TABS = [
   { id: "home" as Page,        label: "Home",        icon: Home },
   { id: "leaderboard" as Page, label: "Leaderboard", icon: Trophy },
-  { id: "attendance" as Page,  label: "Attendance",  icon: CalendarCheck },
   { id: "quest" as Page,       label: "Quest",       icon: Target },
   { id: "listing" as Page,     label: "Listing",     icon: Building2 },
   { id: "prospect" as Page,    label: "Prospect",    icon: Users },
-  { id: "help" as Page,        label: "Help",        icon: HelpCircle },
   { id: "profile" as Page,     label: "Profile",     icon: User },
 ];

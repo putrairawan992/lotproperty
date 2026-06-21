@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Page, T, useTheme } from "../types";
 import { PAGE_TITLE } from "../routes";
 import Logo from "./Logo";
-import { Bell, ChevronRight, User, BookOpen, GraduationCap } from "lucide-react";
+import { Bell, ChevronRight, GraduationCap, HelpCircle } from "lucide-react";
 
 export default function TopHeader({ page, onNav, onLogout }: {
   page: Page;
@@ -75,6 +75,7 @@ export default function TopHeader({ page, onNav, onLogout }: {
                 {[
                   { label: "Notification", icon: Bell, page: "notifications" as Page },
                   { label: "Academy", icon: GraduationCap, page: "academy" as Page },
+                  { label: "Help", icon: HelpCircle, page: "help" as Page },
                 ].map(({ label, icon: Icon, page: p }) => (
                   <button key={p}
                     onClick={() => { onNav(p); setMenuOpen(false); }}

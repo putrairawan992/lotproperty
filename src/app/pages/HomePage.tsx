@@ -7,44 +7,13 @@ import XPBar from "../components/XPBar";
 import AgentAvatar from "../components/AgentAvatar";
 import { HomePageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
+import HofSection from "../components/HofSection";
 import HofFallingStars from "../components/HofFallingStars";
 import EventBannerSlider from "../components/EventBannerSlider";
 import { T, Page } from "../types";
 import { useTabQuery } from "../routes";
 import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
 import { getLevelTierColor } from "../badgeAssets";
-import HofBadgeRow from "../components/HofBadgeRow";
-import PodiumAvatarGlow from "../components/PodiumAvatarGlow";
-import SwipeCarouselZone from "../components/SwipeCarouselZone";
-import padiLeft from "@/imports/icon-padi-left.png";
-import padiRight from "@/imports/icon-padi-right.png";
-
-const getAgentPodiumBadges = (agent: any) => {
-  if (agent.badges && agent.badges.length > 0) {
-    return agent.badges;
-  }
-  // Dynamic fallback badges based on level/initials
-  if (agent.initials === "AF" || agent.name === "Ahmad Fadhil") {
-    return [["epic", "Listing Distributor"], ["rare", "Listing Supplier"], ["common", "First Deal"]];
-  }
-  if (agent.initials === "DR" || agent.name === "Dewi R.") {
-    return [["rare", "Listing Supplier"], ["common", "First Listing"]];
-  }
-  if (agent.initials === "EP" || agent.name === "Eko P.") {
-    return [["common", "First Listing"], ["common", "First Prospect"]];
-  }
-  if (agent.initials === "AW" || agent.name === "Andi W.") {
-    return [["rare", "Prospect Hunter"], ["common", "First Prospect"]];
-  }
-  // General fallback
-  return [["common", "First Listing"]];
-};
-
-const HOF_SLIDE_VARIANTS = {
-  enter: (dir: number) => ({ opacity: 0, x: dir >= 0 ? 56 : -56 }),
-  center: { opacity: 1, x: 0 },
-  exit: (dir: number) => ({ opacity: 0, x: dir >= 0 ? -56 : 56 }),
-};
 
 export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) => void; onShowLevelUp?: () => void }) {
   const loading = useLoading(1400);
@@ -79,9 +48,6 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const hofNext = () => { const ni = Math.min(HOF_TABS.length - 1, hofIdx + 1); setSlideDir(1); setHofTab(HOF_TABS[ni]); };
 
   if (loading) return <HomePageSkeleton />;
-  const podiumBg = isDark
-    ? "linear-gradient(180deg, rgba(10,10,10,0.55) 0%, rgba(26,20,16,0.72) 100%)"
-    : "linear-gradient(180deg, rgba(255,252,240,0.75) 0%, rgba(255,248,239,0.88) 100%)";
 
   return (
     <div className="p-4 lg:p-6 space-y-4 max-w-7xl mx-auto">
@@ -156,266 +122,22 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
       </Card>
 
+      <HofSection
+        hofCat={hofCat}
+        hofAgents={hofAgents}
+        hofTab={hofTab}
+        hofIdx={hofIdx}
+        slideDir={slideDir}
+        isMobile={isMobile}
+        isDark={isDark}
+        onSwitchCat={switchHofCat}
+        onGoTab={goHofTab}
+        onPrev={hofPrev}
+        onNext={hofNext}
+      />
+
       {/* Event Banner Slider — auto-play setiap 3 detik */}
       <EventBannerSlider isDark={isDark} onNav={onNav} />
-
-      {/* HALL OF FAME — dark cinematic */}
-      <div className="overflow-hidden rounded-2xl border relative" style={{ borderColor: T.border, backgroundColor: T.card }}>
-        <HofFallingStars isDark={isDark} />
-        {/* Header */}
-        <div className="flex flex-col items-center py-5 px-4 relative overflow-hidden z-[1]" style={{ background: isDark ? "linear-gradient(135deg, rgba(10,10,10,0.72), rgba(21,18,13,0.55))" : "linear-gradient(135deg, rgba(26,18,0,0.88), rgba(13,21,32,0.75))" }}>
-          <div className="flex items-center gap-3 w-full justify-between mb-2 relative z-10">
-            <div className="flex-1" />
-            <div className="flex flex-col items-center relative py-1 px-4">
-              <div className="flex items-center gap-2 sm:gap-3 relative z-10">
-                <motion.img
-                  src={padiLeft}
-                  alt=""
-                  className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0 padi-sway-left"
-                  style={{ imageRendering: "auto" }}
-                  initial={{ opacity: 0, x: -24, scale: 0.85 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  transition={{ delay: 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                />
-                <div className="text-center min-w-0">
-                  <motion.h2
-                    className="text-gradient-gold whitespace-nowrap title-shimmer-gold title-glow-breathe"
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontWeight: 800,
-                      fontSize: isMobile ? 28 : 36,
-                      letterSpacing: "0.05em",
-                      lineHeight: 1.15,
-                    }}
-                    initial={{ opacity: 0, y: 18, scale: 0.92 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    HALL OF FAME
-                  </motion.h2>
-                  <AnimatePresence mode="wait">
-                    <motion.p
-                      key={hofCat}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -6 }}
-                      transition={{ duration: 0.28 }}
-                      style={{ color: "#E8A500", fontSize: isMobile ? 11 : 13, fontFamily: "var(--font-display)", letterSpacing: "0.12em", fontWeight: 600 }}
-                    >
-                      {hofCat}
-                    </motion.p>
-                  </AnimatePresence>
-                </div>
-                <motion.img
-                  src={padiRight}
-                  alt=""
-                  className="w-14 h-14 sm:w-20 sm:h-20 object-contain shrink-0 padi-sway-right"
-                  style={{ imageRendering: "auto" }}
-                  initial={{ opacity: 0, x: 24, scale: 0.85 }}
-                  animate={{ opacity: 1, x: 0, scale: 1 }}
-                  transition={{ delay: 0.12, duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                />
-              </div>
-              <motion.p
-                className="relative z-10"
-                style={{ color: T.text3, fontSize: 11, letterSpacing: "0.12em" }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
-              >
-                JULY 2026
-              </motion.p>
-            </div>
-            <div className="flex-1" />
-          </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-1 w-full" style={{ scrollbarWidth: "none" }}>
-            {HOF_TABS.map((cat, i) => (
-              <motion.button key={cat} onClick={() => switchHofCat(cat)}
-                className="px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex-shrink-0"
-                animate={{ backgroundColor: hofTab === cat ? "#E8A500" : "rgba(0,0,0,0)", color: hofTab === cat ? "#ffffff" : "#9CA3AF", borderColor: hofTab === cat ? "#E8A500" : "#374151" }}
-                style={{ border: "1px solid" }} transition={{ duration: 0.18 }} whileTap={{ scale: 0.95 }}>
-                {cat}
-              </motion.button>
-            ))}
-          </div>
-        </div>
-
-        {/* Podium */}
-        <div className="relative px-2 pb-3 pt-2 podium-area z-[1] overflow-hidden" style={{ background: podiumBg }}>
-          <button onClick={hofPrev} disabled={hofIdx === 0}
-            className="absolute left-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
-            style={{ backgroundColor: T.card, color: hofIdx === 0 ? T.text3 : "#E8A500", border: `1px solid ${T.border}` }}>
-            <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} />
-          </button>
-          <button onClick={hofNext} disabled={hofIdx === HOF_TABS.length - 1}
-            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full flex items-center justify-center shadow-md"
-            style={{ backgroundColor: T.card, color: hofIdx === HOF_TABS.length - 1 ? T.text3 : "#E8A500", border: `1px solid ${T.border}` }}>
-            <ChevronRight size={16} />
-          </button>
-
-          <SwipeCarouselZone
-            className="relative"
-            onPrev={hofIdx > 0 ? hofPrev : undefined}
-            onNext={hofIdx < HOF_TABS.length - 1 ? hofNext : undefined}
-          >
-          <AnimatePresence custom={slideDir} initial={false} mode="popLayout">
-            <motion.div
-              key={hofCat}
-              custom={slideDir}
-              variants={HOF_SLIDE_VARIANTS}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] }}
-            >
-              {/* ── HoF Podium with real photos ── */}
-              <div className="flex items-end justify-center gap-1 sm:gap-2 px-1 sm:px-6">
-                {([3, 1, 0, 2, 4] as const).map((idx, colI) => {
-                  const agent = hofAgents[idx];
-                  if (!agent) return <div key={colI} className="flex-1" style={{ maxWidth: isMobile ? 60 : 90 }} />;
-                  const rank = idx + 1;
-                  const isFirst = rank === 1;
-                  const isTop3 = rank <= 3;
-                  const avatarSz = isMobile
-                    ? (isFirst ? 64 : isTop3 ? 48 : 38)
-                    : (isFirst ? 92 : isTop3 ? 68 : 52);
-                  const ringColor = rank === 1 ? "#E8A500" : rank === 2 ? "#C0C0C0" : rank === 3 ? "#CD7F32" : "#6B7280";
-                  const ringGlow = rank === 1 ? "0 0 18px rgba(232,165,0,0.7), 0 0 32px rgba(200,146,42,0.4)" : rank === 2 ? "0 0 8px rgba(192,192,192,0.4)" : rank === 3 ? "0 0 8px rgba(205,127,50,0.4)" : "none";
-                  const pedH = isMobile
-                    ? (isFirst ? 50 : rank === 2 ? 38 : rank === 3 ? 28 : 20)
-                    : (isFirst ? 72 : rank === 2 ? 54 : rank === 3 ? 42 : 30);
-                  const pedTop = rank === 1 ? "radial-gradient(ellipse at center,#FFE9A8 0%,#E8A500 55%,#B8860B 100%)" : rank === 2 ? "radial-gradient(ellipse at center,#F0F0F0 0%,#C0C0C0 55%,#909090 100%)" : rank === 3 ? "radial-gradient(ellipse at center,#E8B88A 0%,#CD7F32 55%,#8B5E20 100%)" : "radial-gradient(ellipse at center,#9AA0A8 0%,#6B7280 60%,#454B54 100%)";
-                  const pedBody = "linear-gradient(180deg,#211B12 0%,#0C0A07 100%)";
-                  const pedPill = rank === 1 ? "linear-gradient(135deg,#FFE08A,#E8A500)" : rank === 2 ? "linear-gradient(135deg,#EDEDED,#B8B8B8)" : rank === 3 ? "linear-gradient(135deg,#E8B88A,#CD7F32)" : "linear-gradient(135deg,#AEB4BC,#6B7280)";
-                  const delay = colI * 0.08;
-                  return (
-                    <motion.div key={rank} className="flex flex-col items-center flex-1 min-w-0 overflow-hidden"
-                      style={{ maxWidth: isMobile ? (isFirst ? 96 : isTop3 ? 80 : 60) : (isFirst ? 150 : isTop3 ? 112 : 90) }}
-                      initial={false}
-                      whileHover={{ scale: 1.04 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 22 }}>
-
-                      {/* Floating Wrapper for Crown & Avatar */}
-                      <motion.div
-                        animate={{ y: [0, -6, 0] }}
-                        transition={{
-                          duration: 3.2,
-                          repeat: Infinity,
-                          repeatType: "reverse",
-                          ease: "easeInOut",
-                          delay: colI * 0.25
-                        }}
-                        className="flex flex-col items-center w-full select-none"
-                      >
-                        {/* Crown for #1 */}
-                        <div style={{ height: isFirst ? (isMobile ? 20 : 28) : 0, overflow: "hidden" }} className="flex items-end justify-center w-full">
-                          {isFirst && (
-                            <motion.span className="crown-bounce" style={{ fontSize: isMobile ? 18 : 24, lineHeight: 1, filter: "drop-shadow(0 2px 6px rgba(200,146,42,0.8))" }}>👑</motion.span>
-                          )}
-                        </div>
-
-                        {/* Photo frame */}
-                        <motion.div
-                          className="relative flex-shrink-0"
-                          initial={false}>
-                          <PodiumAvatarGlow
-                            color={ringColor}
-                            width={avatarSz + (isMobile ? 24 : 36)}
-                            height={Math.round(avatarSz * (isMobile ? 0.4 : 0.46))}
-                            intensity={isFirst ? 1.15 : isTop3 ? 0.9 : 0.65}
-                          />
-                          {isFirst && (
-                            <svg className="absolute" style={{ width: avatarSz + 28, height: avatarSz + 28, top: -14, left: -14, zIndex: 0, pointerEvents: "none" }} viewBox="0 0 120 120">
-                              <g opacity="0.9">
-                                <path d="M10 80 Q5 65 12 52 Q15 62 14 72Z" fill="#C8922A" />
-                                <path d="M14 72 Q8 58 16 46 Q19 56 17 68Z" fill="#C8922A" opacity="0.8" />
-                                <path d="M18 65 Q12 50 22 40 Q24 50 21 62Z" fill="#C8922A" opacity="0.7" />
-                                <path d="M23 58 Q18 44 30 36 Q31 46 26 57Z" fill="#E8A500" opacity="0.6" />
-                                <path d="M30 50 Q26 38 38 32 Q39 42 34 50Z" fill="#E8A500" opacity="0.5" />
-                              </g>
-                              <g opacity="0.9">
-                                <path d="M110 80 Q115 65 108 52 Q105 62 106 72Z" fill="#C8922A" />
-                                <path d="M106 72 Q112 58 104 46 Q101 56 103 68Z" fill="#C8922A" opacity="0.8" />
-                                <path d="M102 65 Q108 50 98 40 Q96 50 99 62Z" fill="#C8922A" opacity="0.7" />
-                                <path d="M97 58 Q102 44 90 36 Q89 46 94 57Z" fill="#E8A500" opacity="0.6" />
-                                <path d="M90 50 Q94 38 82 32 Q81 42 86 50Z" fill="#E8A500" opacity="0.5" />
-                              </g>
-                            </svg>
-                          )}
-                          <div style={{
-                            width: avatarSz + 6,
-                            height: avatarSz + 6,
-                            borderRadius: "50%",
-                            background: `conic-gradient(${ringColor} 0%, #FFF8E7 25%, ${ringColor} 50%, #FFF8E7 75%, ${ringColor} 100%)`,
-                            padding: 3,
-                            boxShadow: ringGlow,
-                            position: "relative",
-                            zIndex: 1,
-                          }}>
-                            <div style={{ width: avatarSz, height: avatarSz, borderRadius: "50%", overflow: "hidden", border: "2px solid white" }}>
-                              <AgentAvatar initials={agent.initials} photo={agent.photo} size={avatarSz} />
-                            </div>
-                          </div>
-                        </motion.div>
-                      </motion.div>
-
-                      {/* Pedestal */}
-                      <div className="relative flex-shrink-0" style={{ width: isMobile ? (isFirst ? 80 : isTop3 ? 64 : 50) : (isFirst ? 116 : isTop3 ? 92 : 74), marginTop: 8 }}>
-                        <div style={{ height: 14, borderRadius: "50%", background: pedTop, boxShadow: `0 0 16px ${ringColor}66`, position: "relative", zIndex: 2 }} />
-                        <div
-                          className="flex items-center justify-center"
-                          style={{ marginTop: -7, height: pedH, background: pedBody, borderLeft: `1px solid ${ringColor}55`, borderRight: `1px solid ${ringColor}55`, borderRadius: "0 0 10px 10px", boxShadow: isFirst ? `0 10px 30px ${ringColor}33, inset 0 0 24px rgba(232,165,0,0.08)` : "inset 0 0 16px rgba(0,0,0,0.5)" }}>
-                          <span className="rounded-md font-bold text-center"
-                            style={{ background: pedPill, color: "#3A2800", fontSize: isMobile ? (isFirst ? 12 : 10) : (isFirst ? 16 : 13), minWidth: isMobile ? (isFirst ? 30 : 24) : (isFirst ? 40 : 32), padding: "2px 8px", fontFamily: "'Rajdhani',sans-serif", border: `1.5px solid ${ringColor}`, boxShadow: "0 2px 6px rgba(0,0,0,0.4)" }}>
-                            #{rank}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Name */}
-                      <div style={{ minHeight: 20, marginTop: 8 }} className="flex items-center justify-center w-full overflow-hidden px-0.5">
-                        <p className="font-bold truncate text-center"
-                          style={{ color: T.text1, fontSize: isMobile ? (isFirst ? 11 : isTop3 ? 9 : 8) : (isFirst ? 14 : isTop3 ? 12 : 10), fontFamily: "'Rajdhani',sans-serif" }}>
-                          {agent.name.split(" ").slice(0, 2).join(" ")}
-                        </p>
-                      </div>
-
-                      {/* Value */}
-                      <div style={{ minHeight: 16 }} className="flex items-center justify-center w-full overflow-hidden px-0.5">
-                        <p className="font-bold truncate text-center"
-                          style={{ color: "#E8A500", fontSize: isMobile ? (isFirst ? 10 : 8) : (isFirst ? 12 : 10), fontFamily: "'Rajdhani',sans-serif" }}>
-                          {agent.value ?? "—"}
-                        </p>
-                      </div>
-
-                      {/* Badges */}
-                      <HofBadgeRow
-                        badges={getAgentPodiumBadges(agent)}
-                        isMobile={isMobile}
-                        isFirst={isFirst}
-                        isDark={isDark}
-                        delay={delay}
-                      />
-                    </motion.div>
-                  );
-                })}
-              </div>
-
-              <div style={{ height: 12 }} />
-
-              {/* Dot pagination */}
-              <div className="flex justify-center gap-1.5 py-3">
-                {HOF_TABS.map((_, i) => (
-                  <button key={i} onClick={() => goHofTab(HOF_TABS[i])}
-                    className="rounded-full transition-all"
-                    style={{ width: hofIdx === i ? 16 : 6, height: 6, backgroundColor: hofIdx === i ? "#E8A500" : T.border }} />
-                ))}
-              </div>
-            </motion.div>
-          </AnimatePresence>
-          </SwipeCarouselZone>
-        </div>
-      </div>
 
       {/* Weekly LB + Progress + Quest */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
@@ -479,7 +201,16 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                   }}>
                   {agent.rank}
                 </div>
-                {agent.level && <LevelBadge title={agent.level} size={62} />}
+                <div
+                  className="flex-shrink-0"
+                  style={{
+                    borderRadius: "50%",
+                    padding: agent.isMe ? 2 : 0,
+                    background: agent.isMe ? "linear-gradient(135deg,#E8A500,#C8922A)" : "transparent",
+                  }}
+                >
+                  <AgentAvatar initials={agent.initials} photo={agent.photo} size={44} isMe={agent.isMe} />
+                </div>
                 <div className="flex-1 min-w-0">
                   {agent.level && (
                     <p className="text-xs font-bold mb-0.5 truncate" style={{ color: getLevelTierColor(agent.level), fontFamily: "'Rajdhani',sans-serif", letterSpacing: "0.02em" }}>

@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { Page, AdminRole, T, ThemeCtx } from "./types";
 
 // Routes & Navigation
-import { useLocation, getPageFromUrl, DESKTOP_NAV_TABS } from "./routes";
+import { useLocation, getPageFromUrl } from "./routes";
 
 // Components
 import TopHeader from "./components/TopHeader";

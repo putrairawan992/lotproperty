@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect, useMemo } from "react";
-import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2 } from "lucide-react";
+import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
@@ -10,6 +10,7 @@ import useLoading from "../hooks/useLoading";
 import { T, Rarity, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
+import HofAwardLaurel from "../components/HofAwardLaurel";
 
 export const ALL_BADGES: { name: string; rarity: Rarity; locked: boolean; req: string }[] = [
   // MYTHIC (2 total, 2 unlocked)
@@ -519,78 +520,94 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             </div>
           </Card>
 
-          {/* ==================== HALL OF FAME HISTORY (MOVED TO TOP OF RIGHT COLUMN) ==================== */}
-          <Card className="p-5 shadow-lg border border-border/50">
-            <div className="flex items-center justify-between mb-3 border-b pb-2 border-border/40">
-              <div className="flex items-center gap-2">
-                <Trophy size={18} className="text-[#C8922A]" />
-                <h3 className="font-bold text-[16px] tracking-wide text-foreground uppercase" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+          {/* ==================== HALL OF FAME HISTORY ==================== */}
+          <div
+            className="relative overflow-hidden rounded-[28px] p-4 sm:px-11 sm:pt-11 sm:pb-9"
+            style={{
+              background: isDark
+                ? "radial-gradient(ellipse 1000px 300px at 50% -20%, rgba(255,255,255,0.035), transparent 70%), linear-gradient(165deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 45%, rgba(0,0,0,0.25) 100%)"
+                : "radial-gradient(ellipse 1000px 300px at 50% -20%, rgba(255,255,255,0.035), transparent 70%), linear-gradient(165deg, rgba(14,18,28,0.92) 0%, rgba(18,24,36,0.88) 55%, rgba(10,14,22,0.94) 100%)",
+              border: "1px solid rgba(255,255,255,0.06)",
+              boxShadow: "0 40px 80px -30px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)",
+            }}
+          >
+            <div
+              className="absolute inset-0 pointer-events-none opacity-[0.035] mix-blend-overlay"
+              style={{
+                backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")",
+              }}
+            />
+
+            <div className="relative z-[1] flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-0 mb-5 sm:mb-11">
+              <div>
+                <p
+                  className="text-[10px] sm:text-[11px] tracking-[0.35em] sm:tracking-[0.45em] uppercase font-semibold mb-2 sm:mb-2.5 m-0"
+                  style={{ color: "#87858d", fontFamily: "'Inter', sans-serif" }}
+                >
+                  Official Selection
+                </p>
+                <h3
+                  className="m-0 font-normal text-[24px] sm:text-[36px] tracking-[0.06em] uppercase leading-none"
+                  style={{ fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif", color: "#f3f2ee" }}
+                >
                   Hall of Fame History
                 </h3>
               </div>
-              <span className="text-xs font-bold text-[#C8922A] bg-[#C8922A]/10 px-2.5 py-0.5 rounded-full" style={{ fontFamily: "'Rajdhani', sans-serif", letterSpacing: "0.02em" }}>
-                {HOF_ACHIEVEMENTS.length} Achievements
-              </span>
+              <div
+                className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-full text-[12px] sm:text-[13px] font-semibold whitespace-nowrap self-start"
+                style={{
+                  color: "#f3dca0",
+                  border: "1px solid rgba(202,165,76,0.35)",
+                  background: "linear-gradient(180deg, rgba(202,165,76,0.10), rgba(202,165,76,0.02))",
+                }}
+              >
+                <Award size={14} className="flex-shrink-0" />
+                {HOF_ACHIEVEMENTS.length} Awards
+              </div>
             </div>
 
-            {/* Premium Engraved Metallic Plaque Style Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[290px] overflow-y-auto pr-1">
+            <div className="relative z-[1] grid grid-cols-3 gap-x-1.5 gap-y-4 sm:flex sm:flex-wrap sm:justify-between sm:gap-x-3 sm:gap-y-0">
               {visibleHof.map((h, i) => (
-                <div key={i} className="flex items-center justify-between p-3.5 rounded-xl border relative overflow-hidden transition-all duration-300 animate-fade-in"
-                  style={{ 
-                    background: isDark 
-                      ? "linear-gradient(135deg, #1A1308 0%, #0D0904 100%)" 
-                      : "linear-gradient(135deg, #FFFDF8 0%, #FFF3DD 100%)",
-                    borderColor: isDark ? "rgba(200, 146, 42, 0.4)" : "rgba(200, 146, 42, 0.5)",
-                    boxShadow: isDark 
-                      ? "inset 0 0 12px rgba(200, 146, 42, 0.15), 0 2px 4px rgba(0,0,0,0.4)" 
-                      : "inset 0 0 8px rgba(200, 146, 42, 0.08), 0 1px 3px rgba(0,0,0,0.05)",
-                    borderWidth: "1.5px"
-                  }}>
-                  {/* Plaque subtle engraving pattern */}
-                  <div className="absolute inset-0 opacity-5 pointer-events-none" 
-                    style={{ 
-                      backgroundImage: "repeating-linear-gradient(45deg, var(--border-gold), var(--border-gold) 1px, transparent 1px, transparent 10px)" 
-                    }} 
-                  />
-                  
-                  <div className="flex items-center gap-2.5 min-w-0 relative z-10">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center" 
-                      style={{ 
-                        backgroundColor: isDark ? "rgba(200,146,42,0.12)" : "#FFF7E6",
-                        border: "1px solid rgba(200,146,42,0.3)"
-                      }}>
-                      <Trophy size={12} className="text-[#C8922A]" />
-                    </div>
-                    <span className="text-xs font-bold truncate text-gradient-gold" style={{ fontFamily: "var(--font-display)", letterSpacing: "0.03em" }}>{h.cat.toUpperCase()}</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 relative z-10">
-                    <span className="text-xs font-black px-2 py-0.5 rounded border font-mono" 
-                      style={{ 
-                        borderColor: "#C8922A60", 
-                        backgroundColor: isDark ? "rgba(0,0,0,0.4)" : "rgba(255,255,255,0.7)", 
-                        color: "#E8A500",
-                        textShadow: isDark ? "0 0 8px rgba(255,215,0,0.5)" : "none"
-                      }}>
-                      {h.rank}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground w-14 text-right font-bold uppercase tracking-wider">{h.period}</span>
-                  </div>
-                </div>
+                <motion.div
+                  key={`${h.cat}-${h.period}-${i}`}
+                  className="flex justify-center sm:flex-1 sm:min-w-[150px]"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.35 }}
+                >
+                  <HofAwardLaurel category={h.cat} rank={h.rank} period={h.period} />
+                </motion.div>
               ))}
             </div>
 
             {HOF_ACHIEVEMENTS.length > 5 && (
-              <button
-                onClick={() => setShowAllHof(!showAllHof)}
-                className="w-full text-center py-2 mt-3.5 text-xs font-bold text-gradient-gold hover:opacity-85 border-t border-border/30 transition-all uppercase tracking-wider"
-                style={{ fontFamily: "'Rajdhani', sans-serif" }}
-              >
-                {showAllHof ? "Lihat Lebih Sedikit" : "Lihat Semua Hall of Fame"}
-              </button>
+              <>
+                <div
+                  className="relative z-[1] h-px my-8 sm:my-10"
+                  style={{
+                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 15%, rgba(255,255,255,0.06) 85%, transparent)",
+                  }}
+                />
+                <div className="relative z-[1] text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllHof(!showAllHof)}
+                    className="inline-flex items-center gap-2 text-[12px] font-semibold tracking-[0.22em] uppercase transition-all hover:gap-3"
+                    style={{
+                      color: showAllHof ? "#f3dca0" : "#87858d",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {showAllHof ? "Lihat Lebih Sedikit" : "Lihat Semua Hall of Fame"}
+                    <ChevronRight
+                      size={12}
+                      style={{ transform: showAllHof ? "rotate(-90deg)" : "none", transition: "transform 0.2s ease" }}
+                    />
+                  </button>
+                </div>
+              </>
             )}
-          </Card>
+          </div>
 
           {/* Featured Badges */}
           <Card className="p-5 shadow-lg border border-border/50">

@@ -323,16 +323,24 @@ export default function ListingPage() {
       </AnimatePresence>
 
       <div className="max-w-6xl mx-auto">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3 mb-3 sm:mb-5">
           {[
-            { l: "Total Listing", v: listings.length, c: T.text2 },
-            { l: "Active", v: listings.filter(l => l.status === "Active").length, c: "#16A34A" },
-            { l: "Inactive", v: listings.filter(l => l.status === "Inactive").length, c: "#D97706" },
-            { l: "Closed", v: listings.filter(l => l.status === "Closed").length, c: "#DC2626" },
+            { l: "Total Listing", short: "Total", v: listings.length, c: T.text2 },
+            { l: "Active", short: "Active", v: listings.filter(l => l.status === "Active").length, c: "#16A34A" },
+            { l: "Inactive", short: "Inactive", v: listings.filter(l => l.status === "Inactive").length, c: "#D97706" },
+            { l: "Closed", short: "Closed", v: listings.filter(l => l.status === "Closed").length, c: "#DC2626" },
           ].map(s => (
-            <Card key={s.l} className="p-4 text-center">
-              <p className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 28, color: s.c }}>{s.v}</p>
-              <p className="text-xs" style={{ color: T.text3 }}>{s.l}</p>
+            <Card key={s.l} className="px-2 py-2 sm:p-3 lg:p-4 text-center min-w-0">
+              <p
+                className="font-bold leading-none"
+                style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: "clamp(18px, 4.5vw, 28px)", color: s.c }}
+              >
+                {s.v}
+              </p>
+              <p className="text-[9px] sm:text-xs mt-0.5 sm:mt-1 leading-tight truncate" style={{ color: T.text3 }}>
+                <span className="sm:hidden">{s.short}</span>
+                <span className="hidden sm:inline">{s.l}</span>
+              </p>
             </Card>
           ))}
         </div>

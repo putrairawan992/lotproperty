@@ -348,32 +348,6 @@ export default function ProspectPage() {
           </button>
         </div>
 
-        {/* Pipeline */}
-        <Card className="p-4 mb-5 overflow-x-auto">
-          <p className="text-xs font-bold mb-3 uppercase tracking-wider" style={{ color: T.text3 }}>Prospect Pipeline</p>
-          <div className="flex items-center gap-1 min-w-max">
-            {PIPELINE.map((step, i) => {
-              const Icon = step.icon;
-              const count = prospects.filter(p => p.status === step.status).length;
-              return (
-                <div key={step.status} className="flex items-center">
-                  <div className="flex flex-col items-center" style={{ width: 72 }}>
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 mb-1"
-                      style={{ borderColor: step.color, backgroundColor: `${step.color}15`, color: step.color }}>
-                      <Icon size={16} />
-                    </div>
-                    <p className="text-[9px] font-bold text-center leading-tight" style={{ color: step.color }}>{step.status}</p>
-                    <p className="text-[8px] text-center leading-tight mt-0.5" style={{ color: T.text3 }}>{count}</p>
-                  </div>
-                  {i < PIPELINE.length - 1 && (
-                    <div className="w-6 h-0.5 mx-0.5 flex-shrink-0" style={{ backgroundColor: T.border }} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </Card>
-
         {/* Add panel */}
         <AnimatePresence>
           {showAdd && (
@@ -553,6 +527,32 @@ export default function ProspectPage() {
             </div>
           )}
         </div>
+
+        {/* Pipeline */}
+        <Card className="p-4 mt-5 overflow-x-auto">
+          <p className="text-xs font-bold mb-3 uppercase tracking-wider" style={{ color: T.text3 }}>Prospect Pipeline</p>
+          <div className="flex items-center gap-1 min-w-max">
+            {PIPELINE.map((step, i) => {
+              const Icon = step.icon;
+              const count = prospects.filter(p => p.status === step.status).length;
+              return (
+                <div key={step.status} className="flex items-center">
+                  <div className="flex flex-col items-center" style={{ width: 72 }}>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center border-2 mb-1"
+                      style={{ borderColor: step.color, backgroundColor: `${step.color}15`, color: step.color }}>
+                      <Icon size={16} />
+                    </div>
+                    <p className="text-[9px] font-bold text-center leading-tight" style={{ color: step.color }}>{step.status}</p>
+                    <p className="text-[8px] text-center leading-tight mt-0.5" style={{ color: T.text3 }}>{count}</p>
+                  </div>
+                  {i < PIPELINE.length - 1 && (
+                    <div className="w-6 h-0.5 mx-0.5 flex-shrink-0" style={{ backgroundColor: T.border }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
       </div>
 
       {/* Detail / Edit modal */}
