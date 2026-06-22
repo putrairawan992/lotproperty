@@ -247,22 +247,20 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                       </div>
                       <div className="divide-y" style={{ borderColor: T.border }}>
                         {badges.map((b, i) => (
-                          <div key={i} className="flex items-center gap-4 px-4 py-3.5 sm:py-3 select-none">
-                            <div className="flex-shrink-0">
+                          <div key={i} className="grid grid-cols-[88px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 sm:py-3 select-none">
+                            <div className="w-[88px] flex justify-center">
                               <BadgeShield rarity={b.rarity} name={b.name} size="sm" />
                             </div>
-                            <div className="flex-1 min-w-0 flex flex-row items-center justify-between gap-3">
-                              <div className="flex-1 min-w-0">
-                                <p className="font-bold text-sm text-foreground" style={{ color: T.text1 }}>{b.name}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5" style={{ color: T.text3 }}>{b.req}</p>
-                              </div>
-                              <div className="flex-shrink-0 self-center">
-                                {b.locked ? (
-                                  <span className="inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50" style={{ fontFamily: "'Rajdhani', sans-serif" }}>Locked</span>
-                                ) : (
-                                  <span className="inline-block text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" style={{ fontFamily: "'Rajdhani', sans-serif" }}>✓ Dimiliki</span>
-                                )}
-                              </div>
+                            <div className="min-w-0 pr-1">
+                              <p className="font-bold text-base leading-tight truncate" style={{ color: T.text1 }}>{b.name}</p>
+                              <p className="text-xs mt-1 leading-5 min-h-10 line-clamp-2" style={{ color: T.text3 }}>{b.req}</p>
+                            </div>
+                            <div className="justify-self-end self-center">
+                              {b.locked ? (
+                                <span className="inline-flex h-8 items-center text-[10px] sm:text-xs px-2.5 rounded-full font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50" style={{ fontFamily: "'Rajdhani', sans-serif" }}>Locked</span>
+                              ) : (
+                                <span className="inline-flex h-8 items-center text-[10px] sm:text-xs px-3 rounded-full font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" style={{ fontFamily: "'Rajdhani', sans-serif" }}>✓ Dimiliki</span>
+                              )}
                             </div>
                           </div>
                         ))}

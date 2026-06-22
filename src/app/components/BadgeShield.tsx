@@ -46,7 +46,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
             objectFit: "contain",
             filter: rarityGlow,
             maxWidth: "100%",
-            transform: (name === "Billionaire Club" || name === "Perfectionist Agent") ? "scale(1.28)" : undefined,
+            transform: size !== "sm" && (name === "Billionaire Club" || name === "Perfectionist Agent") ? "scale(1.28)" : undefined,
           }} />
         {cfg.nameSz > 0 && (
           <span className="text-center font-bold leading-tight w-full px-0.5"
