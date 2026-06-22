@@ -285,7 +285,7 @@ export default function ProspectPage() {
     </AnimatePresence>
   );
 
-  const ActionMenu = ({ prospect }: { prospect: Prospect }) => (
+  const ActionMenu = ({ prospect, alignUp }: { prospect: Prospect; alignUp?: boolean }) => (
     <div className="relative" ref={openMenuId === prospect.id ? menuRef : undefined}>
       <button
         type="button"
@@ -298,10 +298,12 @@ export default function ProspectPage() {
       <AnimatePresence>
         {openMenuId === prospect.id && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            initial={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -4 }}
-            className="absolute right-0 top-full mt-1 w-40 rounded-xl border shadow-xl z-50 overflow-hidden"
+            exit={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
+            className={`absolute right-0 w-40 rounded-xl border shadow-xl z-50 overflow-hidden ${
+              alignUp ? "bottom-full mb-1" : "top-full mt-1"
+            }`}
             style={{ backgroundColor: T.card, borderColor: T.border }}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
@@ -485,14 +487,14 @@ export default function ProspectPage() {
 
           {/* Mobile: card layout */}
           <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
-            {filtered.map(p => {
+            {filtered.map((p, index) => {
               const sc = STATUS_CFG[p.status];
               return (
                 <div key={p.id} className="p-4 cursor-pointer transition-all hover:bg-muted/10 relative" onClick={() => openDetail(p.id)}>
                   <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                     <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap uppercase tracking-wider"
                       style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
-                    <ActionMenu prospect={p} />
+                    <ActionMenu prospect={p} alignUp={index === filtered.length - 1} />
                   </div>
                   <div className="flex items-start gap-3 mb-3 pr-24">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
@@ -534,7 +536,7 @@ export default function ProspectPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(p => {
+                {filtered.map((p, index) => {
                   const sc = STATUS_CFG[p.status];
                   const actionCfg = NEXT_ACTIONS.find(a => a.id === p.nextAction) || NEXT_ACTIONS[0];
                   const ActionIcon = actionCfg.icon;
@@ -572,8 +574,8 @@ export default function ProspectPage() {
                       <td className="px-4 py-3 whitespace-nowrap text-xs" style={{ color: T.text2 }}>
                         {p.reminderDate ? (
                           <div className="flex items-center gap-1 text-[#D97706] font-semibold">
-                            <Calendar size={12} />
-                            <span>{formatDateDisplay(p.reminderDate)} {p.reminderTime}</span>
+                             <Calendar size={12} />
+                             <span>{formatDateDisplay(p.reminderDate)} {p.reminderTime}</span>
                           </div>
                         ) : (
                           <span style={{ color: T.text3 }}>—</span>
@@ -581,7 +583,7 @@ export default function ProspectPage() {
                       </td>
                       <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text3 }}>{p.date}</td>
                       <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                        <ActionMenu prospect={p} />
+                        <ActionMenu prospect={p} alignUp={index === filtered.length - 1} />
                       </td>
                     </tr>
                   );

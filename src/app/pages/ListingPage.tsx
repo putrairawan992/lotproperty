@@ -215,7 +215,7 @@ export default function ListingPage() {
     return <span className="text-xs font-semibold" style={{ color: "#DC2626" }}>⚡ Rekomendasi Inactive</span>;
   };
 
-  const ActionMenu = ({ listing }: { listing: Listing }) => (
+  const ActionMenu = ({ listing, alignUp }: { listing: Listing; alignUp?: boolean }) => (
     <div className="relative" ref={openMenuId === listing.id ? menuRef : undefined}>
       <button
         type="button"
@@ -228,10 +228,12 @@ export default function ListingPage() {
       <AnimatePresence>
         {openMenuId === listing.id && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+            initial={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -4 }}
-            className="absolute right-0 top-full mt-1 w-44 rounded-xl border shadow-xl z-50 overflow-hidden"
+            exit={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
+            className={`absolute right-0 w-44 rounded-xl border shadow-xl z-50 overflow-hidden ${
+              alignUp ? "bottom-full mb-1" : "top-full mt-1"
+            }`}
             style={{ backgroundColor: T.card, borderColor: T.border }}
             onPointerDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
@@ -270,7 +272,7 @@ export default function ListingPage() {
     return parts.length > 0 ? parts.join(" · ") : "—";
   };
 
-  const ListingMobileCard = ({ listing }: { listing: Listing }) => (
+  const ListingMobileCard = ({ listing, isLast }: { listing: Listing; isLast?: boolean }) => (
     <div
       className="p-4 transition-colors cursor-pointer active:bg-muted/60"
       onClick={() => openDetail(listing.id)}
@@ -287,7 +289,7 @@ export default function ListingPage() {
         </div>
         <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
           <StatusChip s={listing.status} />
-          <ActionMenu listing={listing} />
+          <ActionMenu listing={listing} alignUp={isLast} />
         </div>
       </div>
 
@@ -384,8 +386,8 @@ export default function ListingPage() {
 
           {/* Mobile: card layout */}
           <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
-            {filtered.map(l => (
-              <ListingMobileCard key={l.id} listing={l} />
+            {filtered.map((l, index) => (
+              <ListingMobileCard key={l.id} listing={l} isLast={index === filtered.length - 1} />
             ))}
             {filtered.length === 0 && (
               <p className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
@@ -405,7 +407,7 @@ export default function ListingPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(l => (
+                {filtered.map((l, index) => (
                   <tr
                     key={l.id}
                     className="border-b transition-colors cursor-pointer"
@@ -429,7 +431,7 @@ export default function ListingPage() {
                     <td className="px-4 py-3"><StatusChip s={l.status} /></td>
                     <td className="px-4 py-3 whitespace-nowrap"><RemindBadge r={l.remind} d={l.days} /></td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <ActionMenu listing={l} />
+                      <ActionMenu listing={l} alignUp={index === filtered.length - 1} />
                     </td>
                   </tr>
                 ))}

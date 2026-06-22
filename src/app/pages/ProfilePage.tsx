@@ -262,7 +262,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     setTimeout(() => setErrorAlert(""), 4000);
   };
 
-  const visibleHof = showAllHof ? HOF_ACHIEVEMENTS : HOF_ACHIEVEMENTS.slice(0, 5);
+  const visibleHof = showAllHof ? HOF_ACHIEVEMENTS : HOF_ACHIEVEMENTS.slice(0, 6);
 
   const totalBadges = ALL_BADGES.length;
   const unlockedBadges = ALL_BADGES.filter(b => !b.locked).length;
@@ -579,7 +579,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               ))}
             </div>
 
-            {HOF_ACHIEVEMENTS.length > 5 && (
+            {HOF_ACHIEVEMENTS.length > 6 && (
               <>
                 <div
                   className="relative z-[1] h-px my-6 sm:my-8"
