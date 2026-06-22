@@ -121,9 +121,9 @@ export const XP_CARDS = [
 ] as const;
 
 export const RARITY_CFG = {
-  mythic:    { color: "#C0392B", darkColor: "#E74C3C", bg: "#FDEEEC", darkBg: "rgba(231,76,60,0.12)", label: "MYTHIC",    glow: "rgba(231,76,60,0.7)",   radialGradient: "radial-gradient(circle, #FF6B5B 0%, #8B0000 100%)" },
-  legendary: { color: "#C8922A", darkColor: "#FFD700", bg: "#FDF6E3", darkBg: "rgba(255,215,0,0.10)", label: "LEGENDARY", glow: "rgba(255,215,0,0.8)",   radialGradient: "radial-gradient(circle, #FFE066 0%, #B8860B 100%)" },
-  epic:      { color: "#7B2FBE", darkColor: "#A855F7", bg: "#F3EAFD", darkBg: "rgba(168,85,247,0.12)", label: "EPIC",      glow: "rgba(168,85,247,0.65)", radialGradient: "radial-gradient(circle, #C99EFF 0%, #4A1580 100%)" },
-  rare:      { color: "#1A6FC4", darkColor: "#3B82F6", bg: "#E6F1FB", darkBg: "rgba(59,130,246,0.12)", label: "RARE",      glow: "rgba(59,130,246,0.6)",  radialGradient: "radial-gradient(circle, #93C5FD 0%, #0C3460 100%)" },
-  common:    { color: "#6B7280", darkColor: "#9CA3AF", bg: "#F3F4F6", darkBg: "rgba(156,163,175,0.10)", label: "COMMON",    glow: "rgba(107,114,128,0.4)", radialGradient: "radial-gradient(circle, #D1D5DB 0%, #374151 100%)" },
+  mythic:    { color: "#C0392B", darkColor: "#E74C3C", bg: "#FDEEEC", darkBg: "rgba(231,76,60,0.12)", label: "MYTHIC",    glow: "rgba(231,76,60,0.38)",  radialGradient: "radial-gradient(circle, #FF6B5B 0%, #8B0000 100%)" },
+  legendary: { color: "#C8922A", darkColor: "#FFD700", bg: "#FDF6E3", darkBg: "rgba(255,215,0,0.10)", label: "LEGENDARY", glow: "rgba(255,215,0,0.42)",  radialGradient: "radial-gradient(circle, #FFE066 0%, #B8860B 100%)" },
+  epic:      { color: "#7B2FBE", darkColor: "#A855F7", bg: "#F3EAFD", darkBg: "rgba(168,85,247,0.12)", label: "EPIC",      glow: "rgba(168,85,247,0.35)", radialGradient: "radial-gradient(circle, #C99EFF 0%, #4A1580 100%)" },
+  rare:      { color: "#1A6FC4", darkColor: "#3B82F6", bg: "#E6F1FB", darkBg: "rgba(59,130,246,0.12)", label: "RARE",      glow: "rgba(59,130,246,0.32)",  radialGradient: "radial-gradient(circle, #93C5FD 0%, #0C3460 100%)" },
+  common:    { color: "#6B7280", darkColor: "#9CA3AF", bg: "#F3F4F6", darkBg: "rgba(156,163,175,0.10)", label: "COMMON",    glow: "rgba(107,114,128,0.2)",  radialGradient: "radial-gradient(circle, #D1D5DB 0%, #374151 100%)" },
 };

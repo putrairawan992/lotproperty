@@ -565,7 +565,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             </div>
 
             {/* LAUREL GRID LAYOUT */}
-            <div className="relative z-[1] grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-3 gap-y-4 justify-items-center">
+            <div className="relative z-[1] grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-4 gap-y-6 lg:gap-x-8 justify-items-center">
               {visibleHof.map((h, i) => (
                 <motion.div
                   key={`${h.cat}-${h.period}-${i}`}
@@ -665,68 +665,78 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               </button>
             </div>
 
-            {/* circular ring + columns layout */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center border border-border/30 rounded-2xl p-5 bg-muted/10">
+            {/* circular ring + progress bars layout */}
+            <div className="flex flex-col md:flex-row items-center justify-between border border-border/30 rounded-2xl p-5 bg-muted/10 gap-6 md:gap-12">
               
-              {/* Progress Circle (Span 5) */}
-              <div className="md:col-span-5 flex items-center gap-4 border-r border-border/30 pr-0 md:pr-4 justify-center md:justify-start">
-                <div className="relative flex items-center justify-center w-20 h-20 flex-shrink-0">
+              {/* Progress Circle (Left) */}
+              <div className="flex items-center gap-5 justify-center flex-shrink-0">
+                <div className="relative flex items-center justify-center w-24 h-24 flex-shrink-0">
                   <svg className="absolute w-full h-full transform -rotate-90">
                     <circle
-                      cx="40"
-                      cy="40"
-                      r="34"
+                      cx="48"
+                      cy="48"
+                      r="40"
                       stroke={isDark ? "#2A2218" : "#E5E0D5"}
-                      strokeWidth="5"
+                      strokeWidth="6"
                       fill="transparent"
                       className="opacity-40"
                     />
                     <circle
-                      cx="40"
-                      cy="40"
-                      r="34"
+                      cx="48"
+                      cy="48"
+                      r="40"
                       stroke="#E8A500"
-                      strokeWidth="5"
+                      strokeWidth="6"
                       fill="transparent"
-                      strokeDasharray={2 * Math.PI * 34}
-                      strokeDashoffset={2 * Math.PI * 34 * (1 - progressPercent / 100)}
+                      strokeDasharray={2 * Math.PI * 40}
+                      strokeDashoffset={2 * Math.PI * 40 * (1 - progressPercent / 100)}
                       strokeLinecap="round"
                     />
                   </svg>
                   <div className="text-center z-10">
-                    <p className="text-sm font-bold text-foreground" style={{ fontFamily: "var(--font-numeric)" }}>
-                      {unlockedBadges} <span className="text-[10px] text-muted-foreground">/ {totalBadges}</span>
+                    <p className="text-base font-extrabold text-foreground" style={{ fontFamily: "var(--font-numeric)" }}>
+                      {unlockedBadges} <span className="text-xs text-muted-foreground">/ {totalBadges}</span>
                     </p>
-                    <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">Unlocked</p>
+                    <p className="text-[9px] font-extrabold text-muted-foreground uppercase tracking-widest">Unlocked</p>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="font-extrabold text-2xl text-gradient-gold leading-none" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                  <h4 className="font-extrabold text-3xl text-gradient-gold leading-none" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                     {progressPercent}%
                   </h4>
-                  <p className="text-[11px] text-muted-foreground font-semibold mt-1 tracking-wide">Collection Progress</p>
+                  <p className="text-xs text-muted-foreground font-bold mt-1 tracking-wide">Collection Progress</p>
                 </div>
               </div>
 
-              {/* Rarity Tabs (Span 7) */}
-              <div className="md:col-span-7 grid grid-cols-5 gap-1.5 text-center">
+              {/* Divider for desktop */}
+              <div className="hidden md:block w-px h-24 bg-border/20 self-center" />
+
+              {/* Rarity breakdown bars (Right) */}
+              <div className="flex-1 w-full max-w-sm space-y-2.5">
                 {(["mythic", "legendary", "epic", "rare", "common"] as const).map(r => {
                   const c = RARITY_CFG[r];
-                  const repBadgeName = repBadges[r];
                   const count = getRarityCount(r);
                   const total = ALL_BADGES.filter(b => b.rarity === r).length;
-
+                  const percent = total > 0 ? Math.round((count / total) * 100) : 0;
+                  const activeColor = isDark ? c.darkColor : c.color;
+                  
                   return (
-                    <div key={r} className="flex flex-col items-center p-1.5 transition-transform hover:scale-103">
-                      <span className="text-[9px] font-bold capitalize mb-1" style={{ color: isDark ? c.darkColor : c.color, fontFamily: "'Rajdhani', sans-serif" }}>
-                        {r}
+                    <div key={r} className="flex items-center gap-3 w-full">
+                      <span className="w-20 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest text-left" style={{ color: activeColor, fontFamily: "'Rajdhani', sans-serif" }}>
+                        {c.label}
                       </span>
-                      <BadgeShield rarity={r} name={repBadgeName} size="sm" />
-                      <span className="text-xs font-bold text-foreground mt-1" style={{ fontFamily: "var(--font-numeric)" }}>
-                        {count}
+                      <div className="flex-1 h-1.5 rounded-full relative bg-zinc-800/40 dark:bg-zinc-900/60 overflow-hidden border border-zinc-700/10">
+                        <div className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${percent}%`,
+                            background: `linear-gradient(90deg, ${activeColor}80, ${activeColor})`,
+                            boxShadow: `0 0 6px ${activeColor}30`
+                          }} />
+                      </div>
+                      <span className="w-8 text-[11px] font-bold text-right text-foreground font-mono" style={{ fontFamily: "var(--font-numeric)" }}>
+                        {count}/{total}
                       </span>
-                      <span className="text-[8px] text-muted-foreground">/ {total}</span>
                     </div>
                   );
                 })}
@@ -737,9 +747,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             {/* Expandable all badges view */}
             {showAllBadges && (
               <div className="mt-5 pt-5 border-t border-border/30 animate-fade-in">
-                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 justify-items-center">
+                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3.5 gap-y-5 sm:gap-4 justify-items-center">
                   {ALL_BADGES.map((b, i) => (
-                    <BadgeShield key={i} rarity={b.rarity} name={b.name} locked={b.locked} size="sm" />
+                    <BadgeShield key={i} rarity={b.rarity} name={b.name} locked={b.locked} size="md" />
                   ))}
                 </div>
               </div>

@@ -10,22 +10,25 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
 
   const cfg = {
     sm:  { artH: 52,  cardW: 84,  nameSz: 8.5, showRarity: false, pad: "p-0.5" },
-    md:  { artH: 76,  cardW: 104,  nameSz: 11,  showRarity: true,  pad: "p-1.5" },
-    lg:  { artH: 96,  cardW: 120, nameSz: 13,  showRarity: true,  pad: "p-2"   },
+    md:  { artH: 76,  cardW: 104,  nameSz: 10,  showRarity: true,  pad: "pt-3.5 pb-2.5 px-1.5" },
+    lg:  { artH: 96,  cardW: 120, nameSz: 12,  showRarity: true,  pad: "pt-4 pb-3 px-2" },
   }[size];
 
   const badgeColor = isDark ? c.darkColor : c.color;
 
   const sharedCard = {
-    backgroundColor: "transparent",
+    backgroundColor: size === "sm" ? "transparent" : (isDark ? "rgba(255, 255, 255, 0.015)" : "rgba(255, 255, 255, 0.4)"),
+    border: size === "sm" ? "none" : `1px solid ${isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.05)"}`,
+    borderRadius: "16px",
+    boxShadow: size === "sm" ? "none" : (isDark ? "inset 0 1px 0 rgba(255, 255, 255, 0.03)" : "inset 0 1px 0 rgba(255, 255, 255, 0.6)"),
     width: "100%",
-    minWidth: size === "sm" ? "0px" : `${cfg.cardW}px`,
+    minWidth: "0px",
     maxWidth: size === "sm" ? "100%" : `${cfg.cardW}px`,
   };
 
   const rarityGlow = locked
     ? "grayscale(1) opacity(0.4)"
-    : `drop-shadow(0 0 ${rarity === "mythic" ? "12px" : rarity === "legendary" ? "10px" : rarity === "epic" ? "8px" : rarity === "rare" ? "7px" : "4px"} ${c.glow}) drop-shadow(0 4px 6px rgba(0,0,0,0.5))`;
+    : `drop-shadow(0 0 ${rarity === "mythic" ? "6px" : rarity === "legendary" ? "5px" : rarity === "epic" ? "4px" : rarity === "rare" ? "4px" : "2px"} ${c.glow}) drop-shadow(0 2px 4px rgba(0,0,0,0.35))`;
 
   if (asset) {
     return (
@@ -46,7 +49,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
             objectFit: "contain",
             filter: rarityGlow,
             maxWidth: "100%",
-            transform: size !== "sm" && (name === "Billionaire Club" || name === "Perfectionist Agent") ? "scale(1.28)" : undefined,
+            transform: size !== "sm" && (name === "Billionaire Club" || name === "Perfectionist Agent") ? "scale(1.05)" : undefined,
           }} />
         {cfg.nameSz > 0 && (
           <span className="text-center font-bold leading-tight w-full px-0.5"

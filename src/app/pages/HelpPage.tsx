@@ -231,35 +231,58 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
 
             {/* BADGE GUIDE */}
             {guideTab === "badge" && (
-              <div className="space-y-4">
+              <div className="space-y-5">
                 {(["mythic","legendary","epic","rare","common"] as const).map(rarity => {
                   const badges = ALL_BADGES.filter(b => b.rarity === rarity);
                   const c = RARITY_CFG[rarity];
+                  const activeColor = isDark ? c.darkColor : c.color;
                   return (
-                    <Card key={rarity} className="overflow-hidden">
-                      <div className="flex items-center gap-2 px-4 py-3 border-b"
-                        style={{ borderColor: T.border, backgroundColor: c.bg }}>
-                        <span className="font-bold tracking-wide"
-                          style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 14, color: c.color }}>
+                    <Card key={rarity} className="overflow-hidden border border-border/50 shadow-md">
+                      {/* Dark Glossy Prominent Header with dynamic gradient */}
+                      <div className="flex items-center gap-2 px-5 py-3.5 rounded-t-[19px]"
+                        style={{
+                          borderLeft: `4px solid ${activeColor}`,
+                          borderBottom: `1px solid ${T.border}`,
+                          background: isDark
+                            ? `linear-gradient(110deg, #111015 0%, ${c.darkBg} 100%)`
+                            : `linear-gradient(110deg, #ffffff 0%, ${c.bg} 100%)`,
+                          boxShadow: isDark
+                            ? "inset 0 1px 0 rgba(255, 255, 255, 0.05)"
+                            : "inset 0 1px 0 rgba(255, 255, 255, 0.8)",
+                        }}>
+                        <span className="font-extrabold tracking-widest text-sm sm:text-base uppercase"
+                          style={{ fontFamily: "'Rajdhani', sans-serif", color: activeColor }}>
                           {c.label}
                         </span>
-                        <span className="text-xs text-opacity-80" style={{ color: c.color }}>({badges.length} badge)</span>
+                        <span className="text-xs font-semibold" style={{ color: activeColor, opacity: 0.85 }}>
+                          ({badges.length} badge)
+                        </span>
                       </div>
+                      
+                      {/* Badge list: upsized icons and text */}
                       <div className="divide-y" style={{ borderColor: T.border }}>
                         {badges.map((b, i) => (
-                          <div key={i} className="grid grid-cols-[88px_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3.5 sm:py-3 select-none">
-                            <div className="w-[88px] flex justify-center">
-                              <BadgeShield rarity={b.rarity} name={b.name} size="sm" />
+                          <div key={i} className="grid grid-cols-[108px_minmax(0,1fr)_auto] sm:grid-cols-[124px_minmax(0,1fr)_auto] items-center gap-4 px-5 py-4 select-none">
+                            <div className="w-[108px] sm:w-[124px] flex justify-center">
+                              <BadgeShield rarity={b.rarity} name={b.name} size="md" />
                             </div>
-                            <div className="min-w-0 pr-1">
-                              <p className="font-bold text-base leading-tight truncate" style={{ color: T.text1 }}>{b.name}</p>
-                              <p className="text-xs mt-1 leading-5 min-h-10 line-clamp-2" style={{ color: T.text3 }}>{b.req}</p>
+                            <div className="min-w-0 pr-2">
+                              <p className="font-extrabold text-base sm:text-lg leading-snug" style={{ color: T.text1 }}>
+                                {b.name}
+                              </p>
+                              <p className="text-xs sm:text-sm mt-1 leading-relaxed text-muted-foreground" style={{ color: T.text3 }}>
+                                {b.req}
+                              </p>
                             </div>
                             <div className="justify-self-end self-center">
                               {b.locked ? (
-                                <span className="inline-flex h-8 items-center text-[10px] sm:text-xs px-2.5 rounded-full font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50" style={{ fontFamily: "'Rajdhani', sans-serif" }}>Locked</span>
+                                <span className="inline-flex h-8 items-center text-xs px-3 rounded-xl font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                  Locked
+                                </span>
                               ) : (
-                                <span className="inline-flex h-8 items-center text-[10px] sm:text-xs px-3 rounded-full font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" style={{ fontFamily: "'Rajdhani', sans-serif" }}>✓ Dimiliki</span>
+                                <span className="inline-flex h-8 items-center text-xs px-3.5 rounded-xl font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                  ✓ Dimiliki
+                                </span>
                               )}
                             </div>
                           </div>
@@ -295,8 +318,6 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                       { label: "New Recruit",          xp: "+5.000 XP",  cap: "—",             icon: "🤝", color: "#DC2626" },
                       { label: "Complete Module",      xp: "+200 XP",    cap: "Tidak ada batas",icon:"🎓", color: "#1A6FC4" },
                       { label: "Event Attendance",     xp: "+1.000 XP",  cap: "Sesuai event",  icon: "🎪", color: "#7B2FBE" },
-                      { label: "Commission (SALE Rumah)",xp: "+7.500 XP",cap: "—",             icon: "💰", color: "#C8922A" },
-                      { label: "Commission (PRIMARY)", xp: "+10.000 XP", cap: "—",             icon: "🏆", color: "#C8922A" },
                     ].map((s, i) => (
                       <motion.div key={i} className="grid grid-cols-12 gap-2 items-center p-2.5 rounded-xl border text-sm font-medium"
                         style={{ borderColor: T.border }}

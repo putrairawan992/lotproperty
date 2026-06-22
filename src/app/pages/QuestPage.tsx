@@ -8,8 +8,9 @@ import XPBar from "../components/XPBar";
 import { QuestPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { T, Page, ThemeCtx } from "../types";
-import { BADGE_ASSETS } from "../badgeAssets";
+import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
+import petiHartaKarun from "../../imports/peti-harta-karun.png";
 
 const TreasureChestIcon = ({ size = 22, className = "" }: { size?: number; className?: string }) => (
   <svg
@@ -61,77 +62,45 @@ function Quest3DCoins({ isDark }: { isDark: boolean }) {
     dirLight2.position.set(-5, -5, 2);
     scene.add(dirLight2);
 
-    const coinGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.07, 24);
+    const coinGeo = new THREE.CylinderGeometry(0.45, 0.45, 0.09, 24);
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xffd700,
       metalness: 0.9,
       roughness: 0.12,
     });
 
-    const woodMat = new THREE.MeshStandardMaterial({
-      color: 0x7a431d, // rich warm wood brown
-      roughness: 0.75,
-      metalness: 0.15,
+    // Detailed open chest texture plane geometry
+    const textureLoader = new THREE.TextureLoader();
+    const chestTex = textureLoader.load(petiHartaKarun);
+    const chestGeo = new THREE.PlaneGeometry(2.0, 2.0);
+    const chestMat = new THREE.MeshBasicMaterial({
+      map: chestTex,
+      transparent: true,
+      depthWrite: false,
+      side: THREE.DoubleSide,
     });
-
-    // Treasure chest geometries
-    const baseGeo = new THREE.BoxGeometry(0.5, 0.3, 0.35);
-    const lidGeo = new THREE.CylinderGeometry(0.175, 0.175, 0.5, 12, 1, false, 0, Math.PI);
-    const trimGeo = new THREE.BoxGeometry(0.04, 0.31, 0.36);
-    const lockGeo = new THREE.BoxGeometry(0.08, 0.08, 0.03);
-
-    const createTreasureChest = () => {
-      const group = new THREE.Group();
-
-      // Base wood
-      const baseMesh = new THREE.Mesh(baseGeo, woodMat);
-      baseMesh.position.y = -0.05;
-      group.add(baseMesh);
-
-      // Lid wood
-      const lidMesh = new THREE.Mesh(lidGeo, woodMat);
-      lidMesh.rotation.z = Math.PI / 2; // align along X-axis
-      lidMesh.position.set(0, 0.1, 0);
-      group.add(lidMesh);
-
-      // Gold Corner Bands
-      const trimL = new THREE.Mesh(trimGeo, goldMat);
-      trimL.position.set(-0.23, -0.05, 0);
-      group.add(trimL);
-
-      const trimR = new THREE.Mesh(trimGeo, goldMat);
-      trimR.position.set(0.23, -0.05, 0);
-      group.add(trimR);
-
-      // Gold Lock
-      const lockMesh = new THREE.Mesh(lockGeo, goldMat);
-      lockMesh.position.set(0, 0.06, 0.185);
-      group.add(lockMesh);
-
-      return group;
-    };
 
     const items: THREE.Object3D[] = [];
 
     // Item 1: Large Chest (Right)
-    const chest1 = createTreasureChest();
-    chest1.position.set(2.2, 0.15, 0);
-    chest1.scale.set(1.4, 1.4, 1.4);
-    chest1.rotation.y = -Math.PI / 6;
+    const chest1 = new THREE.Mesh(chestGeo, chestMat);
+    chest1.position.set(2.3, 0.15, 0);
+    chest1.scale.set(1.9, 1.9, 1.9);
+    chest1.rotation.y = -Math.PI / 12;
     scene.add(chest1);
     items.push(chest1);
 
     // Item 2: Medium Chest (Left)
-    const chest2 = createTreasureChest();
-    chest2.position.set(-2.4, -0.25, -0.4);
-    chest2.scale.set(1.1, 1.1, 1.1);
-    chest2.rotation.y = Math.PI / 6;
+    const chest2 = new THREE.Mesh(chestGeo, chestMat);
+    chest2.position.set(-2.4, -0.2, -0.4);
+    chest2.scale.set(1.4, 1.4, 1.4);
+    chest2.rotation.y = Math.PI / 12;
     scene.add(chest2);
     items.push(chest2);
 
     // Item 3: Golden Coin (Center Right Bottom)
     const coin1 = new THREE.Mesh(coinGeo, goldMat);
-    coin1.position.set(1.4, -0.45, -0.6);
+    coin1.position.set(1.4, -0.4, -0.6);
     coin1.rotation.x = Math.PI / 4;
     coin1.rotation.y = Math.PI / 6;
     scene.add(coin1);
@@ -157,9 +126,9 @@ function Quest3DCoins({ isDark }: { isDark: boolean }) {
 
     const particleMat = new THREE.PointsMaterial({
       color: 0xffd700,
-      size: 0.08,
+      size: 0.12,
       transparent: true,
-      opacity: 0.8,
+      opacity: 0.85,
       blending: THREE.AdditiveBlending,
     });
 
@@ -171,15 +140,26 @@ function Quest3DCoins({ isDark }: { isDark: boolean }) {
       animId = requestAnimationFrame(animate);
 
       items.forEach((item, idx) => {
-        item.rotation.y += 0.018; // smooth horizontal spin
         if (idx === 2) {
-          // It's a coin, rotate on multiple axes for dynamic light reflection
-          item.rotation.x += 0.01;
+          // Coin: rotate dynamically on multiple axes
+          item.rotation.x += 0.015;
+          item.rotation.y += 0.025;
+          item.position.y = -0.4 + Math.sin(Date.now() * 0.002) * 0.06;
         } else {
-          // Chests wobble slightly on x-axis
-          item.rotation.x = Math.sin(Date.now() * 0.0015 + idx) * 0.12;
+          // Chest plane: larger swaying, tilting and floating bobbing
+          const time = Date.now() * 0.0016 + idx * 1.5;
+          
+          // Swaying rotation on Y-axis (left-right)
+          item.rotation.y = (idx === 0 ? -Math.PI / 12 : Math.PI / 12) + Math.sin(time) * 0.28;
+          // Side-to-side tilt on Z-axis
+          item.rotation.z = Math.cos(time * 0.8) * 0.12;
+          // Forward-backward tilt on X-axis
+          item.rotation.x = Math.sin(time * 0.5) * 0.15;
+          
+          // Organic bobbing up and down
+          const baseHeight = idx === 0 ? 0.15 : -0.2;
+          item.position.y = baseHeight + Math.sin(time * 0.7) * 0.24;
         }
-        item.position.y += Math.sin(Date.now() * 0.001 + idx) * 0.0025;
       });
 
       const posAttr = particleGeo.getAttribute("position") as THREE.BufferAttribute;
@@ -217,12 +197,10 @@ function Quest3DCoins({ isDark }: { isDark: boolean }) {
       cancelAnimationFrame(animId);
       resizeObserver.disconnect();
       coinGeo.dispose();
-      baseGeo.dispose();
-      lidGeo.dispose();
-      trimGeo.dispose();
-      lockGeo.dispose();
+      chestGeo.dispose();
+      chestMat.dispose();
+      chestTex.dispose();
       goldMat.dispose();
-      woodMat.dispose();
       particleGeo.dispose();
       particleMat.dispose();
       renderer.dispose();
@@ -306,6 +284,8 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   const [showContentModal, setShowContentModal] = useState(false);
   const [contentUrl, setContentUrl] = useState("");
+  const [showPromoModal, setShowPromoModal] = useState(false);
+  const [promoUrl, setPromoUrl] = useState("");
 
   if (loading) return <QuestPageSkeleton />;
 
@@ -331,7 +311,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     } else if (q.id === "new_listing") {
       navigate("/listing?create=1");
     } else if (q.id === "listing_promo") {
-      navigate("/listing");
+      setShowPromoModal(true);
     }
   };
 
@@ -357,6 +337,20 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     setShowContentModal(false);
     setContentUrl("");
     triggerToast("Link konten berhasil disubmit! +300 XP ditambahkan.");
+  };
+
+  const handlePromoSubmit = () => {
+    if (!promoUrl.trim()) return;
+    setDailyQuests(prev => prev.map(q => {
+      if (q.id === "listing_promo") {
+        const nextProgress = Math.min(q.progress + 1, q.total);
+        return { ...q, progress: nextProgress, done: nextProgress >= q.total };
+      }
+      return q;
+    }));
+    setShowPromoModal(false);
+    setPromoUrl("");
+    triggerToast("Link promosi listing berhasil disubmit! +100 XP ditambahkan.");
   };
 
   function QuestRow({ q, accent }: { q: any; accent: string }) {
@@ -719,6 +713,70 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
                 <button onClick={handleContentSubmit} disabled={!contentUrl.trim()}
                   className="px-5 py-2 rounded-xl text-sm font-bold transition-all text-white"
                   style={{ backgroundColor: contentUrl.trim() ? "#E8A500" : "var(--border)", cursor: contentUrl.trim() ? "pointer" : "not-allowed" }}>
+                  Klaim XP
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL: LISTING PROMOTION LINK ── */}
+      <AnimatePresence>
+        {showPromoModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPromoModal(false)} className="absolute inset-0 bg-black/60" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden relative z-10" style={{ borderColor: T.border }}>
+              <div className="px-6 py-4 border-b flex justify-between items-center" style={{ borderColor: T.border }}>
+                <h3 className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 18, color: T.text1 }}>Listing Promotion</h3>
+                <button onClick={() => setShowPromoModal(false)} style={{ color: T.text3 }}><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <p className="text-xs" style={{ color: T.text3 }}>
+                  Pilih portal properti atau media sosial di bawah ini untuk mempromosikan listing Anda, kemudian submit link postingan promosi Anda untuk klaim <strong style={{ color: "#E8A500" }}>+100 XP</strong>.
+                </p>
+
+                {/* Platforms Grid list */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { name: "Rumah123", url: "https://www.rumah123.com", color: "#0A2540", bg: "#EEF2F6" },
+                    { name: "OLX Indonesia", url: "https://www.olx.co.id", color: "#002F34", bg: "#E6F7F8" },
+                    { name: "Lamudi", url: "https://www.lamudi.co.id", color: "#006C35", bg: "#EBF6F0" },
+                    { name: "Threads", url: "https://www.threads.net", color: "#000000", bg: "#F3F4F6" },
+                    { name: "Facebook", url: "https://www.facebook.com", color: "#1877F2", bg: "#E7F3FF" },
+                    { name: "Instagram", url: "https://www.instagram.com", color: "#E1306C", bg: "#FFF0F5" }
+                  ].map(platform => (
+                    <a
+                      key={platform.name}
+                      href={platform.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2.5 rounded-xl border text-xs font-bold transition-all hover:scale-[1.02] hover:shadow-sm"
+                      style={{
+                        borderColor: T.border,
+                        color: isDark ? "#ffffff" : platform.color,
+                        backgroundColor: isDark ? "rgba(255,255,255,0.03)" : platform.bg,
+                      }}
+                    >
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: platform.color }} />
+                      {platform.name}
+                      <ChevronRight size={12} className="ml-auto opacity-45" />
+                    </a>
+                  ))}
+                </div>
+
+                <div className="pt-2">
+                  <label className="block text-xs font-semibold mb-1.5 uppercase" style={{ color: T.text3 }}>URL Postingan Promosi</label>
+                  <input type="url" placeholder="https://www.olx.co.id/item/..." value={promoUrl} onChange={e => setPromoUrl(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t flex gap-2 justify-end bg-muted/10" style={{ borderColor: T.border }}>
+                <button onClick={() => setShowPromoModal(false)} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
+                <button onClick={handlePromoSubmit} disabled={!promoUrl.trim()}
+                  className="px-5 py-2 rounded-xl text-sm font-bold transition-all text-white"
+                  style={{ backgroundColor: promoUrl.trim() ? "#E8A500" : "var(--border)", cursor: promoUrl.trim() ? "pointer" : "not-allowed" }}>
                   Klaim XP
                 </button>
               </div>
