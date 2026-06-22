@@ -272,46 +272,6 @@ export default function ListingPage() {
     return parts.length > 0 ? parts.join(" · ") : "—";
   };
 
-  const ListingMobileCard = ({ listing, isLast }: { listing: Listing; isLast?: boolean }) => (
-    <div
-      className="p-4 transition-colors cursor-pointer active:bg-muted/60"
-      onClick={() => openDetail(listing.id)}
-    >
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold leading-snug line-clamp-2" style={{ color: T.text1 }}>
-            {listing.title}
-          </p>
-          <p className="text-xs flex items-center gap-1 mt-1 truncate" style={{ color: T.text3 }}>
-            <MapPin size={11} className="flex-shrink-0" />
-            <span className="truncate">{listing.loc} · {listing.owner}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-1 flex-shrink-0" onClick={e => e.stopPropagation()}>
-          <StatusChip s={listing.status} />
-          <ActionMenu listing={listing} alignUp={isLast} />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-3 mb-2">
-        <span className="text-xs px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: "var(--muted)", color: T.text2 }}>
-          {listing.type}
-        </span>
-        <p className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#E8A500" }}>
-          {listing.price}
-        </p>
-      </div>
-
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-[11px] leading-snug flex-1 min-w-0" style={{ color: T.text3 }}>
-          {formatArea(listing)}
-        </p>
-        <div className="flex-shrink-0">
-          <RemindBadge r={listing.remind} d={listing.days} />
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="p-4 lg:p-6 relative">
@@ -387,7 +347,46 @@ export default function ListingPage() {
           {/* Mobile: card layout */}
           <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
             {filtered.map((l, index) => (
-              <ListingMobileCard key={l.id} listing={l} isLast={index === filtered.length - 1} />
+              <div
+                key={l.id}
+                className="p-4 transition-colors cursor-pointer active:bg-muted/60 relative"
+                onClick={() => openDetail(l.id)}
+              >
+                <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                  <StatusChip s={l.status} />
+                  <ActionMenu listing={l} alignUp={index === filtered.length - 1} />
+                </div>
+
+                <div className="flex items-start justify-between gap-3 mb-2 pr-24">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold leading-snug line-clamp-2" style={{ color: T.text1 }}>
+                      {l.title}
+                    </p>
+                    <p className="text-xs flex items-center gap-1 mt-1 truncate" style={{ color: T.text3 }}>
+                      <MapPin size={11} className="flex-shrink-0" />
+                      <span className="truncate">{l.loc} · {l.owner}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <span className="text-xs px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: "var(--muted)", color: T.text2 }}>
+                    {l.type}
+                  </span>
+                  <p className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#E8A500" }}>
+                    {l.price}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[11px] leading-snug flex-1 min-w-0" style={{ color: T.text3 }}>
+                    {formatArea(l)}
+                  </p>
+                  <div className="flex-shrink-0">
+                    <RemindBadge r={l.remind} d={l.days} />
+                  </div>
+                </div>
+              </div>
             ))}
             {filtered.length === 0 && (
               <p className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
