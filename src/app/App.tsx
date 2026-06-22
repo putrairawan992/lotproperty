@@ -181,10 +181,19 @@ export default function App() {
         {/* Floating Level Up demo trigger */}
         <motion.button
           onClick={() => setShowLevelUp(true)}
-          className="fixed z-40 flex items-center gap-2 px-3 py-2 rounded-full shadow-lg text-white text-xs font-bold"
-          style={{ bottom: 80, right: 16, background: "linear-gradient(135deg,#E8A500,#C8922A)", fontFamily: "'Rajdhani', sans-serif" }}
-          whileHover={{ scale: 1.08 }} whileTap={{ scale: 0.94 }}
-          animate={{ y: [0, -4, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}>
+          className="fixed z-40 flex items-center gap-2 px-3.5 py-2.5 rounded-full shadow-lg text-xs font-bold border"
+          style={{
+            bottom: 80,
+            right: 16,
+            backgroundColor: isDark ? "rgba(232, 165, 0, 0.15)" : "rgba(232, 165, 0, 0.1)",
+            borderColor: "rgba(232, 165, 0, 0.45)",
+            color: isDark ? "#FFD666" : "#A66D00",
+            boxShadow: isDark ? "0 4px 12px rgba(0, 0, 0, 0.3)" : "0 4px 12px rgba(232, 165, 0, 0.08)",
+            backdropFilter: "blur(6px)",
+            fontFamily: "'Rajdhani', sans-serif"
+          }}
+          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+          animate={{ y: [0, -4, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>
           ⭐ Level Up!
         </motion.button>
 

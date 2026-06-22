@@ -394,8 +394,20 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               Pending
             </span>
           ) : (
-            <button onClick={() => handleGo(q)} className="w-16 h-8 rounded-xl text-xs font-bold flex-shrink-0 transition-all flex items-center justify-center text-white" style={{ backgroundColor: "#E8A500", fontFamily: "'Rajdhani',sans-serif" }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#CC9200")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#E8A500")}>
+            <button onClick={() => handleGo(q)} className="w-16 h-8 rounded-xl text-xs font-bold flex-shrink-0 transition-all flex items-center justify-center border"
+              style={{
+                backgroundColor: isDark ? "rgba(232, 165, 0, 0.12)" : "rgba(232, 165, 0, 0.08)",
+                borderColor: "rgba(232, 165, 0, 0.35)",
+                color: isDark ? "#FFD666" : "#A66D00",
+                fontFamily: "'Rajdhani', sans-serif"
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = "rgba(232, 165, 0, 0.25)";
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = isDark ? "rgba(232, 165, 0, 0.12)" : "rgba(232, 165, 0, 0.08)";
+              }}
+            >
               Go
             </button>
           )}
@@ -472,26 +484,6 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
         <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 justify-between" style={{ transform: "translateZ(30px)", transformStyle: "preserve-3d" }}>
           <div className="flex items-center gap-4" style={{ transformStyle: "preserve-3d" }}>
-            {/* Animated Icon Container */}
-            <div className="relative flex-shrink-0" style={{ transform: "translateZ(20px)" }}>
-              <motion.div
-                className="w-12 h-12 rounded-xl flex items-center justify-center border border-[#E8A500]/50 relative overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, #E8A500, #C8922A)",
-                  boxShadow: "0 4px 12px rgba(232, 165, 0, 0.35)",
-                }}
-                animate={{ y: [0, -3, 0] }}
-                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <motion.div
-                  animate={{ rotateY: [0, 180, 360] }}
-                  transition={{ duration: 4, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
-                >
-                  <TreasureChestIcon size={22} className="text-black font-bold" />
-                </motion.div>
-              </motion.div>
-            </div>
-
             <div className="text-left" style={{ transform: "translateZ(25px)" }}>
               <h3 className="font-bold text-base leading-tight uppercase tracking-wider text-gradient-gold"
                 style={{ fontFamily: "'Rajdhani', sans-serif" }}>
@@ -507,15 +499,18 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
           </div>
 
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => {
               window.open("https://docs.google.com/forms/d/e/1FAIpQLSfDCE255_yY7oQ4uO2X3jW9h38bH5jY8KjYtL7_Zg/viewform", "_blank");
             }}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-white transition-all shadow-md text-xs tracking-wider uppercase whitespace-nowrap"
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold transition-all text-xs tracking-wider uppercase whitespace-nowrap border"
             style={{
-              background: "linear-gradient(135deg, #E8A500 0%, #C8922A 100%)",
-              boxShadow: "0 4px 12px rgba(200, 146, 42, 0.3)",
+              backgroundColor: isDark ? "rgba(232, 165, 0, 0.12)" : "rgba(232, 165, 0, 0.08)",
+              borderColor: "rgba(232, 165, 0, 0.45)",
+              color: isDark ? "#FFD666" : "#A66D00",
+              boxShadow: isDark ? "0 4px 12px rgba(0, 0, 0, 0.2)" : "0 4px 12px rgba(232, 165, 0, 0.05)",
+              backdropFilter: "blur(4px)",
               fontFamily: "'Rajdhani', sans-serif",
               transform: "translateZ(30px)"
             }}
@@ -527,14 +522,21 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
       {/* Daily Quest */}
       <Card style={{ borderLeft: "4px solid #16A34A" }}>
-        <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(22,163,74,0.1)" : "#DCFCE715" }}>
-          <div>
-            <h3 className="font-bold" style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 16, color: "#16A34A" }}>Daily Quest</h3>
-            <p style={{ fontSize: 10, color: T.text3 }}>Direset setiap hari pukul 00:00 WIB</p>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b flex-wrap sm:flex-nowrap gap-2" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(22,163,74,0.1)" : "#DCFCE715" }}>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-sm sm:text-base" style={{ fontFamily: "'Rajdhani',sans-serif", color: "#16A34A" }}>Daily Quest</h3>
+            <p className="text-[10px] sm:text-xs truncate" style={{ color: T.text3 }}>Direset setiap hari pukul 00:00 WIB</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#DCFCE7", color: "#16A34A" }}>🔥 14 Hari</span>
-            {BADGE_ASSETS["Dedicated Agent"] && <img src={BADGE_ASSETS["Dedicated Agent"]} alt="Dedicated Agent" style={{ width: 30, height: 30, objectFit: "contain" }} />}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <span className="text-[10px] sm:text-xs px-2.5 py-1 rounded-full whitespace-nowrap font-bold flex items-center gap-1"
+              style={{
+                backgroundColor: isDark ? "rgba(22,163,74,0.2)" : "#DCFCE7",
+                color: "#16A34A",
+                border: "1px solid rgba(22,163,74,0.3)"
+              }}>
+              🔥 14 Hari
+            </span>
+            {BADGE_ASSETS["Dedicated Agent"] && <img src={BADGE_ASSETS["Dedicated Agent"]} alt="Dedicated Agent" className="w-7 h-7 sm:w-8 sm:h-8 object-contain flex-shrink-0" />}
           </div>
         </div>
         {dailyQuests.map((q, i) => <QuestRow key={i} q={q} accent="#16A34A" />)}
@@ -542,26 +544,33 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
       {/* Weekly Quest */}
       <Card style={{ borderLeft: "4px solid #7B2FBE" }}>
-        <div className="flex items-center justify-between px-5 py-3 border-b gap-2" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(123,47,190,0.1)" : "#F3EAFD15" }}>
-          <div className="min-w-0">
-            <h3 className="font-bold" style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 16, color: "#7B2FBE" }}>Weekly Quest</h3>
-            <p className="text-[10px] sm:text-xs truncate sm:whitespace-normal" style={{ color: T.text3 }}>Pembaluan mingguan untuk target listing & prospek</p>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b flex-wrap sm:flex-nowrap gap-2" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(123,47,190,0.1)" : "#F3EAFD15" }}>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-sm sm:text-base" style={{ fontFamily: "'Rajdhani',sans-serif", color: "#7B2FBE" }}>Weekly Quest</h3>
+            <p className="text-[10px] sm:text-xs truncate" style={{ color: T.text3 }}>Pembaruan mingguan untuk target listing & prospek</p>
           </div>
-          <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0" style={{ backgroundColor: "#F3EAFD", color: "#7B2FBE" }}>Reset Senin</span>
+          <span className="text-[10px] sm:text-xs px-2 py-1 rounded-full whitespace-nowrap font-bold flex-shrink-0"
+            style={{
+              backgroundColor: isDark ? "rgba(123,47,190,0.2)" : "#F3EAFD",
+              color: "#7B2FBE",
+              border: "1px solid rgba(123,47,190,0.3)"
+            }}>
+            Reset Senin
+          </span>
         </div>
         {weeklyQuests.map((q, i) => <QuestRow key={i} q={q} accent="#7B2FBE" />)}
       </Card>
 
       {/* Skill Quest */}
       <Card style={{ borderLeft: "4px solid #1A6FC4" }}>
-        <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(26,111,196,0.1)" : "#DBEAFE15" }}>
-          <div>
-            <h3 className="font-bold" style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 16, color: "#1A6FC4" }}>Skill Quest</h3>
-            <p style={{ fontSize: 10, color: T.text3 }}>Meningkatkan keahlian berkarir dan rekrutmen aktif</p>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b flex-wrap sm:flex-nowrap gap-2" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(26,111,196,0.1)" : "#DBEAFE15" }}>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-bold text-sm sm:text-base" style={{ fontFamily: "'Rajdhani',sans-serif", color: "#1A6FC4" }}>Skill Quest</h3>
+            <p className="text-[10px] sm:text-xs truncate" style={{ color: T.text3 }}>Meningkatkan keahlian berkarir dan rekrutmen aktif</p>
           </div>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 flex-shrink-0">
             {["The Leader", "The Professor"].map(n => BADGE_ASSETS[n] && (
-              <img key={n} src={BADGE_ASSETS[n]} alt={n} style={{ width: 26, height: 26, objectFit: "contain" }} />
+              <img key={n} src={BADGE_ASSETS[n]} alt={n} className="w-6.5 h-6.5 sm:w-7.5 sm:h-7.5 object-contain flex-shrink-0" />
             ))}
           </div>
         </div>
