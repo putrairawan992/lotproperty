@@ -523,53 +523,48 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               </div>
             </div>
 
-            {/* SLEEK VERTICAL SCROLLABLE LIST OF HOF ACHIEVEMENTS */}
-            <div className="relative z-[1] max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
-              {HOF_ACHIEVEMENTS.map((h, i) => {
-                const medal = getRankMedal(h.rank);
-                const theme = getCategoryTheme(h.cat);
-                return (
-                  <motion.div
-                    key={`${h.cat}-${h.period}-${i}`}
-                    className="flex items-center justify-between p-3 rounded-2xl border transition-all"
-                    style={{
-                      backgroundColor: isDark ? "rgba(255,255,255,0.02)" : "rgba(0,0,0,0.02)",
-                      borderColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)",
-                    }}
-                    whileHover={{ x: 4, backgroundColor: isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)" }}
-                  >
-                    <div className="flex items-center gap-3">
-                      {/* Medal Icon with glowing backdrop */}
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center text-lg font-bold"
-                        style={{
-                          background: `radial-gradient(circle, ${medal.color}25, transparent 70%)`,
-                          border: `1px solid ${medal.color}30`,
-                        }}>
-                        {medal.icon}
-                      </div>
-
-                      {/* Title and Category */}
-                      <div>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-1.5">
-                          <span className="font-bold text-sm tracking-wide uppercase text-[#f3f2ee]" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {h.cat}
-                          </span>
-                          <span className="text-[9px] px-2 py-0.5 rounded-full font-bold uppercase text-white tracking-wider self-start sm:self-auto"
-                            style={{ backgroundColor: theme.color }}>
-                            {medal.label === "Gold" || medal.label === "Silver" || medal.label === "Bronze" ? `${medal.label} Medal` : `Rank ${medal.label}`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Date Period */}
-                    <div className="text-xs text-[#87858d] font-semibold whitespace-nowrap font-mono">
-                      {h.period}
-                    </div>
-                  </motion.div>
-                );
-              })}
+            {/* LAUREL GRID LAYOUT */}
+            <div className="relative z-[1] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 justify-items-center">
+              {visibleHof.map((h, i) => (
+                <motion.div
+                  key={`${h.cat}-${h.period}-${i}`}
+                  className="flex justify-center w-full"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.35 }}
+                >
+                  <HofAwardLaurel category={h.cat} rank={h.rank} period={h.period} />
+                </motion.div>
+              ))}
             </div>
+
+            {HOF_ACHIEVEMENTS.length > 5 && (
+              <>
+                <div
+                  className="relative z-[1] h-px my-6 sm:my-8"
+                  style={{
+                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 15%, rgba(255,255,255,0.06) 85%, transparent)",
+                  }}
+                />
+                <div className="relative z-[1] text-center">
+                  <button
+                    type="button"
+                    onClick={() => setShowAllHof(!showAllHof)}
+                    className="inline-flex items-center gap-2 text-[12px] font-semibold tracking-[0.22em] uppercase transition-all hover:gap-3"
+                    style={{
+                      color: showAllHof ? "#f3dca0" : "#87858d",
+                      fontFamily: "'Inter', sans-serif",
+                    }}
+                  >
+                    {showAllHof ? "Lihat Lebih Sedikit" : "Lihat Semua Hall of Fame"}
+                    <ChevronRight
+                      size={12}
+                      style={{ transform: showAllHof ? "rotate(-90deg)" : "none", transition: "transform 0.2s ease" }}
+                    />
+                  </button>
+                </div>
+              </>
+            )}
           </div>
 
           {/* Career Statistics */}
