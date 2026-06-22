@@ -298,13 +298,6 @@ export default function ProspectPage() {
       <AnimatePresence>
         {openMenuId === prospect.id && (
           <motion.div
-            ref={(el) => {
-              if (el) {
-                setTimeout(() => {
-                  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
-                }, 80);
-              }
-            }}
             initial={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}

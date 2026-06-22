@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 
@@ -40,6 +40,8 @@ export default function App() {
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
+  
+  const mainRef = useRef<HTMLDivElement>(null);
 
   // Trigger auto-attendance popup immediately on dashboard enter after login
   useEffect(() => {
@@ -89,7 +91,9 @@ export default function App() {
 
   // Auto scroll back to top of the menu/page on tab transitions
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (mainRef.current) {
+      mainRef.current.scrollTop = 0;
+    }
   }, [page, path]);
 
   const handleLogout = () => {
@@ -164,7 +168,7 @@ export default function App() {
         <div className="flex flex-1 overflow-hidden h-full">
 
           {/* Main content */}
-          <main className="flex-1 overflow-y-auto" style={{ paddingTop: 60, paddingBottom: 72 }}>
+          <main ref={mainRef} className="flex-1 overflow-y-auto" style={{ paddingTop: 60, paddingBottom: 72 }}>
             {renderPage()}
           </main>
         </div>
