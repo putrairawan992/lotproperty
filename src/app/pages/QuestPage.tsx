@@ -1,6 +1,7 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect, useRef } from "react";
 import { Calendar, DollarSign, Target, Check, ChevronRight, X, Camera, Send, QrCode } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "motion/react";
+import * as THREE from "three";
 import Card from "../components/Card";
 import LevelBadge from "../components/LevelBadge";
 import XPBar from "../components/XPBar";
@@ -9,6 +10,188 @@ import useLoading from "../hooks/useLoading";
 import { T, Page, ThemeCtx } from "../types";
 import { BADGE_ASSETS } from "../badgeAssets";
 import { useLocation } from "../routes";
+
+function Quest3DCoins({ isDark }: { isDark: boolean }) {
+  const mountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const container = mountRef.current;
+    if (!container) return;
+
+    let width = container.clientWidth || 400;
+    let height = container.clientHeight || 150;
+
+    const scene = new THREE.Scene();
+
+    const camera = new THREE.PerspectiveCamera(40, width / height, 0.1, 100);
+    camera.position.z = 6;
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, isDark ? 0.7 : 0.9);
+    scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffd700, 2.5);
+    dirLight.position.set(5, 5, 5);
+    scene.add(dirLight);
+
+    const dirLight2 = new THREE.DirectionalLight(0xffaa00, 1.5);
+    dirLight2.position.set(-5, -5, 2);
+    scene.add(dirLight2);
+
+    const coinGeo = new THREE.CylinderGeometry(0.35, 0.35, 0.07, 24);
+    const goldMat = new THREE.MeshStandardMaterial({
+      color: 0xffd700,
+      metalness: 0.9,
+      roughness: 0.12,
+    });
+
+    // Dollar sign geometries
+    const sPoints = [
+      new THREE.Vector3(0.18, 0.35, 0),
+      new THREE.Vector3(0, 0.35, 0),
+      new THREE.Vector3(-0.18, 0.25, 0),
+      new THREE.Vector3(-0.18, 0.1, 0),
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(0.18, -0.1, 0),
+      new THREE.Vector3(0.18, -0.25, 0),
+      new THREE.Vector3(0, -0.35, 0),
+      new THREE.Vector3(-0.18, -0.3, 0),
+    ];
+    const sCurve = new THREE.CatmullRomCurve3(sPoints);
+    const sGeo = new THREE.TubeGeometry(sCurve, 24, 0.05, 8, false);
+    const barGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.9, 12);
+
+    const items: THREE.Object3D[] = [];
+
+    // Item 1: Large Dollar Sign (Right)
+    const dollar1 = new THREE.Group();
+    dollar1.add(new THREE.Mesh(sGeo, goldMat));
+    dollar1.add(new THREE.Mesh(barGeo, goldMat));
+    dollar1.position.set(2.2, 0.15, 0);
+    dollar1.scale.set(1.4, 1.4, 1.4);
+    dollar1.rotation.y = -Math.PI / 6;
+    scene.add(dollar1);
+    items.push(dollar1);
+
+    // Item 2: Medium Dollar Sign (Left)
+    const dollar2 = new THREE.Group();
+    dollar2.add(new THREE.Mesh(sGeo, goldMat));
+    dollar2.add(new THREE.Mesh(barGeo, goldMat));
+    dollar2.position.set(-2.4, -0.25, -0.4);
+    dollar2.scale.set(1.1, 1.1, 1.1);
+    dollar2.rotation.y = Math.PI / 6;
+    scene.add(dollar2);
+    items.push(dollar2);
+
+    // Item 3: Golden Coin (Center Right Bottom)
+    const coin1 = new THREE.Mesh(coinGeo, goldMat);
+    coin1.position.set(1.4, -0.45, -0.6);
+    coin1.rotation.x = Math.PI / 4;
+    coin1.rotation.y = Math.PI / 6;
+    scene.add(coin1);
+    items.push(coin1);
+
+    const particleCount = 25;
+    const positions = new Float32Array(particleCount * 3);
+    const velocities: { x: number; y: number; z: number }[] = [];
+
+    for (let i = 0; i < particleCount; i++) {
+      positions[i * 3] = (Math.random() - 0.5) * 8;
+      positions[i * 3 + 1] = (Math.random() - 0.5) * 3;
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 2;
+      velocities.push({
+        x: (Math.random() - 0.5) * 0.008,
+        y: (Math.random() * 0.012) + 0.006,
+        z: (Math.random() - 0.5) * 0.008,
+      });
+    }
+
+    const particleGeo = new THREE.BufferGeometry();
+    particleGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+
+    const particleMat = new THREE.PointsMaterial({
+      color: 0xffd700,
+      size: 0.08,
+      transparent: true,
+      opacity: 0.8,
+      blending: THREE.AdditiveBlending,
+    });
+
+    const particles = new THREE.Points(particleGeo, particleMat);
+    scene.add(particles);
+
+    let animId = 0;
+    const animate = () => {
+      animId = requestAnimationFrame(animate);
+
+      items.forEach((item, idx) => {
+        item.rotation.y += 0.018; // smooth horizontal spin
+        if (idx === 2) {
+          // It's a coin, rotate on multiple axes for dynamic light reflection
+          item.rotation.x += 0.01;
+        } else {
+          // Dollar signs wobble slightly on x-axis
+          item.rotation.x = Math.sin(Date.now() * 0.0015 + idx) * 0.15;
+        }
+        item.position.y += Math.sin(Date.now() * 0.001 + idx) * 0.0025;
+      });
+
+      const posAttr = particleGeo.getAttribute("position") as THREE.BufferAttribute;
+      for (let i = 0; i < particleCount; i++) {
+        let px = posAttr.getX(i) + velocities[i].x;
+        let py = posAttr.getY(i) + velocities[i].y;
+        let pz = posAttr.getZ(i) + velocities[i].z;
+
+        if (py > 2) {
+          py = -2;
+          px = (Math.random() - 0.5) * 8;
+        }
+
+        posAttr.setXYZ(i, px, py, pz);
+      }
+      posAttr.needsUpdate = true;
+
+      renderer.render(scene, camera);
+    };
+
+    animate();
+
+    const handleResize = () => {
+      width = container.clientWidth || 400;
+      height = container.clientHeight || 150;
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(width, height);
+    };
+
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(container);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      resizeObserver.disconnect();
+      coinGeo.dispose();
+      sGeo.dispose();
+      barGeo.dispose();
+      goldMat.dispose();
+      particleGeo.dispose();
+      particleMat.dispose();
+      renderer.dispose();
+      if (renderer.domElement.parentNode === container) {
+        container.removeChild(renderer.domElement);
+      }
+    };
+  }, [isDark]);
+
+  return (
+    <div ref={mountRef} className="absolute inset-0 pointer-events-none z-0 overflow-hidden opacity-90" />
+  );
+}
+
 
 interface QuestItem {
   name: string;
@@ -25,6 +208,28 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const loading = useLoading(1200);
   const { isDark } = useTheme();
   const { navigate } = useLocation();
+
+  // 3D Card Tilt Motion Values and Springs
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const rotateX = useSpring(useTransform(y, [-80, 80], [10, -10]), { damping: 20, stiffness: 150 });
+  const rotateY = useSpring(useTransform(x, [-250, 250], [-10, 10]), { damping: 20, stiffness: 150 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+    const mouseX = e.clientX - rect.left - width / 2;
+    const mouseY = e.clientY - rect.top - height / 2;
+    x.set(mouseX);
+    y.set(mouseY);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
 
   // Quest states
   const [dailyQuests, setDailyQuests] = useState<QuestItem[]>([
@@ -186,9 +391,15 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       {/* Claim Commission */}
       <motion.div
         className="relative overflow-hidden p-5 rounded-2xl border"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
         whileHover={{ scale: 1.01, y: -2 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
         style={{
+          rotateX,
+          rotateY,
+          transformPerspective: 1000,
+          transformStyle: "preserve-3d",
           background: isDark
             ? "linear-gradient(135deg, rgba(30, 16, 4, 0.95) 0%, rgba(15, 8, 2, 0.98) 100%)"
             : "linear-gradient(135deg, #FFFDF5 0%, #FFF9E6 100%)",
@@ -198,14 +409,17 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
             : "0 8px 32px rgba(232, 165, 0, 0.06)",
         }}
       >
+        {/* 3D WebGL Coins Background */}
+        <Quest3DCoins isDark={isDark} />
+
         {/* Decorative glowing orbs */}
         <div className="absolute -right-16 -top-16 w-32 h-32 rounded-full bg-[#E8A500]/10 blur-2xl pointer-events-none" />
         <div className="absolute -left-16 -bottom-16 w-32 h-32 rounded-full bg-[#E8A500]/10 blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 justify-between">
-          <div className="flex items-center gap-4">
+        <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 justify-between" style={{ transform: "translateZ(30px)", transformStyle: "preserve-3d" }}>
+          <div className="flex items-center gap-4" style={{ transformStyle: "preserve-3d" }}>
             {/* Animated Icon Container */}
-            <div className="relative flex-shrink-0">
+            <div className="relative flex-shrink-0" style={{ transform: "translateZ(20px)" }}>
               <motion.div
                 className="w-12 h-12 rounded-xl flex items-center justify-center border border-[#E8A500]/50 relative overflow-hidden"
                 style={{
@@ -224,7 +438,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               </motion.div>
             </div>
 
-            <div className="text-left">
+            <div className="text-left" style={{ transform: "translateZ(25px)" }}>
               <h3 className="font-bold text-base leading-tight uppercase tracking-wider text-gradient-gold"
                 style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                 Claim Commission
@@ -249,6 +463,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               background: "linear-gradient(135deg, #E8A500 0%, #C8922A 100%)",
               boxShadow: "0 4px 12px rgba(200, 146, 42, 0.3)",
               fontFamily: "'Rajdhani', sans-serif",
+              transform: "translateZ(30px)"
             }}
           >
             CLAIM COMMISSION
