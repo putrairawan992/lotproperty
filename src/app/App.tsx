@@ -87,6 +87,11 @@ export default function App() {
     }
   }, [path, loggedIn, adminRole, authView]);
 
+  // Auto scroll back to top of the menu/page on tab transitions
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [page, path]);
+
   const handleLogout = () => {
     setLoggedIn(false);
     setAdminRole(null);
