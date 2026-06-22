@@ -51,9 +51,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
 
   return (
     <div className="p-4 lg:p-6 space-y-4 max-w-7xl mx-auto">
-      {/* Full-width Profile Widget */}
+      {/* Full-width Profile Widget (Hidden on mobile) */}
       <Card
-        className="relative overflow-hidden shadow-md transition-all duration-300"
+        className="hidden sm:block relative overflow-hidden shadow-sm transition-all duration-300"
         style={{
           background: isDark
             ? "linear-gradient(135deg, rgba(20,16,12,0.78), rgba(28,22,14,0.62))"
@@ -62,11 +62,11 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         }}
       >
         <HofFallingStars isDark={isDark} />
-        <div className="relative z-[1] p-4 md:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-6">
+        <div className="relative z-[1] p-3 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
         {/* Left: User Avatar + Name */}
-        <div className="flex items-center gap-4 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-shrink-0">
-            <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-[#C8922A] p-0.5" style={{ boxShadow: "0 0 10px rgba(200,146,42,0.2)" }}>
+            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#C8922A] p-0.5" style={{ boxShadow: "0 0 10px rgba(200,146,42,0.2)" }}>
               <img
                 src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"
                 alt="Ronald Richy"
@@ -75,9 +75,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             </div>
           </div>
           <div>
-            <h2 className="font-bold text-lg md:text-xl" style={{ fontFamily: "var(--font-display)", color: T.text1 }}>Ronald Richy</h2>
-            <p className="text-xs" style={{ color: T.text3 }}>Top Producer</p>
-            <span className="inline-block text-xs px-2.5 py-0.5 rounded-md font-bold mt-1"
+            <h2 className="font-bold text-base" style={{ fontFamily: "var(--font-display)", color: T.text1 }}>Ronald Richy</h2>
+            <p className="text-[11px]" style={{ color: T.text3 }}>Top Producer</p>
+            <span className="inline-block text-[10px] px-2 py-0.5 rounded font-bold mt-0.5"
               style={{ backgroundColor: isDark ? "rgba(232,165,0,0.15)" : "#FEF3C7", color: "#D97706", fontFamily: "var(--font-display)" }}>
               Lv. 23
             </span>
@@ -85,18 +85,18 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
 
         {/* Middle: Medallion & XP Progress */}
-        <div className="flex flex-1 items-center gap-4 min-w-0 w-full md:w-auto">
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <LevelBadge title="Senior Agent" size={52} />
+        <div className="flex flex-1 items-center gap-3 min-w-0 w-full md:w-auto">
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <LevelBadge title="Senior Agent" size={40} />
             <div>
-              <p className="text-[10px] uppercase tracking-wider" style={{ color: T.text3, letterSpacing: "0.06em" }}>Current Rank</p>
-              <p className="font-bold leading-tight" style={{ fontFamily: "var(--font-display)", fontSize: 14, color: getLevelTierColor("Senior Agent") }}>Senior Agent</p>
+              <p className="text-[9px] uppercase tracking-wider" style={{ color: T.text3, letterSpacing: "0.06em" }}>Current Rank</p>
+              <p className="font-bold leading-tight" style={{ fontFamily: "var(--font-display)", fontSize: 13, color: getLevelTierColor("Senior Agent") }}>Senior Agent</p>
             </div>
           </div>
           {/* XP progress */}
           <div className="flex-1 min-w-0">
-            <XPBar value={24680} max={30000} height={10} />
-            <p className="text-center text-xs mt-1 font-bold" style={{ fontFamily: "var(--font-numeric)", color: T.text2 }}>
+            <XPBar value={24680} max={30000} height={8} />
+            <p className="text-center text-[11px] mt-0.5 font-bold" style={{ fontFamily: "var(--font-numeric)", color: T.text2 }}>
               24,680 <span style={{ color: T.text3, fontWeight: 400 }}>/ 30,000 XP</span>
             </p>
           </div>
@@ -106,25 +106,21 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         <button
           type="button"
           onClick={() => onNav("profile")}
-          className="flex items-center justify-between md:justify-end gap-3 border-t md:border-t-0 pt-3 md:pt-0 w-full md:w-auto text-left md:text-right transition-opacity hover:opacity-85 active:opacity-75 cursor-pointer"
+          className="flex items-center justify-between md:justify-end gap-2 border-t md:border-t-0 pt-2.5 md:pt-0 w-full md:w-auto text-left md:text-right transition-opacity hover:opacity-85 active:opacity-75 cursor-pointer"
           style={{ borderColor: T.border }}
           aria-label="Lihat detail profil dan progress rank"
         >
           <div>
-            <p style={{ fontSize: 10, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Next Rank</p>
-            <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 15 }}>Senior Elite</p>
+            <p style={{ fontSize: 9, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Next Rank</p>
+            <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 13 }}>Senior Elite</p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <LevelBadge title="Elite Agent" size={48} />
-            <ChevronRight size={16} style={{ color: "#E8A500" }} />
+            <LevelBadge title="Elite Agent" size={38} />
+            <ChevronRight size={14} style={{ color: "#E8A500" }} />
           </div>
         </button>
         </div>
       </Card>
-
-      
-      {/* Event Banner Slider — auto-play setiap 3 detik */}
-      <EventBannerSlider isDark={isDark} onNav={onNav} />
 
       <HofSection
         hofCat={hofCat}
@@ -299,6 +295,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
           </Card>
         </div>
       </div>
+
+      {/* Event Banner Slider — auto-play setiap 5 detik (shrunken & at bottom) */}
+      <EventBannerSlider isDark={isDark} onNav={onNav} />
     </div>
   );
 }

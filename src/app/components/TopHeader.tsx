@@ -74,7 +74,6 @@ export default function TopHeader({ page, onNav, onLogout }: {
                 style={{ minWidth: 180, backgroundColor: T.card, borderColor: T.border, zIndex: 60 }}>
                 {[
                   { label: "Notification", icon: Bell, page: "notifications" as Page },
-                  { label: "Academy", icon: GraduationCap, page: "academy" as Page },
                   { label: "Help", icon: HelpCircle, page: "help" as Page },
                 ].map(({ label, icon: Icon, page: p }) => (
                   <button key={p}

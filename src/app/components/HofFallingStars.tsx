@@ -15,9 +15,11 @@ interface Star {
 export default function HofFallingStars({
   isDark = true,
   mode = "stars",
+  color,
 }: {
   isDark?: boolean;
   mode?: "stars" | "embers";
+  color?: string;
 }) {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -39,9 +41,15 @@ export default function HofFallingStars({
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
+    // Parse custom color if provided
+    let customColorNum: number | undefined;
+    if (color) {
+      customColorNum = parseInt(color.replace("#", "0x"), 16);
+    }
+
     // Embers mode: Orange/Red burning sparks. Stars mode: Gold/Yellow stars.
-    const starColor = mode === "embers" ? 0xff4500 : (isDark ? 0xffe08a : 0xffd54f);
-    const dustColor = mode === "embers" ? 0xff8800 : (isDark ? 0xfff4c2 : 0xffe9a8);
+    const starColor = customColorNum ?? (mode === "embers" ? 0xff4500 : (isDark ? 0xffe08a : 0xffd54f));
+    const dustColor = customColorNum ?? (mode === "embers" ? 0xff8800 : (isDark ? 0xfff4c2 : 0xffe9a8));
 
     const linePositions = new Float32Array(STAR_COUNT * 2 * 3);
     const lineGeo = new THREE.BufferGeometry();
@@ -196,7 +204,7 @@ export default function HofFallingStars({
         container.removeChild(renderer.domElement);
       }
     };
-  }, [isDark, mode]);
+  }, [isDark, mode, color]);
 
   return (
     <div

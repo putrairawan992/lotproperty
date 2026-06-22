@@ -469,64 +469,134 @@ export default function ProspectPage() {
             </div>
           )}
         </AnimatePresence>
+        {/* Tab / Table Wrapper Card */}
+        <Card className="overflow-hidden border border-border/40 mb-6" style={{ backgroundColor: T.card }}>
+          
+          {/* Tab Filter Button Row */}
+          <div className="flex border-b overflow-x-auto" style={{ borderColor: T.border }}>
+            {filters.map(f => (
+              <button key={f} onClick={() => setFilter(f)}
+                className="px-5 py-3 text-sm font-medium whitespace-nowrap transition-all"
+                style={{ color: filter === f ? "#E8A500" : T.text3, borderBottom: filter === f ? "2px solid #E8A500" : "2px solid transparent" }}>
+                {f}
+              </button>
+            ))}
+          </div>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-2 mb-5">
-          {filters.map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-              style={{
-                backgroundColor: filter === f ? "#E8A500" : T.card,
-                color: filter === f ? "white" : T.text2,
-                border: `1px solid ${filter === f ? "#E8A500" : "var(--border)"}`,
-              }}>
-              {f}
-            </button>
-          ))}
-        </div>
-
-        {/* Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map(p => {
-            const sc = STATUS_CFG[p.status];
-            return (
-              <Card key={p.id}
-                className="p-4 cursor-pointer transition-all hover:shadow-md relative"
-                style={{ borderColor: "var(--border)", backgroundColor: T.card }}
-                onClick={() => openDetail(p.id)}>
-                <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-semibold whitespace-nowrap"
-                    style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
-                  <ActionMenu prospect={p} />
-                </div>
-                <div className="flex items-start gap-3 mb-3 pr-28">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                    style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate" style={{ color: T.text1 }}>{p.name}</p>
-                    <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
-                      <Phone size={10} />{p.phone}
-                    </p>
+          {/* Mobile: card layout */}
+          <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
+            {filtered.map(p => {
+              const sc = STATUS_CFG[p.status];
+              return (
+                <div key={p.id} className="p-4 cursor-pointer transition-all hover:bg-muted/10 relative" onClick={() => openDetail(p.id)}>
+                  <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                    <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap uppercase tracking-wider"
+                      style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
+                    <ActionMenu prospect={p} />
                   </div>
-                </div>
-                <p className="text-xs mb-3 line-clamp-2" style={{ color: T.text3 }}>{p.note}</p>
-                {p.reminderDate && (
-                  <p className="text-[10px] flex items-center gap-1 font-semibold" style={{ color: "#D97706" }}>
-                    <Calendar size={10} /> Reminder: {formatDateDisplay(p.reminderDate)} {p.reminderTime}
+                  <div className="flex items-start gap-3 mb-3 pr-24">
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                      style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm truncate" style={{ color: T.text1 }}>{p.name}</p>
+                      <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
+                        <Phone size={10} />{p.phone}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs mb-3 line-clamp-2" style={{ color: T.text3 }}>{p.note}</p>
+                  {p.reminderDate && (
+                    <p className="text-[10px] flex items-center gap-1 font-semibold" style={{ color: "#D97706" }}>
+                      <Calendar size={10} /> Reminder: {formatDateDisplay(p.reminderDate)} {p.reminderTime}
+                    </p>
+                  )}
+                  <p className="text-[10px] mt-2 flex items-center gap-1" style={{ color: T.text3 }}>
+                    <Calendar size={10} /> Dibuat: {p.date}
                   </p>
+                </div>
+              );
+            })}
+            {filtered.length === 0 && (
+              <p className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
+                Tidak ada prospect ditemukan.
+              </p>
+            )}
+          </div>
+
+          {/* Desktop: table layout */}
+          <div className="hidden md:block overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b" style={{ borderColor: T.border }}>
+                  {["PROSPECT", "STATUS", "NEXT ACTION", "REMINDER", "DIBUAT", ""].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: T.text3 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(p => {
+                  const sc = STATUS_CFG[p.status];
+                  const actionCfg = NEXT_ACTIONS.find(a => a.id === p.nextAction) || NEXT_ACTIONS[0];
+                  const ActionIcon = actionCfg.icon;
+                  return (
+                    <tr
+                      key={p.id}
+                      className="border-b transition-colors cursor-pointer"
+                      style={{ borderColor: T.border }}
+                      onClick={() => openDetail(p.id)}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                    >
+                      <td className="px-4 py-3 min-w-[220px]">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                            style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
+                          <div>
+                            <p className="text-sm font-semibold" style={{ color: T.text1 }}>{p.name}</p>
+                            <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
+                              <Phone size={10} />{p.phone}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
+                          style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: actionCfg.color }}>
+                          <ActionIcon size={14} />
+                          <span>{p.nextAction}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-xs" style={{ color: T.text2 }}>
+                        {p.reminderDate ? (
+                          <div className="flex items-center gap-1 text-[#D97706] font-semibold">
+                            <Calendar size={12} />
+                            <span>{formatDateDisplay(p.reminderDate)} {p.reminderTime}</span>
+                          </div>
+                        ) : (
+                          <span style={{ color: T.text3 }}>—</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text3 }}>{p.date}</td>
+                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                        <ActionMenu prospect={p} />
+                      </td>
+                    </tr>
+                  );
+                })}
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
+                      Tidak ada prospect ditemukan.
+                    </td>
+                  </tr>
                 )}
-                <p className="text-[10px] mt-2 flex items-center gap-1" style={{ color: T.text3 }}>
-                  <Calendar size={10} /> Dibuat: {p.date}
-                </p>
-              </Card>
-            );
-          })}
-          {filtered.length === 0 && (
-            <div className="col-span-full text-center py-12 text-sm" style={{ color: T.text3 }}>
-              Tidak ada prospect ditemukan.
-            </div>
-          )}
-        </div>
+              </tbody>
+            </table>
+          </div>
+        </Card>
 
         {/* Pipeline */}
         <Card className="p-4 mt-5 overflow-x-auto">

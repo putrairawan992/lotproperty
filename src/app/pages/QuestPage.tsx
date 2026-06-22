@@ -128,15 +128,15 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
         </div>
         <span className="text-xs font-bold flex-shrink-0" style={{ color: "#C8922A" }}>+{q.xp.toLocaleString()} XP</span>
         {isDone ? (
-          <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#DCFCE7" }}>
+          <div className="w-16 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border" style={{ backgroundColor: isDark ? "rgba(34,197,94,0.1)" : "#DCFCE7", borderColor: "rgba(34,197,94,0.2)" }}>
             <Check size={14} style={{ color: "#16A34A" }} />
           </div>
         ) : isPending ? (
-          <span className="px-2.5 py-1.5 rounded-lg text-xs font-bold flex-shrink-0" style={{ backgroundColor: "#FEF3C7", color: "#D97706", fontFamily: "'Rajdhani',sans-serif" }}>
+          <span className="w-16 h-8 rounded-xl text-xs font-bold flex items-center justify-center flex-shrink-0 border text-center" style={{ backgroundColor: isDark ? "rgba(217,119,6,0.1)" : "#FEF3C7", color: "#D97706", borderColor: "rgba(217,119,6,0.2)", fontFamily: "'Rajdhani',sans-serif" }}>
             Pending
           </span>
         ) : (
-          <button onClick={() => handleGo(q)} className="px-3.5 py-1.5 rounded-lg text-xs font-bold flex-shrink-0 transition-all" style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani',sans-serif" }}
+          <button onClick={() => handleGo(q)} className="w-16 h-8 rounded-xl text-xs font-bold flex-shrink-0 transition-all flex items-center justify-center text-white" style={{ backgroundColor: "#E8A500", fontFamily: "'Rajdhani',sans-serif" }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#CC9200")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#E8A500")}>
             Go
           </button>
@@ -184,22 +184,77 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       </Card>
 
       {/* Claim Commission */}
-      <Card className="p-4" style={{ backgroundColor: isDark ? "#1A0A00" : "#FFFCF0", borderColor: "#E8A50025" }}>
-        <div className="flex items-center gap-3 justify-between flex-wrap gap-y-3">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#FEF3C7" }}><DollarSign size={20} style={{ color: "#C8922A" }} /></div>
-            <div>
-              <p className="font-semibold" style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 16, color: T.text1 }}>Claim Commission</p>
-              <p className="text-xs" style={{ color: T.text3 }}>Terakhir: 14 Jun 2025 · Rp 12.500.000</p>
+      <motion.div
+        className="relative overflow-hidden p-5 rounded-2xl border"
+        whileHover={{ scale: 1.01, y: -2 }}
+        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        style={{
+          background: isDark
+            ? "linear-gradient(135deg, rgba(30, 16, 4, 0.95) 0%, rgba(15, 8, 2, 0.98) 100%)"
+            : "linear-gradient(135deg, #FFFDF5 0%, #FFF9E6 100%)",
+          borderColor: "rgba(232, 165, 0, 0.35)",
+          boxShadow: isDark
+            ? "0 8px 32px rgba(232, 165, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.05)"
+            : "0 8px 32px rgba(232, 165, 0, 0.06)",
+        }}
+      >
+        {/* Decorative glowing orbs */}
+        <div className="absolute -right-16 -top-16 w-32 h-32 rounded-full bg-[#E8A500]/10 blur-2xl pointer-events-none" />
+        <div className="absolute -left-16 -bottom-16 w-32 h-32 rounded-full bg-[#E8A500]/10 blur-2xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col sm:flex-row items-center gap-4 justify-between">
+          <div className="flex items-center gap-4">
+            {/* Animated Icon Container */}
+            <div className="relative flex-shrink-0">
+              <motion.div
+                className="w-12 h-12 rounded-xl flex items-center justify-center border border-[#E8A500]/50 relative overflow-hidden"
+                style={{
+                  background: "linear-gradient(135deg, #E8A500, #C8922A)",
+                  boxShadow: "0 4px 12px rgba(232, 165, 0, 0.35)",
+                }}
+                animate={{ y: [0, -3, 0] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <motion.div
+                  animate={{ rotateY: [0, 180, 360] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
+                >
+                  <DollarSign size={22} className="text-black font-bold" />
+                </motion.div>
+              </motion.div>
+            </div>
+
+            <div className="text-left">
+              <h3 className="font-bold text-base leading-tight uppercase tracking-wider text-gradient-gold"
+                style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                Claim Commission
+              </h3>
+              <p className="text-xs mt-1" style={{ color: T.text3 }}>
+                Submit bukti transaksi closing untuk verifikasi komisi & bonus XP
+              </p>
+              <p className="text-[10px] mt-1 font-semibold" style={{ color: "#D97706" }}>
+                Terakhir disetujui: Rp 12.500.000 · 14 Jun 2025
+              </p>
             </div>
           </div>
-          <button className="px-5 py-2.5 rounded-xl font-bold transition-all whitespace-nowrap"
-            style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani',sans-serif", fontSize: 14, letterSpacing: "0.06em" }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#CC9200")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#E8A500")}>
+
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => {
+              window.open("https://docs.google.com/forms/d/e/1FAIpQLSfDCE255_yY7oQ4uO2X3jW9h38bH5jY8KjYtL7_Zg/viewform", "_blank");
+            }}
+            className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-white transition-all shadow-md text-xs tracking-wider uppercase whitespace-nowrap"
+            style={{
+              background: "linear-gradient(135deg, #E8A500 0%, #C8922A 100%)",
+              boxShadow: "0 4px 12px rgba(200, 146, 42, 0.3)",
+              fontFamily: "'Rajdhani', sans-serif",
+            }}
+          >
             CLAIM COMMISSION
-          </button>
+          </motion.button>
         </div>
-      </Card>
+      </motion.div>
 
       {/* Daily Quest */}
       <Card style={{ borderLeft: "4px solid #16A34A" }}>

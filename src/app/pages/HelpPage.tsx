@@ -273,7 +273,15 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
               <div className="space-y-4">
                 <Card className="p-5">
                   <p className="text-xs font-semibold mb-4" style={{ color: T.text3 }}>CARA MENDAPAT XP</p>
-                  <div className="space-y-2.5">
+                  
+                  {/* Grid Header */}
+                  <div className="grid grid-cols-12 gap-2 px-3 py-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider border-b mb-2" style={{ borderColor: T.border }}>
+                    <div className="col-span-6">Aktivitas</div>
+                    <div className="col-span-3 text-right">XP Reward</div>
+                    <div className="col-span-3 text-right">Limit Harian / Mingguan</div>
+                  </div>
+
+                  <div className="space-y-2">
                     {[
                       { label: "Daily Login",          xp: "+100 XP",    cap: "—",             icon: "📅", color: "#1A6FC4" },
                       { label: "New Listing",          xp: "+100 XP",    cap: "300 XP/hari",   icon: "🏢", color: "#E8A500" },
@@ -287,33 +295,48 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                       { label: "Commission (SALE Rumah)",xp: "+7.500 XP",cap: "—",             icon: "💰", color: "#C8922A" },
                       { label: "Commission (PRIMARY)", xp: "+10.000 XP", cap: "—",             icon: "🏆", color: "#C8922A" },
                     ].map((s, i) => (
-                      <motion.div key={i} className="flex items-center gap-3 p-3 rounded-xl border"
+                      <motion.div key={i} className="grid grid-cols-12 gap-2 items-center p-2.5 rounded-xl border text-sm font-medium"
                         style={{ borderColor: T.border }}
                         initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04 }}
                         whileHover={{ borderColor: s.color, backgroundColor: s.color + "06" }}>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-                          style={{ backgroundColor: s.color + "18" }}>
-                          <span style={{ fontSize: 16 }}>{s.icon}</span>
+                        
+                        {/* Col 1: Icon + Activity Name (col-span-6) */}
+                        <div className="col-span-6 flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: s.color + "18" }}>
+                            <span style={{ fontSize: 14 }}>{s.icon}</span>
+                          </div>
+                          <span className="truncate" style={{ color: T.text1 }}>{s.label}</span>
                         </div>
-                        <span className="flex-1 text-sm font-medium" style={{ color: T.text1 }}>{s.label}</span>
-                        <span className="font-bold text-sm" style={{ color: s.color, fontFamily: "'Rajdhani', sans-serif" }}>{s.xp}</span>
-                        <span className="text-xs ml-2 hidden sm:block" style={{ color: T.text3 }}>{s.cap}</span>
+
+                        {/* Col 2: XP Reward (col-span-3) */}
+                        <div className="col-span-3 text-right font-bold" style={{ color: s.color, fontFamily: "'Rajdhani', sans-serif" }}>
+                          {s.xp}
+                        </div>
+
+                        {/* Col 3: Limit Cap (col-span-3) */}
+                        <div className="col-span-3 text-right text-xs" style={{ color: T.text3 }}>
+                          {s.cap}
+                        </div>
                       </motion.div>
                     ))}
                   </div>
-                </Card>
 
-                {/* Commission XP matrix */}
-                <Card className="p-5">
-                  <p className="text-xs font-semibold mb-3" style={{ color: T.text3 }}>COMMISSION XP MATRIX</p>
+                  {/* Divider */}
+                  <div className="my-6 border-t border-dashed" style={{ borderColor: T.border }} />
+
+                  {/* Commission XP matrix */}
+                  <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: T.text3 }}>COMMISSION XP MATRIX</p>
                   <div className="overflow-x-auto">
                     <table className="w-full">
-                      <thead><tr className="border-b" style={{ borderColor: T.border }}>
-                        {["Tipe Properti","RENT","SALE"].map(h => (
-                          <th key={h} className="text-left py-2 px-3 text-xs font-semibold" style={{ color: T.text3 }}>{h}</th>
-                        ))}
-                      </tr></thead>
+                      <thead>
+                        <tr className="border-b" style={{ borderColor: T.border }}>
+                          {["Tipe Properti","RENT","SALE"].map(h => (
+                            <th key={h} className="text-left py-2 px-3 text-xs font-semibold" style={{ color: T.text3 }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
                       <tbody>
                         {[
                           ["Apartemen",  "+2.000 XP", "+5.000 XP"],

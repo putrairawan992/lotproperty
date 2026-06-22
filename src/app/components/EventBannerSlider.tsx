@@ -28,7 +28,7 @@ function EventBannerSlide({
 
   return (
     <Card
-      className="p-5 overflow-hidden relative min-h-[220px] md:min-h-[260px] flex flex-col justify-between shadow-md event-banner"
+      className="p-3.5 sm:p-5 overflow-hidden relative min-h-[170px] sm:min-h-[220px] md:min-h-[260px] flex flex-col justify-between shadow-md event-banner"
       style={{
         borderColor: isDark ? "#C8922A35" : "#E8A50035",
         background: isDark
@@ -36,7 +36,7 @@ function EventBannerSlide({
           : "linear-gradient(135deg, #FFF9F2 0%, #F5F7FA 100%)",
       }}
     >
-      <div className="absolute top-3 left-3 bg-[#E53E3E] text-white px-3.5 py-1 text-[10px] font-extrabold uppercase rounded-lg -rotate-6 transform shadow-md z-20 tracking-wider">
+      <div className="absolute top-2 left-2 bg-[#E53E3E] text-white px-2.5 py-0.5 text-[9px] font-extrabold uppercase rounded-lg -rotate-6 transform shadow-md z-20 tracking-wider">
         SPESIAL EVENT
       </div>
 
@@ -49,12 +49,12 @@ function EventBannerSlide({
 
       <div className="absolute right-4 bottom-0 top-4 w-1/2 hidden sm:flex items-center justify-end gap-6 z-10 pointer-events-none">
         <div className="flex flex-col items-center flex-shrink-0 text-center">
-          <div className="relative w-24 h-24 flex items-center justify-center">
+          <div className="relative w-20 h-20 md:w-24 md:h-24 flex items-center justify-center">
             <div className="absolute inset-0 rounded-2xl border-2 border-[#C8922A] bg-gradient-to-b from-[#2D1F08] to-[#15120D] rotate-45 scale-90 shadow-lg" />
             <div className="absolute inset-2 rounded-2xl border border-[#E8A500]/40 rotate-45 scale-90" />
             <div className="relative z-10 text-[#E8A500] flex flex-col items-center justify-center">
-              <div className="flex items-center justify-center p-2 rounded-full bg-[#E8A500]/10 border border-[#E8A500]/20">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <div className="flex items-center justify-center p-1.5 md:p-2 rounded-full bg-[#E8A500]/10 border border-[#E8A500]/20">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M23 7l-7 5 7 5V7z" />
                   <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
                   <circle cx="9" cy="12" r="3" />
@@ -62,13 +62,13 @@ function EventBannerSlide({
               </div>
             </div>
             <div
-              className="absolute bottom-2 left-1/2 -translate-x-1/2 text-white px-2 py-0.5 text-[8px] font-bold uppercase rounded shadow-md border border-red-400/20 whitespace-nowrap z-20 max-w-[90px] truncate"
+              className="absolute bottom-1.5 left-1/2 -translate-x-1/2 text-white px-2 py-0.5 text-[8px] font-bold uppercase rounded shadow-md border border-red-400/20 whitespace-nowrap z-20 max-w-[80px] truncate"
               style={{ backgroundColor: event.accentColor }}
             >
               {event.badge.toUpperCase()}
             </div>
           </div>
-          <p className="mt-1 text-[9px] font-bold uppercase tracking-wider" style={{ color: T.text3 }}>
+          <p className="mt-1 text-[8px] md:text-[9px] font-bold uppercase tracking-wider" style={{ color: T.text3 }}>
             BADGE EKSKLUSIF
           </p>
         </div>
@@ -84,13 +84,13 @@ function EventBannerSlide({
         </div>
       </div>
 
-      <div className="relative z-10 flex-1 flex flex-col justify-between mt-6">
+      <div className="relative z-10 flex-1 flex flex-col justify-between mt-4 sm:mt-6">
         <div>
-          <p className="font-extrabold tracking-wider text-[11px] md:text-xs mb-1" style={{ color: T.text3, letterSpacing: "0.08em" }}>
+          <p className="font-extrabold tracking-wider text-[9px] sm:text-[11px] md:text-xs mb-0.5 sm:mb-1" style={{ color: T.text3, letterSpacing: "0.08em" }}>
             {event.subtitle}
           </p>
           <h3
-            className="font-black text-2xl md:text-3xl italic uppercase tracking-wide leading-none mb-2"
+            className="font-black text-lg sm:text-2xl md:text-3xl italic uppercase tracking-wide leading-none mb-1 sm:mb-2"
             style={{
               fontFamily: "var(--font-display)",
               color: event.accentColor,
@@ -99,7 +99,7 @@ function EventBannerSlide({
           >
             {event.heading}
           </h3>
-          <p className="text-xs md:text-sm max-w-[85%] sm:max-w-[50%] mb-4" style={{ color: T.text2, lineHeight: 1.3 }}>
+          <p className="text-[10px] sm:text-xs md:text-sm max-w-[90%] sm:max-w-[50%] mb-2 sm:mb-4" style={{ color: T.text2, lineHeight: 1.25 }}>
             {event.tagline}{" "}
             {event.taglineHighlight && (
               <strong className="text-[#E8A500]">{event.taglineHighlight}</strong>

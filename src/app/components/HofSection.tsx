@@ -78,16 +78,22 @@ function reorderToPodium(arr: any[]): any[] {
   return [...arr];
 }
 
-function getCategoryEmblem(category: string): {
+export function getCategoryTheme(category: string): {
   color: string;
   label: string;
+  glowColor: string;
+  boxShadow: string;
+  hoverBoxShadow: string;
   icon: React.ReactNode;
 } {
   const norm = (category || "").toLowerCase();
-  if (norm.includes("commission")) {
+  if (norm.includes("commission") || norm.includes("com")) {
     return {
-      color: "#ffd700", // Bright gold
+      color: "#EF4444", // Red
       label: "COMMISSION MASTER",
+      glowColor: "rgba(239, 68, 68, 0.35)",
+      boxShadow: "0 0 14px rgba(239, 68, 68, 0.45), 0 0 28px rgba(239, 68, 68, 0.15), inset 0 1px 1px rgba(255,255,255,0.15)",
+      hoverBoxShadow: "0 0 28px rgba(239, 68, 68, 0.85), 0 0 56px rgba(239, 68, 68, 0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-4 h-4">
           <line x1="12" y1="1" x2="12" y2="23"></line>
@@ -98,8 +104,11 @@ function getCategoryEmblem(category: string): {
   }
   if (norm.includes("unit")) {
     return {
-      color: "#00e5ff", // Electric cyan
+      color: "#F97316", // Orange
       label: "UNIT CHAMPION",
+      glowColor: "rgba(249, 115, 22, 0.35)",
+      boxShadow: "0 0 14px rgba(249, 115, 22, 0.45), 0 0 28px rgba(249, 115, 22, 0.15), inset 0 1px 1px rgba(255,255,255,0.15)",
+      hoverBoxShadow: "0 0 28px rgba(249, 115, 22, 0.85), 0 0 56px rgba(249, 115, 22, 0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
           <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
@@ -113,8 +122,11 @@ function getCategoryEmblem(category: string): {
   }
   if (norm.includes("primary")) {
     return {
-      color: "#00e676", // Neon emerald green
+      color: "#10B981", // Emerald green
       label: "PRIMARY ELITE",
+      glowColor: "rgba(16, 185, 129, 0.35)",
+      boxShadow: "0 0 14px rgba(16, 185, 129, 0.45), 0 0 28px rgba(16, 185, 129, 0.15), inset 0 1px 1px rgba(255,255,255,0.15)",
+      hoverBoxShadow: "0 0 28px rgba(16, 185, 129, 0.85), 0 0 56px rgba(16, 185, 129, 0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
@@ -125,8 +137,11 @@ function getCategoryEmblem(category: string): {
   }
   if (norm.includes("rising")) {
     return {
-      color: "#ff5722", // Neon orange/red
+      color: "#C084FC", // Purple
       label: "RISING STAR",
+      glowColor: "rgba(192, 132, 252, 0.35)",
+      boxShadow: "0 0 14px rgba(192, 132, 252, 0.45), 0 0 28px rgba(192, 132, 252, 0.15), inset 0 1px 1px rgba(255,255,255,0.15)",
+      hoverBoxShadow: "0 0 28px rgba(192, 132, 252, 0.85), 0 0 56px rgba(192, 132, 252, 0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
@@ -136,8 +151,11 @@ function getCategoryEmblem(category: string): {
   }
   if (norm.includes("content")) {
     return {
-      color: "#e040fb", // Bright magenta/purple
+      color: "#38BDF8", // Blue
       label: "CONTENT CREATOR",
+      glowColor: "rgba(56, 189, 248, 0.35)",
+      boxShadow: "0 0 14px rgba(56, 189, 248, 0.45), 0 0 28px rgba(56, 189, 248, 0.15), inset 0 1px 1px rgba(255,255,255,0.15)",
+      hoverBoxShadow: "0 0 28px rgba(56, 189, 248, 0.85), 0 0 56px rgba(56, 189, 248, 0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
           <path d="M23 7l-7 5 7 5V7z"></path>
@@ -148,8 +166,11 @@ function getCategoryEmblem(category: string): {
   }
   if (norm.includes("hunter") || norm.includes("listing")) {
     return {
-      color: "#ffc107", // Amber yellow
+      color: "#F59E0B", // Amber yellow
       label: "LISTING HUNTER",
+      glowColor: "rgba(245, 158, 11, 0.35)",
+      boxShadow: "0 0 14px rgba(245, 158, 11, 0.45), 0 0 28px rgba(245, 158, 11, 0.15), inset 0 1px 1px rgba(255,255,255,0.15)",
+      hoverBoxShadow: "0 0 28px rgba(245, 158, 11, 0.85), 0 0 56px rgba(245, 158, 11, 0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
           <circle cx="12" cy="12" r="10"></circle>
@@ -161,8 +182,11 @@ function getCategoryEmblem(category: string): {
   }
   if (norm.includes("prospect") || norm.includes("master")) {
     return {
-      color: "#ff4081", // Bright pink
+      color: "#FF4081", // Pink
       label: "PROSPECT MASTER",
+      glowColor: "rgba(255, 64, 129, 0.35)",
+      boxShadow: "0 0 14px rgba(255, 64, 129, 0.45), 0 0 28px rgba(255, 64, 129, 0.15), inset 0 1px 1px rgba(255,255,255,0.15)",
+      hoverBoxShadow: "0 0 28px rgba(255, 64, 129, 0.85), 0 0 56px rgba(255, 64, 129, 0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
       icon: (
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -175,8 +199,11 @@ function getCategoryEmblem(category: string): {
   }
   // Default/Recruiter
   return {
-    color: "#7c4dff", // Bright violet/indigo
+    color: "#A78BFA", // Violet
     label: "TOP RECRUITER",
+    glowColor: "rgba(167, 139, 250, 0.35)",
+    boxShadow: "0 0 14px rgba(167, 139, 250, 0.45), 0 0 28px rgba(167, 139, 250, 0.15), inset 0 1px 1px rgba(255,255,255,0.15)",
+    hoverBoxShadow: "0 0 28px rgba(167, 139, 250, 0.85), 0 0 56px rgba(167, 139, 250, 0.35), inset 0 1px 1px rgba(255,255,255,0.25)",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-4 h-4">
         <path d="M2 4l3 12h14l3-12-6 7-4-7-4 7-6-7z"></path>
@@ -202,7 +229,7 @@ function PortraitCard({
   const h = Math.round(w * 1.5);
   const isWinner = rank === 1;
   const theme = RANK_THEMES[rank] || RANK_THEMES[5];
-  const emblem = getCategoryEmblem(category);
+  const categoryTheme = getCategoryTheme(category);
 
   return (
     <motion.div
@@ -219,12 +246,12 @@ function PortraitCard({
         style={{
           height: h,
           borderRadius: 20,
-          border: `2px solid ${theme.borderColor}`,
-          boxShadow: theme.boxShadow,
+          border: `2px solid ${categoryTheme.color}`,
+          boxShadow: categoryTheme.boxShadow,
           background: "linear-gradient(180deg, #1f1d24 0%, #0f0e12 100%)",
         }}
         whileHover={isMobile ? {} : {
-          boxShadow: theme.hoverBoxShadow,
+          boxShadow: categoryTheme.hoverBoxShadow,
         }}
         transition={{ duration: 0.3 }}
       >
@@ -232,7 +259,7 @@ function PortraitCard({
         <div
           className="absolute inset-0 pointer-events-none mix-blend-screen opacity-60 z-10"
           style={{
-            background: `radial-gradient(circle at 50% 30%, ${theme.glowColor}, transparent 80%)`,
+            background: `radial-gradient(circle at 50% 30%, ${categoryTheme.glowColor}, transparent 80%)`,
           }}
         />
 
@@ -267,13 +294,13 @@ function PortraitCard({
         <div
           className="absolute inset-0 pointer-events-none z-10 flex items-center justify-center opacity-[0.06] transition-transform duration-700"
           style={{
-            color: emblem.color,
+            color: categoryTheme.color,
             mixBlendMode: "screen",
             transform: hovered ? "scale(1.2)" : "scale(1)",
           }}
         >
           <div className="scale-[3.5] filter drop-shadow(0 0 10px currentColor)">
-            {emblem.icon}
+            {categoryTheme.icon}
           </div>
         </div>
 
@@ -334,11 +361,11 @@ function PortraitCard({
             className="text-[14px] tracking-[0.12em] font-bold uppercase text-center leading-tight"
             style={{
               fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif",
-              color: emblem.color,
-              textShadow: `0 0 12px ${emblem.color}a0, 0 1px 4px rgba(0,0,0,0.8)`,
+              color: categoryTheme.color,
+              textShadow: `0 0 12px ${categoryTheme.color}a0, 0 1px 4px rgba(0,0,0,0.8)`,
             }}
           >
-            {emblem.label}
+            {categoryTheme.label}
           </p>
         </div>
 
@@ -363,13 +390,13 @@ function PortraitCard({
         <div
           className="absolute bottom-3 right-3 z-20 w-8 h-8 rounded-full flex items-center justify-center border transition-all duration-300 pointer-events-none"
           style={{
-            borderColor: `${emblem.color}40`,
-            background: `radial-gradient(circle, ${emblem.color}25 0%, rgba(10,8,12,0.92) 100%)`,
+            borderColor: `${categoryTheme.color}40`,
+            background: `radial-gradient(circle, ${categoryTheme.color}25 0%, rgba(10,8,12,0.92) 100%)`,
             boxShadow: `0 2px 8px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1)`,
-            color: emblem.color,
+            color: categoryTheme.color,
           }}
         >
-          {emblem.icon}
+          {categoryTheme.icon}
         </div>
 
         {/* YOU label */}
@@ -414,7 +441,7 @@ function PortraitCard({
         className="mt-1 text-center leading-tight line-clamp-1 w-full px-0.5 font-medium"
         style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontFamily: "'Inter', sans-serif" }}
       >
-        {agent.value}
+        {category === "Top 5 Commission" ? agent.level : agent.value}
       </p>
     </motion.div>
   );
@@ -521,24 +548,26 @@ export default function HofSection({
   onSwitchCat: (cat: string) => void; onGoTab: (cat: string) => void;
   onPrev: () => void; onNext: () => void;
 }) {
+  const catTheme = getCategoryTheme(hofCat);
+
   return (
     <div
       className="relative overflow-hidden rounded-[30px]"
       style={{
         background: "linear-gradient(180deg, #090303 0%, #150505 35%, #0d0404 70%, #000000 100%)",
-        border: "1px solid rgba(255, 30, 30, 0.16)",
-        boxShadow: "0 30px 90px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255, 50, 50, 0.08)",
+        border: `1px solid ${catTheme.color}25`,
+        boxShadow: `0 30px 90px rgba(0,0,0,0.65), inset 0 1px 0 ${catTheme.color}15`,
       }}
     >
       {/* 3D Ember Sparks Rising Background (Three.js canvas) */}
-      <HofFallingStars isDark={true} mode="embers" />
+      <HofFallingStars isDark={true} mode="embers" color={catTheme.color} />
 
       {/* Cinematic Crystal Shards Background Overlay */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
-        {/* Red radial ambient glow at top */}
+        {/* Category dynamic radial ambient glow at top */}
         <div 
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[300px] rounded-full filter blur-[80px] opacity-[0.28]"
-          style={{ background: "radial-gradient(circle, #ff1a1a 0%, #660000 65%, transparent 100%)" }}
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-[300px] rounded-full filter blur-[80px] opacity-[0.24]"
+          style={{ background: `radial-gradient(circle, ${catTheme.color} 0%, transparent 70%)` }}
         />
         
         {/* Geometric shard shapes SVG for cracked glass look */}
