@@ -503,12 +503,12 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
       {/* Weekly Quest */}
       <Card style={{ borderLeft: "4px solid #7B2FBE" }}>
-        <div className="flex items-center justify-between px-5 py-3 border-b" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(123,47,190,0.1)" : "#F3EAFD15" }}>
-          <div>
+        <div className="flex items-center justify-between px-5 py-3 border-b gap-2" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(123,47,190,0.1)" : "#F3EAFD15" }}>
+          <div className="min-w-0">
             <h3 className="font-bold" style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 16, color: "#7B2FBE" }}>Weekly Quest</h3>
-            <p style={{ fontSize: 10, color: T.text3 }}>Pembaluan mingguan untuk target listing & prospek</p>
+            <p className="text-[10px] sm:text-xs truncate sm:whitespace-normal" style={{ color: T.text3 }}>Pembaluan mingguan untuk target listing & prospek</p>
           </div>
-          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#F3EAFD", color: "#7B2FBE" }}>Reset Senin</span>
+          <span className="text-xs px-2 py-0.5 rounded-full whitespace-nowrap flex-shrink-0" style={{ backgroundColor: "#F3EAFD", color: "#7B2FBE" }}>Reset Senin</span>
         </div>
         {weeklyQuests.map((q, i) => <QuestRow key={i} q={q} accent="#7B2FBE" />)}
       </Card>
