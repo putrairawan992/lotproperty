@@ -319,33 +319,48 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     const isDone = q.done || q.progress >= q.total;
 
     return (
-      <div className="flex items-center gap-4 px-5 py-3 border-b last:border-0" style={{ borderColor: T.border }}>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
-          <Target size={15} />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 border-b last:border-0" style={{ borderColor: T.border }}>
+        {/* Top/Left Row: Icon + Title & XP */}
+        <div className="flex items-center gap-3 w-full sm:w-auto sm:flex-1 min-w-0">
+          <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${accent}15`, color: accent }}>
+            <Target size={15} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium leading-tight text-foreground" style={{ color: isDone ? T.text3 : T.text1 }}>{q.name}</p>
+            {q.note && <p className="text-[11px] mt-0.5 sm:hidden" style={{ color: T.text3 }}>{q.note}</p>}
+          </div>
+          <span className="text-xs font-bold sm:hidden flex-shrink-0 text-right" style={{ color: "#C8922A" }}>+{q.xp.toLocaleString()} XP</span>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium mb-1" style={{ color: isDone ? T.text3 : T.text1 }}>{q.name}</p>
+
+        {/* Middle/Bottom Row: Progress Bar & desktop Note */}
+        <div className="w-full sm:flex-1 min-w-0 pl-11 pr-2 sm:pl-0 sm:pr-0">
           <div className="flex items-center gap-2">
             <div className="flex-1"><XPBar value={q.progress} max={q.total} height={4} /></div>
             <span className="text-xs whitespace-nowrap" style={{ color: T.text3 }}>{q.progress}/{q.total}</span>
           </div>
-          {q.note && <p className="text-xs mt-0.5" style={{ color: T.text3 }}>{q.note}</p>}
+          {q.note && <p className="text-xs mt-0.5 hidden sm:block" style={{ color: T.text3 }}>{q.note}</p>}
         </div>
-        <span className="text-xs font-bold flex-shrink-0" style={{ color: "#C8922A" }}>+{q.xp.toLocaleString()} XP</span>
-        {isDone ? (
-          <div className="w-16 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border" style={{ backgroundColor: isDark ? "rgba(34,197,94,0.1)" : "#DCFCE7", borderColor: "rgba(34,197,94,0.2)" }}>
-            <Check size={14} style={{ color: "#16A34A" }} />
-          </div>
-        ) : isPending ? (
-          <span className="w-16 h-8 rounded-xl text-xs font-bold flex items-center justify-center flex-shrink-0 border text-center" style={{ backgroundColor: isDark ? "rgba(217,119,6,0.1)" : "#FEF3C7", color: "#D97706", borderColor: "rgba(217,119,6,0.2)", fontFamily: "'Rajdhani',sans-serif" }}>
-            Pending
-          </span>
-        ) : (
-          <button onClick={() => handleGo(q)} className="w-16 h-8 rounded-xl text-xs font-bold flex-shrink-0 transition-all flex items-center justify-center text-white" style={{ backgroundColor: "#E8A500", fontFamily: "'Rajdhani',sans-serif" }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#CC9200")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#E8A500")}>
-            Go
-          </button>
-        )}
+
+        {/* Right/Bottom Action: XP & Go Button */}
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-dashed pl-11 sm:pl-0" style={{ borderColor: T.border }}>
+          <span className="text-xs font-bold hidden sm:inline flex-shrink-0" style={{ color: "#C8922A" }}>+{q.xp.toLocaleString()} XP</span>
+          <span className="text-xs font-semibold sm:hidden flex-shrink-0" style={{ color: T.text3 }}>Reward: <strong style={{ color: "#C8922A" }}>+{q.xp.toLocaleString()} XP</strong></span>
+          
+          {isDone ? (
+            <div className="w-16 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border" style={{ backgroundColor: isDark ? "rgba(34,197,94,0.1)" : "#DCFCE7", borderColor: "rgba(34,197,94,0.2)" }}>
+              <Check size={14} style={{ color: "#16A34A" }} />
+            </div>
+          ) : isPending ? (
+            <span className="w-16 h-8 rounded-xl text-xs font-bold flex items-center justify-center flex-shrink-0 border text-center" style={{ backgroundColor: isDark ? "rgba(217,119,6,0.1)" : "#FEF3C7", color: "#D97706", borderColor: "rgba(217,119,6,0.2)", fontFamily: "'Rajdhani',sans-serif" }}>
+              Pending
+            </span>
+          ) : (
+            <button onClick={() => handleGo(q)} className="w-16 h-8 rounded-xl text-xs font-bold flex-shrink-0 transition-all flex items-center justify-center text-white" style={{ backgroundColor: "#E8A500", fontFamily: "'Rajdhani',sans-serif" }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#CC9200")} onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#E8A500")}>
+              Go
+            </button>
+          )}
+        </div>
       </div>
     );
   }

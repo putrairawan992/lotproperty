@@ -9,17 +9,18 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
   const { isDark } = useTheme();
 
   const cfg = {
-    sm:  { artH: 54,  cardW: 84,  nameSz: 9,  showRarity: false, pad: "p-1"   },
-    md:  { artH: 76,  cardW: 104,  nameSz: 11, showRarity: true,  pad: "p-1.5" },
-    lg:  { artH: 96,  cardW: 120, nameSz: 13, showRarity: true,  pad: "p-2"   },
+    sm:  { artH: 52,  cardW: 84,  nameSz: 8.5, showRarity: false, pad: "p-0.5" },
+    md:  { artH: 76,  cardW: 104,  nameSz: 11,  showRarity: true,  pad: "p-1.5" },
+    lg:  { artH: 96,  cardW: 120, nameSz: 13,  showRarity: true,  pad: "p-2"   },
   }[size];
 
   const badgeColor = isDark ? c.darkColor : c.color;
 
   const sharedCard = {
     backgroundColor: "transparent",
-    minWidth: cfg.cardW,
-    maxWidth: cfg.cardW,
+    width: "100%",
+    minWidth: size === "sm" ? "0px" : `${cfg.cardW}px`,
+    maxWidth: size === "sm" ? "100%" : `${cfg.cardW}px`,
   };
 
   const rarityGlow = locked
@@ -28,7 +29,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
 
   if (asset) {
     return (
-      <div className={`relative flex flex-col items-center gap-1.5 overflow-hidden transition-all hover:scale-105 ${cfg.pad}`}
+      <div className={`relative flex flex-col items-center gap-1 overflow-hidden transition-all hover:scale-105 ${cfg.pad}`}
         style={sharedCard}>
         {locked && (
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
@@ -44,13 +45,14 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
             width: cfg.artH,
             objectFit: "contain",
             filter: rarityGlow,
+            maxWidth: "100%",
           }} />
         {cfg.nameSz > 0 && (
-          <span className="text-center font-bold leading-tight w-full"
+          <span className="text-center font-bold leading-tight w-full px-0.5"
             style={{
               color: badgeColor,
               fontFamily: "'Rajdhani', sans-serif",
-              fontSize: cfg.nameSz,
+              fontSize: size === "sm" ? "7.5px" : `${cfg.nameSz}px`,
               overflow: "hidden",
               display: "-webkit-box",
               WebkitLineClamp: size === "sm" ? 2 : 3,
@@ -80,7 +82,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
   const darkBg   = rarity === "mythic" ? "#1A0008" : rarity === "legendary" ? "#1A1000"
                  : rarity === "epic"   ? "#0F0A20" : rarity === "rare"       ? "#080F20"
                  : "#101010";
-  const svgDim = size === "sm" ? 54 : size === "lg" ? 96 : 76;
+  const svgDim = size === "sm" ? 52 : size === "lg" ? 96 : 76;
 
   const isHex = rarity === "epic" || rarity === "rare";
   const outerPath = isHex
@@ -91,7 +93,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
     : "M30,13 L46,20 L46,38 C46,49 30,59 30,59 C30,59 14,49 14,38 L14,20 Z";
 
   return (
-    <div className={`relative flex flex-col items-center gap-1.5 overflow-hidden transition-all hover:scale-105 ${cfg.pad}`}
+    <div className={`relative flex flex-col items-center gap-1 overflow-hidden transition-all hover:scale-105 ${cfg.pad}`}
       style={sharedCard}>
       {locked && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
@@ -101,7 +103,17 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
           </div>
         </div>
       )}
-      <svg width={svgDim} height={Math.round(svgDim * 1.18)} viewBox="0 0 60 72" fill="none" style={{ filter: locked ? "grayscale(1) opacity(0.4)" : "none" }}>
+      <svg 
+        width="100%" 
+        viewBox="0 0 60 72" 
+        fill="none" 
+        style={{ 
+          maxWidth: svgDim, 
+          height: "auto",
+          aspectRatio: "60/72",
+          filter: locked ? "grayscale(1) opacity(0.4)" : "none" 
+        }}
+      >
         <path d={outerPath} fill={darkBg} />
         <path d={outerPath} fill="none" stroke={badgeColor} strokeWidth="3" opacity="0.9" />
         <path d={innerPath} fill={badgeColor} fillOpacity="0.12" stroke={badgeColor} strokeWidth="1.5" opacity="0.6" />
@@ -115,11 +127,11 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
         <text x="30" y="41" textAnchor="middle" fontSize="20" fill={badgeColor} fontFamily="Arial">{icon}</text>
       </svg>
       {cfg.nameSz > 0 && (
-        <span className="text-center leading-tight font-bold w-full"
+        <span className="text-center leading-tight font-bold w-full px-0.5"
           style={{
             color: badgeColor,
             fontFamily: "'Rajdhani', sans-serif",
-            fontSize: cfg.nameSz,
+            fontSize: size === "sm" ? "7.5px" : `${cfg.nameSz}px`,
             overflow: "hidden",
             display: "-webkit-box",
             WebkitLineClamp: size === "sm" ? 2 : 3,
