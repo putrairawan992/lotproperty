@@ -247,18 +247,23 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                       </div>
                       <div className="divide-y" style={{ borderColor: T.border }}>
                         {badges.map((b, i) => (
-                          <div key={i} className="flex items-center gap-3 px-4 py-3">
-                            <BadgeShield rarity={b.rarity} name={b.name} size="sm" />
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm" style={{ color: T.text1 }}>{b.name}</p>
-                              <p className="text-xs" style={{ color: T.text3 }}>{b.req}</p>
+                          <div key={i} className="flex items-center gap-4 px-4 py-3.5 sm:py-3 select-none">
+                            <div className="flex-shrink-0">
+                              <BadgeShield rarity={b.rarity} name={b.name} size="sm" />
                             </div>
-                            {b.locked && (
-                              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: T.muted, color: T.text3 }}>Locked</span>
-                            )}
-                            {!b.locked && (
-                              <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(34,197,94,0.15)", color: "#16A34A" }}>✓ Dimiliki</span>
-                            )}
+                            <div className="flex-1 min-w-0 flex flex-row items-center justify-between gap-3">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-sm text-foreground" style={{ color: T.text1 }}>{b.name}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5" style={{ color: T.text3 }}>{b.req}</p>
+                              </div>
+                              <div className="flex-shrink-0 self-center">
+                                {b.locked ? (
+                                  <span className="inline-block text-[10px] sm:text-xs px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50" style={{ fontFamily: "'Rajdhani', sans-serif" }}>Locked</span>
+                                ) : (
+                                  <span className="inline-block text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" style={{ fontFamily: "'Rajdhani', sans-serif" }}>✓ Dimiliki</span>
+                                )}
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>

@@ -40,7 +40,7 @@ export default function App() {
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
-  
+
   // Trigger auto-attendance popup immediately on dashboard enter after login
   useEffect(() => {
     if (loggedIn) {
@@ -141,7 +141,7 @@ export default function App() {
       case "prospect": return <ProspectPage />;
       case "academy": return <AcademyPage />;
       case "leaderboard": return <LeaderboardPage />;
-      case "profile": return <ProfilePage onLogout={handleLogout} />;
+      case "profile": return <ProfilePage />;
       case "notifications": return <NotificationsPage />;
       case "event": return <EventDetailPage onBack={() => handlePageChange("home")} />;
       case "attendance": return <AttendancePage />;

@@ -11,6 +11,7 @@ import { T, Rarity, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
 import HofAwardLaurel from "../components/HofAwardLaurel";
+import HofFallingStars from "../components/HofFallingStars";
 import { getCategoryTheme } from "../components/HofSection";
 
 const getRankMedal = (rank: string) => {
@@ -367,76 +368,116 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         
         {/* ==================== LEFT COLUMN ==================== */}
         <div className="space-y-6">
-          {/* Circular Photo Card */}
-          <Card className="p-6 border border-border/60 relative group shadow-lg flex flex-col items-center text-center">
-            {/* Center-aligned circular avatar with golden glowing border */}
-            <div className="relative w-36 h-36 rounded-full overflow-hidden border-[3px] border-[#C8922A] shadow-[0_0_20px_rgba(200,146,42,0.45)] transition-transform duration-500 group-hover:scale-105 mb-4">
-              <img
-                src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"
-                alt="Ronald Richy"
-                className="w-full h-full object-cover object-top"
-              />
-            </div>
-            
-            {/* Name & Tier */}
-            <h2 className="font-extrabold text-2xl tracking-wide text-gradient-gold" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-              RONALD RICHY
-            </h2>
-            <div className="flex justify-center mt-1 mb-4">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full font-bold text-xs text-white bg-[#7040D0] border border-[#7040D0]/20 shadow-md uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                ⭐ Elite Agent
-              </span>
+          {/* Profile Card with Lightning Animation */}
+          <Card className="p-6 border border-border/60 relative group shadow-lg flex flex-col items-center text-center overflow-hidden">
+            {/* dynamic electric lightning animation in the background */}
+            <div className="absolute inset-0 pointer-events-none z-0 opacity-45">
+              <HofFallingStars isDark={true} mode="lightning" />
             </div>
 
-            {/* Mobile & Desktop Stats Block */}
-            <div className="w-full border-t border-border/40 pt-4 mb-4">
-              <div className="grid grid-cols-3 gap-2 mb-4">
-                <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
-                  style={{ borderColor: "#E8A50030", backgroundColor: isDark ? "rgba(232,165,0,0.06)" : "#FFFAED" }}>
-                  <LevelBadge title="Elite Agent" size={32} />
-                  <p className="font-bold text-base mt-1 text-[#E8A500]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>23</p>
-                  <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">LEVEL</p>
-                </div>
-                <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
-                  style={{ borderColor: "#C8922A30", backgroundColor: isDark ? "rgba(200,146,42,0.06)" : "#FDF6E3" }}>
-                  <Trophy size={18} className="text-[#C8922A]" />
-                  <p className="font-bold text-base mt-1 text-[#C8922A]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18</p>
-                  <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">HOF HITS</p>
-                </div>
-                <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
-                  style={{ borderColor: "#7040D030", backgroundColor: isDark ? "rgba(112,64,208,0.06)" : "#F5F0FD" }}>
-                  <Award size={18} className="text-[#7040D0]" />
-                  <p className="font-bold text-base mt-1 text-[#7040D0]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18/25</p>
-                  <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">BADGES</p>
+            <div className="relative z-10 flex flex-col items-center w-full">
+              {/* Center-aligned avatar matching Hall of Fame cards */}
+              <div className="relative w-36 h-48 rounded-[20px] overflow-hidden border-[1.2px] border-[#C8922A] shadow-[0_8px_32px_rgba(200,146,42,0.25)] transition-transform duration-500 group-hover:scale-105 mb-4 bg-[#121115]">
+                {/* Glow behind photo */}
+                <div
+                  className="absolute inset-0 pointer-events-none mix-blend-screen opacity-65 z-10"
+                  style={{
+                    background: `radial-gradient(circle at 50% 30%, rgba(200, 146, 42, 0.45), transparent 80%)`,
+                  }}
+                />
+                <img
+                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"
+                  alt="Ronald Richy"
+                  className="w-full h-full object-cover object-top"
+                  draggable={false}
+                />
+                {/* Cinematic Vignette Overlay */}
+                <div
+                  className="absolute inset-0 pointer-events-none z-10"
+                  style={{
+                    background: "radial-gradient(circle at 50% 35%, transparent 30%, rgba(0,0,0,0.3) 80%, rgba(0,0,0,0.65) 100%)",
+                  }}
+                />
+                {/* Metallic inner frame line */}
+                <div
+                  className="absolute inset-2 pointer-events-none z-10 rounded-[12px] border border-amber-500/20"
+                />
+                {/* Dynamic Diagonal Shimmer Sweep on Hover */}
+                <div
+                  className="absolute inset-0 pointer-events-none z-10 transition-transform duration-1000 ease-out group-hover:translate-x-[150%] -translate-x-[150%]"
+                  style={{
+                    background: "linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.02) 30%, rgba(255,255,255,0.18) 50%, rgba(255,255,255,0.02) 70%, rgba(255,255,255,0) 100%)",
+                  }}
+                />
+                {/* Corner brackets frame overlay */}
+                <div className="absolute inset-3.5 pointer-events-none z-20">
+                  <div className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-[#C8922A] opacity-75" />
+                  <div className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-[#C8922A] opacity-75" />
+                  <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-[#C8922A] opacity-75" />
+                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-[#C8922A] opacity-75" />
                 </div>
               </div>
-
-              <div className="text-left space-y-1">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-muted-foreground tracking-wider uppercase text-[9px]">XP PROGRESS</span>
-                  <span className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-numeric)" }}>24.680 / 30.000 XP</span>
-                </div>
-                <XPBar value={24680} max={30000} height={8} />
-                <p className="text-[9px] text-muted-foreground text-center pt-1">82.26% menuju Level 24 (Elite Agent)</p>
-              </div>
-            </div>
-
-            <div className="w-full space-y-2 pt-2 border-t border-border/40">
-              <button onClick={() => setShowShareModal(true)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border border-[#C8922A]/40 text-[#C8922A] bg-[#C8922A]/5 hover:bg-[#C8922A]/10 transition-all uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                <Share2 size={13} /> Share Profile
-              </button>
               
-              {onLogout && (
-                <button
-                  onClick={onLogout}
-                  className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-all border border-red-500/20 text-red-500 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/30"
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-                  </svg>
-                  Logout
+              {/* Name & Tier */}
+              <h2 className="font-extrabold text-2xl tracking-wide text-gradient-gold" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                RONALD RICHY
+              </h2>
+              <div className="flex justify-center mt-1 mb-4">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full font-bold text-xs text-white bg-[#7040D0] border border-[#7040D0]/20 shadow-md uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                  ⭐ Elite Agent
+                </span>
+              </div>
+
+              {/* Mobile & Desktop Stats Block */}
+              <div className="w-full border-t border-border/40 pt-4 mb-4">
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
+                    style={{ borderColor: "#E8A50030", backgroundColor: isDark ? "rgba(232,165,0,0.06)" : "#FFFAED" }}>
+                    <LevelBadge title="Elite Agent" size={32} />
+                    <p className="font-bold text-base mt-1 text-[#E8A500]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>23</p>
+                    <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">LEVEL</p>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
+                    style={{ borderColor: "#C8922A30", backgroundColor: isDark ? "rgba(200,146,42,0.06)" : "#FDF6E3" }}>
+                    <Trophy size={18} className="text-[#C8922A]" />
+                    <p className="font-bold text-base mt-1 text-[#C8922A]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18</p>
+                    <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">HOF HITS</p>
+                  </div>
+                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
+                    style={{ borderColor: "#7040D030", backgroundColor: isDark ? "rgba(112,64,208,0.06)" : "#F5F0FD" }}>
+                    <Award size={18} className="text-[#7040D0]" />
+                    <p className="font-bold text-base mt-1 text-[#7040D0]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18/25</p>
+                    <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">BADGES</p>
+                  </div>
+                </div>
+
+                <div className="text-left space-y-1">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-muted-foreground tracking-wider uppercase text-[9px]">XP PROGRESS</span>
+                    <span className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-numeric)" }}>24.680 / 30.000 XP</span>
+                  </div>
+                  <XPBar value={24680} max={30000} height={8} />
+                  <p className="text-[9px] text-muted-foreground text-center pt-1">82.26% menuju Level 24 (Elite Agent)</p>
+                </div>
+              </div>
+
+              <div className="w-full space-y-2 pt-2 border-t border-border/40">
+                <button onClick={() => setShowShareModal(true)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border border-[#C8922A]/40 text-[#C8922A] bg-[#C8922A]/5 hover:bg-[#C8922A]/10 transition-all uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                  <Share2 size={13} /> Share Profile
                 </button>
-              )}
+                
+                {onLogout && (
+                  <button
+                    onClick={onLogout}
+                    className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-all border border-red-500/20 text-red-500 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/30"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    Logout
+                  </button>
+                )}
+              </div>
             </div>
           </Card>
 
@@ -524,7 +565,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             </div>
 
             {/* LAUREL GRID LAYOUT */}
-            <div className="relative z-[1] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-4 gap-y-8 justify-items-center">
+            <div className="relative z-[1] grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-3 gap-y-4 justify-items-center">
               {visibleHof.map((h, i) => (
                 <motion.div
                   key={`${h.cat}-${h.period}-${i}`}
@@ -696,7 +737,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             {/* Expandable all badges view */}
             {showAllBadges && (
               <div className="mt-5 pt-5 border-t border-border/30 animate-fade-in">
-                <div className="flex flex-wrap gap-4 justify-center">
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 justify-items-center">
                   {ALL_BADGES.map((b, i) => (
                     <BadgeShield key={i} rarity={b.rarity} name={b.name} locked={b.locked} size="sm" />
                   ))}

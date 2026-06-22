@@ -19,7 +19,7 @@ interface Listing {
   address: string;
   price: string;
   loc: string;
-  status: "Active" | "Inactive" | "Closed";
+  status: "Active" | "Inactive" | "Sold";
   days: number;
   remind: "safe" | "warn" | "danger";
   landArea: string;
@@ -53,7 +53,7 @@ const INITIAL_LISTINGS: Listing[] = [
   { id: "L-002", title: "Apartemen Studio The Spring BSD", type: "Apartemen", owner: "Bu Linda", phone: "0821-9876-5432", address: "The Spring Tower A, BSD City", price: "Rp 450Jt", loc: "BSD City", status: "Active", days: 14, remind: "warn", landArea: "—", buildingArea: "32 m²", floors: "1", certificate: "SHGB", commission: "2,5%", notes: "Fully furnished, view kolam renang.", createdAt: "7 Jun 2026" },
   { id: "L-003", title: "Ruko 2 Lantai Grand Serpong", type: "Ruko", owner: "Pak Rudi", phone: "0856-1234-5678", address: "Jl. Raya Serpong KM 7, Tangerang", price: "Rp 2,8M", loc: "Serpong", status: "Inactive", days: 92, remind: "danger", landArea: "80 m²", buildingArea: "160 m²", floors: "2", certificate: "SHM", commission: "3%", notes: "Lokasi ramai, cocok untuk usaha F&B.", createdAt: "20 Mar 2026" },
   { id: "L-004", title: "Kavling 300m² Sawangan Indah", type: "Tanah", owner: "Bu Maya", phone: "0878-2345-6789", address: "Perumahan Sawangan Indah Blok C12", price: "Rp 680Jt", loc: "Sawangan", status: "Active", days: 60, remind: "safe", landArea: "300 m²", buildingArea: "—", floors: "—", certificate: "SHM", commission: "2%", notes: "Tanah siap bangun, sertifikat bersih.", createdAt: "22 Apr 2026" },
-  { id: "L-005", title: "Rumah 4BR Alam Sutera Premium", type: "Rumah", owner: "Pak Doni", phone: "0819-8765-4321", address: "Cluster Premium Alam Sutera, Tangerang", price: "Rp 3,5M", loc: "Alam Sutera", status: "Closed", days: 0, remind: "safe", landArea: "240 m²", buildingArea: "200 m²", floors: "2", certificate: "SHM", commission: "2%", notes: "Deal selesai — KPR BCA.", createdAt: "10 Jan 2026" },
+  { id: "L-005", title: "Rumah 4BR Alam Sutera Premium", type: "Rumah", owner: "Pak Doni", phone: "0819-8765-4321", address: "Cluster Premium Alam Sutera, Tangerang", price: "Rp 3,5M", loc: "Alam Sutera", status: "Sold", days: 0, remind: "safe", landArea: "240 m²", buildingArea: "200 m²", floors: "2", certificate: "SHM", commission: "2%", notes: "Deal selesai — KPR BCA.", createdAt: "10 Jan 2026" },
 ];
 
 function FieldLabel({ children, required }: { children: ReactNode; required?: boolean }) {
@@ -239,7 +239,7 @@ export default function ListingPage() {
             {[
               { label: "Lihat Detail", icon: Eye, action: () => openDetail(listing.id) },
               { label: listing.status === "Active" ? "Set Inactive" : "Set Active", icon: ToggleLeft, action: () => updateStatus(listing.id, listing.status === "Active" ? "Inactive" : "Active") },
-              { label: "Tandai Closed", icon: Archive, action: () => updateStatus(listing.id, "Closed"), hide: listing.status === "Closed" },
+              { label: "Tandai Sold", icon: Archive, action: () => updateStatus(listing.id, "Sold"), hide: listing.status === "Sold" },
               { label: "Hapus", icon: Trash2, action: () => deleteListing(listing.id), danger: true },
             ].filter(a => !a.hide).map(item => (
               <button
@@ -328,7 +328,7 @@ export default function ListingPage() {
             { l: "Total Listing", short: "Total", v: listings.length, c: T.text2 },
             { l: "Active", short: "Active", v: listings.filter(l => l.status === "Active").length, c: "#16A34A" },
             { l: "Inactive", short: "Inactive", v: listings.filter(l => l.status === "Inactive").length, c: "#D97706" },
-            { l: "Closed", short: "Closed", v: listings.filter(l => l.status === "Closed").length, c: "#DC2626" },
+            { l: "Sold", short: "Sold", v: listings.filter(l => l.status === "Sold").length, c: "#DC2626" },
           ].map(s => (
             <Card key={s.l} className="px-2 py-2 sm:p-3 lg:p-4 text-center min-w-0">
               <p
@@ -373,7 +373,7 @@ export default function ListingPage() {
           </div>
 
           <div className="flex border-b overflow-x-auto" style={{ borderColor: T.border }}>
-            {(["All", "Active", "Inactive", "Closed"] as const).map(t => (
+            {(["All", "Active", "Inactive", "Sold"] as const).map(t => (
               <button key={t} onClick={() => setTab(t)}
                 className="px-5 py-3 text-sm font-medium whitespace-nowrap transition-all"
                 style={{ color: tab === t ? "#E8A500" : T.text3, borderBottom: tab === t ? "2px solid #E8A500" : "2px solid transparent" }}>
@@ -686,7 +686,7 @@ export default function ListingPage() {
                     >
                       <MessageCircle size={14} /> WhatsApp Pemilik
                     </a>
-                    {detailListing.status !== "Closed" && (
+                    {detailListing.status !== "Sold" && (
                       <button
                         type="button"
                         onClick={() => updateStatus(detailListing.id, detailListing.status === "Active" ? "Inactive" : "Active")}
@@ -696,14 +696,14 @@ export default function ListingPage() {
                         {detailListing.status === "Active" ? "Set Inactive" : "Set Active"}
                       </button>
                     )}
-                    {detailListing.status !== "Closed" && (
+                    {detailListing.status !== "Sold" && (
                       <button
                         type="button"
-                        onClick={() => updateStatus(detailListing.id, "Closed")}
+                        onClick={() => updateStatus(detailListing.id, "Sold")}
                         className="px-4 py-2 rounded-xl text-xs font-bold"
                         style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani', sans-serif" }}
                       >
-                        Tandai Closed
+                        Tandai Sold
                       </button>
                     )}
                   </div>
