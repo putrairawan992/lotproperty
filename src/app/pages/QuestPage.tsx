@@ -11,6 +11,25 @@ import { T, Page, ThemeCtx } from "../types";
 import { BADGE_ASSETS } from "../badgeAssets";
 import { useLocation } from "../routes";
 
+const TreasureChestIcon = ({ size = 22, className = "" }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M2 10s3-3 10-3 10 3 10 3" />
+    <path d="M2 10h20" />
+    <path d="M4 10v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9" />
+    <rect x="10.5" y="10" width="3" height="4" rx="0.5" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 function Quest3DCoins({ isDark }: { isDark: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -49,43 +68,66 @@ function Quest3DCoins({ isDark }: { isDark: boolean }) {
       roughness: 0.12,
     });
 
-    // Dollar sign geometries
-    const sPoints = [
-      new THREE.Vector3(0.18, 0.35, 0),
-      new THREE.Vector3(0, 0.35, 0),
-      new THREE.Vector3(-0.18, 0.25, 0),
-      new THREE.Vector3(-0.18, 0.1, 0),
-      new THREE.Vector3(0, 0, 0),
-      new THREE.Vector3(0.18, -0.1, 0),
-      new THREE.Vector3(0.18, -0.25, 0),
-      new THREE.Vector3(0, -0.35, 0),
-      new THREE.Vector3(-0.18, -0.3, 0),
-    ];
-    const sCurve = new THREE.CatmullRomCurve3(sPoints);
-    const sGeo = new THREE.TubeGeometry(sCurve, 24, 0.05, 8, false);
-    const barGeo = new THREE.CylinderGeometry(0.025, 0.025, 0.9, 12);
+    const woodMat = new THREE.MeshStandardMaterial({
+      color: 0x7a431d, // rich warm wood brown
+      roughness: 0.75,
+      metalness: 0.15,
+    });
+
+    // Treasure chest geometries
+    const baseGeo = new THREE.BoxGeometry(0.5, 0.3, 0.35);
+    const lidGeo = new THREE.CylinderGeometry(0.175, 0.175, 0.5, 12, 1, false, 0, Math.PI);
+    const trimGeo = new THREE.BoxGeometry(0.04, 0.31, 0.36);
+    const lockGeo = new THREE.BoxGeometry(0.08, 0.08, 0.03);
+
+    const createTreasureChest = () => {
+      const group = new THREE.Group();
+
+      // Base wood
+      const baseMesh = new THREE.Mesh(baseGeo, woodMat);
+      baseMesh.position.y = -0.05;
+      group.add(baseMesh);
+
+      // Lid wood
+      const lidMesh = new THREE.Mesh(lidGeo, woodMat);
+      lidMesh.rotation.z = Math.PI / 2; // align along X-axis
+      lidMesh.position.set(0, 0.1, 0);
+      group.add(lidMesh);
+
+      // Gold Corner Bands
+      const trimL = new THREE.Mesh(trimGeo, goldMat);
+      trimL.position.set(-0.23, -0.05, 0);
+      group.add(trimL);
+
+      const trimR = new THREE.Mesh(trimGeo, goldMat);
+      trimR.position.set(0.23, -0.05, 0);
+      group.add(trimR);
+
+      // Gold Lock
+      const lockMesh = new THREE.Mesh(lockGeo, goldMat);
+      lockMesh.position.set(0, 0.06, 0.185);
+      group.add(lockMesh);
+
+      return group;
+    };
 
     const items: THREE.Object3D[] = [];
 
-    // Item 1: Large Dollar Sign (Right)
-    const dollar1 = new THREE.Group();
-    dollar1.add(new THREE.Mesh(sGeo, goldMat));
-    dollar1.add(new THREE.Mesh(barGeo, goldMat));
-    dollar1.position.set(2.2, 0.15, 0);
-    dollar1.scale.set(1.4, 1.4, 1.4);
-    dollar1.rotation.y = -Math.PI / 6;
-    scene.add(dollar1);
-    items.push(dollar1);
+    // Item 1: Large Chest (Right)
+    const chest1 = createTreasureChest();
+    chest1.position.set(2.2, 0.15, 0);
+    chest1.scale.set(1.4, 1.4, 1.4);
+    chest1.rotation.y = -Math.PI / 6;
+    scene.add(chest1);
+    items.push(chest1);
 
-    // Item 2: Medium Dollar Sign (Left)
-    const dollar2 = new THREE.Group();
-    dollar2.add(new THREE.Mesh(sGeo, goldMat));
-    dollar2.add(new THREE.Mesh(barGeo, goldMat));
-    dollar2.position.set(-2.4, -0.25, -0.4);
-    dollar2.scale.set(1.1, 1.1, 1.1);
-    dollar2.rotation.y = Math.PI / 6;
-    scene.add(dollar2);
-    items.push(dollar2);
+    // Item 2: Medium Chest (Left)
+    const chest2 = createTreasureChest();
+    chest2.position.set(-2.4, -0.25, -0.4);
+    chest2.scale.set(1.1, 1.1, 1.1);
+    chest2.rotation.y = Math.PI / 6;
+    scene.add(chest2);
+    items.push(chest2);
 
     // Item 3: Golden Coin (Center Right Bottom)
     const coin1 = new THREE.Mesh(coinGeo, goldMat);
@@ -134,8 +176,8 @@ function Quest3DCoins({ isDark }: { isDark: boolean }) {
           // It's a coin, rotate on multiple axes for dynamic light reflection
           item.rotation.x += 0.01;
         } else {
-          // Dollar signs wobble slightly on x-axis
-          item.rotation.x = Math.sin(Date.now() * 0.0015 + idx) * 0.15;
+          // Chests wobble slightly on x-axis
+          item.rotation.x = Math.sin(Date.now() * 0.0015 + idx) * 0.12;
         }
         item.position.y += Math.sin(Date.now() * 0.001 + idx) * 0.0025;
       });
@@ -175,9 +217,12 @@ function Quest3DCoins({ isDark }: { isDark: boolean }) {
       cancelAnimationFrame(animId);
       resizeObserver.disconnect();
       coinGeo.dispose();
-      sGeo.dispose();
-      barGeo.dispose();
+      baseGeo.dispose();
+      lidGeo.dispose();
+      trimGeo.dispose();
+      lockGeo.dispose();
       goldMat.dispose();
+      woodMat.dispose();
       particleGeo.dispose();
       particleMat.dispose();
       renderer.dispose();
@@ -448,7 +493,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
                   animate={{ rotateY: [0, 180, 360] }}
                   transition={{ duration: 4, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
                 >
-                  <DollarSign size={22} className="text-black font-bold" />
+                  <TreasureChestIcon size={22} className="text-black font-bold" />
                 </motion.div>
               </motion.div>
             </div>

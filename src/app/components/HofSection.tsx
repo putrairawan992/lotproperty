@@ -246,7 +246,7 @@ function PortraitCard({
         style={{
           height: h,
           borderRadius: 20,
-          border: `2px solid ${categoryTheme.color}`,
+          border: `1.2px solid ${categoryTheme.color}55`,
           boxShadow: categoryTheme.boxShadow,
           background: "linear-gradient(180deg, #1f1d24 0%, #0f0e12 100%)",
         }}

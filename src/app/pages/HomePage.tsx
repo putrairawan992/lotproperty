@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ChevronRight, Flame, Trophy, Crown, Target, Users, Star, BookOpen, TrendingUp, Building2 } from "lucide-react";
+import { ChevronRight, Flame, Trophy, Crown, Target, Users, Star, BookOpen, TrendingUp, Building2, Check } from "lucide-react";
 import Card from "../components/Card";
 import LevelBadge from "../components/LevelBadge";
 import XPBar from "../components/XPBar";
@@ -135,6 +135,11 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         onPrev={hofPrev}
         onNext={hofNext}
       />
+
+      {/* Event Banner Slider placed below Hall of Fame and above Weekly Leaderboard */}
+      <div className="my-2">
+        <EventBannerSlider isDark={isDark} onNav={onNav} />
+      </div>
 
 
       {/* Weekly LB + Progress + Quest */}
@@ -278,17 +283,24 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                 { name: "New Content", icon: "📱", p: 1, t: 1, xp: 300, done: true },
                 { name: "Complete Module", icon: "🎓", p: 2, t: 5, xp: 200, done: false },
               ].map((q, i) => (
-                <div key={i} className="flex flex-col items-center flex-shrink-0 rounded-2xl border p-2.5"
+                <div key={i} onClick={() => onNav("quest")} className="flex flex-col items-center flex-shrink-0 rounded-2xl border p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.03] hover:border-amber-500/50 hover:shadow-md"
                   style={{ minWidth: 80, borderColor: q.done ? "#86EFAC50" : T.border, backgroundColor: q.done ? (isDark ? "#0A2010" : "#F0FDF4") : T.card }}>
                   <span style={{ fontSize: 20 }}>{q.icon}</span>
                   <p className="text-center font-medium mt-1" style={{ fontSize: 9, color: T.text2, lineHeight: 1.2, maxWidth: 72 }}>{q.name}</p>
                   <p className="font-bold mt-0.5" style={{ fontSize: 10, color: "#C8922A", fontFamily: "'Rajdhani',sans-serif" }}>+{q.xp} XP</p>
                   <div className="w-full my-1"><XPBar value={q.p} max={q.t} height={3} /></div>
                   <p style={{ fontSize: 9, color: T.text3 }}>{q.p}/{q.t}</p>
-                  <button className="mt-1.5 w-full py-1 rounded-lg text-xs font-bold"
-                    style={{ backgroundColor: q.done ? "#E8A500" : T.muted, color: q.done ? "white" : T.text2, fontSize: 9, fontFamily: "'Rajdhani',sans-serif" }}>
-                    {q.done ? "Claimed" : "Go"}
-                  </button>
+                  {q.done ? (
+                    <div className="mt-1.5 w-full py-1 rounded-lg text-[9px] font-bold flex items-center justify-center gap-0.5 border"
+                      style={{ backgroundColor: isDark ? "rgba(34,197,94,0.12)" : "#DCFCE7", borderColor: isDark ? "rgba(34,197,94,0.3)" : "#BBF7D0", color: "#16A34A", fontFamily: "'Rajdhani',sans-serif" }}>
+                      <Check size={9} strokeWidth={3.5} /> Selesai
+                    </div>
+                  ) : (
+                    <div className="mt-1.5 w-full py-1 rounded-lg text-[9px] font-bold text-center"
+                      style={{ backgroundColor: T.muted, color: T.text2, fontFamily: "'Rajdhani',sans-serif" }}>
+                      Go
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -296,8 +308,6 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
       </div>
 
-      {/* Event Banner Slider — auto-play setiap 5 detik (shrunken & at bottom) */}
-      <EventBannerSlider isDark={isDark} onNav={onNav} />
     </div>
   );
 }
