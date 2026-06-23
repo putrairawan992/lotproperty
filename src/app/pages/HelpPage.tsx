@@ -3,6 +3,7 @@ import { Search, ChevronDown, BookOpen, ChevronRight, MessageSquare, ArrowLeftRi
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
+import LevelBadge from "../components/LevelBadge";
 import { T, Page, useTheme } from "../types";
 import { useTabQuery } from "../routes";
 import { FAQ_DATA, TERMS_SECTIONS } from "../appData";
@@ -193,26 +194,18 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                         initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: i * 0.06 }}
                         whileHover={{ borderColor: tier.color, backgroundColor: tier.color + "08" }}>
-                        {tier.asset ? (
-                          <img src={tier.asset} alt={tier.title}
-                            style={{ height: 56, width: Math.round(56 * 200/260), objectFit: "contain", flexShrink: 0 }} />
-                        ) : (
-                          <div className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ backgroundColor: T.muted }}>
-                            <span style={{ color: tier.color, fontSize: 20 }}>★</span>
-                          </div>
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                            <p className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 16, color: tier.color }}>
+                        <LevelBadge title={tier.title} size={56} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-0.5">
+                            <span className="font-bold text-[15px] sm:text-[16px] leading-none" style={{ fontFamily: "'Rajdhani', sans-serif", color: tier.color }}>
                               {tier.title}
-                            </p>
-                            <span className="text-xs px-2 py-0.5 rounded font-semibold"
-                               style={{ backgroundColor: tier.color + "20", color: tier.color }}>
+                            </span>
+                            <span className="text-[11px] px-2 py-0.5 rounded font-semibold leading-none whitespace-nowrap flex items-center justify-center font-sans"
+                               style={{ backgroundColor: tier.color + "20", color: tier.color, height: "18px" }}>
                               Level {tier.range}
                             </span>
                           </div>
-                          <p className="text-xs" style={{ color: T.text3 }}>Mulai dari {tier.xp} XP</p>
+                          <p className="text-xs leading-normal" style={{ color: T.text3 }}>Mulai dari {tier.xp} XP</p>
                         </div>
                         {i < LEVEL_TIERS.length - 1 && (
                           <div className="text-right flex-shrink-0">

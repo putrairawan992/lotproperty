@@ -24,11 +24,11 @@ export default function LevelBadge({
   const isCircle = size < 44;
   const shadowBlur = Math.max(3, Math.round(size * 0.12));
   const borderThickness = size < 40 ? 1 : 1.5;
-  const borderRadius = showPlate ? (isCircle ? "50%" : Math.max(10, Math.round(size * 0.22))) : undefined;
+  const borderRadius = isCircle ? "50%" : Math.max(10, Math.round(size * 0.22));
 
   return (
     <div
-      className={`relative flex-shrink-0 flex items-center justify-center ${showPlate ? "glossy-glare overflow-hidden" : ""}`}
+      className="relative flex-shrink-0 flex items-center justify-center glossy-glare overflow-hidden"
       style={{
         width: size,
         height: size,

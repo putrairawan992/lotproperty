@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { T } from "../types";
 import { LEVEL_ASSETS } from "../badgeAssets";
+import LevelBadge from "./LevelBadge";
 
 const CONFETTI_COLORS = ["#E8A500", "#C8922A", "#16A34A", "#7B2FBE", "#1A6FC4", "#DC2626", "#FFD700"];
 
@@ -70,14 +71,7 @@ export default function LevelUpModal({ newLevel, newTier, xpTotal, onClose }: {
             initial={{ scale: 0.2, opacity: 0, rotate: -15 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 14, delay: 0.2 }}>
-            {tierAsset
-              ? <img src={tierAsset} alt={newTier}
-                  style={{ height: 120, width: "auto", objectFit: "contain" }} />
-              : <div className="w-28 h-28 rounded-full flex items-center justify-center"
-                  style={{ background: "linear-gradient(135deg,#E8A500,#C8922A)" }}>
-                  <span style={{ fontSize: 48 }}>⭐</span>
-                </div>
-            }
+            <LevelBadge title={newTier} size={120} />
           </motion.div>
 
           {/* "LEVEL UP!" */}
