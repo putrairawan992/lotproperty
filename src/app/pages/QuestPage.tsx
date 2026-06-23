@@ -522,21 +522,31 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
       {/* Daily Quest */}
       <Card style={{ borderLeft: "4px solid #16A34A" }}>
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b flex-wrap sm:flex-nowrap gap-2" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(22,163,74,0.1)" : "#DCFCE715" }}>
-          <div className="min-w-0 flex-1">
-            <h3 className="font-bold text-sm sm:text-base" style={{ fontFamily: "'Rajdhani',sans-serif", color: "#16A34A" }}>Daily Quest</h3>
-            <p className="text-[10px] sm:text-xs truncate" style={{ color: T.text3 }}>Direset setiap hari pukul 00:00 WIB</p>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b gap-3" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(22,163,74,0.1)" : "#DCFCE715" }}>
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-bold text-sm sm:text-base" style={{ fontFamily: "'Rajdhani',sans-serif", color: "#16A34A" }}>Daily Quest</h3>
+              <span className="text-[9px] sm:text-xs px-2 py-0.5 rounded-full whitespace-nowrap font-bold flex items-center gap-1 flex-shrink-0"
+                style={{
+                  backgroundColor: isDark ? "rgba(22,163,74,0.2)" : "#DCFCE7",
+                  color: "#16A34A",
+                  border: "1px solid rgba(22,163,74,0.3)"
+                }}>
+                🔥 14 Hari
+              </span>
+            </div>
+            <p className="text-[10px] sm:text-xs leading-tight text-muted-foreground" style={{ color: T.text3 }}>
+              Direset setiap hari pukul 00:00 WIB
+            </p>
           </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span className="text-[10px] sm:text-xs px-2.5 py-1 rounded-full whitespace-nowrap font-bold flex items-center gap-1"
-              style={{
-                backgroundColor: isDark ? "rgba(22,163,74,0.2)" : "#DCFCE7",
-                color: "#16A34A",
-                border: "1px solid rgba(22,163,74,0.3)"
-              }}>
-              🔥 14 Hari
-            </span>
-            {BADGE_ASSETS["Dedicated Agent"] && <img src={BADGE_ASSETS["Dedicated Agent"]} alt="Dedicated Agent" className="w-7 h-7 sm:w-8 sm:h-8 object-contain flex-shrink-0" />}
+          <div className="flex-shrink-0">
+            {BADGE_ASSETS["Dedicated Agent"] && (
+              <img 
+                src={BADGE_ASSETS["Dedicated Agent"]} 
+                alt="Dedicated Agent" 
+                className="w-11 h-11 sm:w-13 sm:h-13 object-contain filter drop-shadow(0 2px 6px rgba(0,0,0,0.2))" 
+              />
+            )}
           </div>
         </div>
         {dailyQuests.map((q, i) => <QuestRow key={i} q={q} accent="#16A34A" />)}
