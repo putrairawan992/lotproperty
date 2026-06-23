@@ -491,17 +491,19 @@ export default function ProspectPage() {
               const sc = STATUS_CFG[p.status];
               return (
                 <div key={p.id} className="p-4 cursor-pointer transition-all hover:bg-muted/10 relative" onClick={() => openDetail(p.id)}>
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                    <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap uppercase tracking-wider"
-                      style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
+                  <div className="absolute top-3 right-3" onClick={e => e.stopPropagation()}>
                     <ActionMenu prospect={p} alignUp={index === filtered.length - 1} />
                   </div>
-                  <div className="flex items-start gap-3 mb-3 pr-24">
+                  <div className="flex items-start gap-3 mb-3 pr-8">
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
                       style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm truncate" style={{ color: T.text1 }}>{p.name}</p>
-                      <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
+                      <div className="mt-1">
+                        <span className="inline-block text-[10px] px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap uppercase tracking-wider"
+                          style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
+                      </div>
+                      <p className="text-xs flex items-center gap-1 mt-1.5" style={{ color: T.text3 }}>
                         <Phone size={10} />{p.phone}
                       </p>
                     </div>
