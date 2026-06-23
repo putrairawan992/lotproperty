@@ -24,35 +24,35 @@ const getRankMedal = (rank: string) => {
 
 export const ALL_BADGES: { name: string; rarity: Rarity; locked: boolean; req: string }[] = [
   // MYTHIC (2 total, 2 unlocked)
-  { name: "Billionaire Club",    rarity: "mythic",    locked: false, req: "Komisi ≥ Rp 1 Miliar" },
-  { name: "Perfectionist Agent", rarity: "mythic",    locked: false, req: "Daily Quest 100 hari berturut" },
+  { name: "Billionaire Club", rarity: "mythic", locked: false, req: "Komisi ≥ Rp 1 Miliar" },
+  { name: "Perfectionist Agent", rarity: "mythic", locked: false, req: "Daily Quest 100 hari berturut" },
   // LEGENDARY (9 total, 6 unlocked)
-  { name: "Listing Factory",     rarity: "legendary", locked: false, req: "100 Listing" },
-  { name: "The Consultant",      rarity: "legendary", locked: true,  req: "100 Prospect" },
-  { name: "The Leader",          rarity: "legendary", locked: false, req: "10 Recruit" },
-  { name: "The Professor",       rarity: "legendary", locked: false, req: "50 Module Selesai" },
-  { name: "Deal Maker",          rarity: "legendary", locked: false, req: "100 Transaksi" },
-  { name: "500 Million Club",    rarity: "legendary", locked: true,  req: "Komisi ≥ Rp 500 Juta" },
-  { name: "100 Million Club",    rarity: "legendary", locked: false, req: "Komisi ≥ Rp 100 Juta" },
-  { name: "The Influencer",      rarity: "legendary", locked: true,  req: "100 Konten" },
-  { name: "Exceptional Agent",   rarity: "legendary", locked: false, req: "Daily Quest 30 hari berturut" },
+  { name: "Listing Factory", rarity: "legendary", locked: false, req: "100 Listing" },
+  { name: "The Consultant", rarity: "legendary", locked: true, req: "100 Prospect" },
+  { name: "The Leader", rarity: "legendary", locked: false, req: "10 Recruit" },
+  { name: "The Professor", rarity: "legendary", locked: false, req: "50 Module Selesai" },
+  { name: "Deal Maker", rarity: "legendary", locked: false, req: "100 Transaksi" },
+  { name: "500 Million Club", rarity: "legendary", locked: true, req: "Komisi ≥ Rp 500 Juta" },
+  { name: "100 Million Club", rarity: "legendary", locked: false, req: "Komisi ≥ Rp 100 Juta" },
+  { name: "The Influencer", rarity: "legendary", locked: true, req: "100 Konten" },
+  { name: "Exceptional Agent", rarity: "legendary", locked: false, req: "Daily Quest 30 hari berturut" },
   // EPIC (6 total, 5 unlocked)
-  { name: "Listing Distributor", rarity: "epic",      locked: false, req: "50 Listing" },
-  { name: "Prospect Tycoon",     rarity: "epic",      locked: true,  req: "50 Prospect" },
-  { name: "Team Builder",        rarity: "epic",      locked: false, req: "5 Recruit" },
-  { name: "Content Creator",     rarity: "epic",      locked: false, req: "25 Konten" },
-  { name: "Dedicated Agent",     rarity: "epic",      locked: false, req: "Daily Quest 7 hari berturut" },
-  { name: "Certified Agent",     rarity: "epic",      locked: false, req: "10 Module Selesai" },
+  { name: "Listing Distributor", rarity: "epic", locked: false, req: "50 Listing" },
+  { name: "Prospect Tycoon", rarity: "epic", locked: true, req: "50 Prospect" },
+  { name: "Team Builder", rarity: "epic", locked: false, req: "5 Recruit" },
+  { name: "Content Creator", rarity: "epic", locked: false, req: "25 Konten" },
+  { name: "Dedicated Agent", rarity: "epic", locked: false, req: "Daily Quest 7 hari berturut" },
+  { name: "Certified Agent", rarity: "epic", locked: false, req: "10 Module Selesai" },
   // RARE (4 total, 3 unlocked)
-  { name: "Listing Supplier",    rarity: "rare",      locked: false, req: "25 Listing" },
-  { name: "Prospect Hunter",     rarity: "rare",      locked: false, req: "25 Prospect" },
-  { name: "Talent Scout",        rarity: "rare",      locked: true,  req: "3 Recruit" },
-  { name: "The Loyalist",        rarity: "rare",      locked: false, req: "Login 30 hari berturut" },
+  { name: "Listing Supplier", rarity: "rare", locked: false, req: "25 Listing" },
+  { name: "Prospect Hunter", rarity: "rare", locked: false, req: "25 Prospect" },
+  { name: "Talent Scout", rarity: "rare", locked: true, req: "3 Recruit" },
+  { name: "The Loyalist", rarity: "rare", locked: false, req: "Login 30 hari berturut" },
   // COMMON (4 total, 2 unlocked)
-  { name: "First Listing",       rarity: "common",    locked: false, req: "1 Listing" },
-  { name: "First Prospect",      rarity: "common",    locked: true,  req: "1 Prospect" },
-  { name: "First Recruit",       rarity: "common",    locked: true,  req: "1 Recruit" },
-  { name: "First Deal",          rarity: "common",    locked: false, req: "1 Transaksi" },
+  { name: "First Listing", rarity: "common", locked: false, req: "1 Listing" },
+  { name: "First Prospect", rarity: "common", locked: true, req: "1 Prospect" },
+  { name: "First Recruit", rarity: "common", locked: true, req: "1 Recruit" },
+  { name: "First Deal", rarity: "common", locked: false, req: "1 Transaksi" },
 ];
 
 const HOF_ACHIEVEMENTS = [
@@ -217,10 +217,10 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const loading = useLoading(1200);
   const { isDark } = useTheme();
   const { getQueryParam, navigate, search } = useLocation();
-  
+
   const [showAllHof, setShowAllHof] = useState(false);
   const [showAllBadges, setShowAllBadges] = useState(false);
-  
+
   // Featured badges states (limited to 3)
   const [featured, setFeatured] = useState<string[]>([
     "Billionaire Club",
@@ -231,7 +231,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const [showManageBadges, setShowManageBadges] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [activeLang, setActiveLang] = useState<"ID" | "EN" | "CN">("ID");
-  
+
   const [successToast, setSuccessToast] = useState("");
   const [errorAlert, setErrorAlert] = useState("");
 
@@ -365,7 +365,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       </AnimatePresence>
 
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
+
         {/* ==================== LEFT COLUMN ==================== */}
         <div className="space-y-6">
           {/* Profile Card with Lightning Animation */}
@@ -417,36 +417,57 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-[#C8922A] opacity-75" />
                 </div>
               </div>
-              
+
               {/* Name & Tier */}
               <h2 className="font-extrabold text-2xl tracking-wide text-gradient-gold" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                RONALD RICHY
+                {AGENT_PROFILE.name}
               </h2>
-              <div className="flex justify-center mt-1 mb-4">
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full font-bold text-xs text-white bg-[#7040D0] border border-[#7040D0]/20 shadow-md uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                  ⭐ Elite Agent
+              <div className="flex justify-center mt-1.5 mb-4">
+                <span
+                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-extrabold text-xs text-white backdrop-blur-md uppercase tracking-wider glossy-glare transition-all"
+                  style={{
+                    fontFamily: "'Rajdhani', sans-serif",
+                    backgroundColor: isDark ? "rgba(112, 64, 208, 0.16)" : "rgba(112, 64, 208, 0.08)",
+                    border: `1px solid ${isDark ? "rgba(112, 64, 208, 0.45)" : "rgba(112, 64, 208, 0.25)"}`,
+                    boxShadow: isDark
+                      ? "0 0 14px rgba(112, 64, 208, 0.35), inset 0 1px 0 rgba(255,255,255,0.18)"
+                      : "0 2px 8px rgba(112, 64, 208, 0.12), inset 0 1px 0 rgba(255,255,255,0.6)"
+                  }}
+                >
+                  <LevelBadge title={AGENT_PROFILE.tier} size={26} showPlate={false} />
+                  <span
+                    className="font-black"
+                    style={{
+                      color: isDark ? "#FFD700" : "#7040D0",
+                      textShadow: isDark
+                        ? "0 0 10px rgba(112,64,208,0.85), 0 1.5px 2px rgba(0,0,0,0.95)"
+                        : "0 1px 1px rgba(255,255,255,0.85)"
+                    }}
+                  >
+                    {AGENT_PROFILE.tier}
+                  </span>
                 </span>
               </div>
 
               {/* Mobile & Desktop Stats Block */}
               <div className="w-full border-t border-border/40 pt-4 mb-4">
                 <div className="grid grid-cols-3 gap-2 mb-4">
-                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
-                    style={{ borderColor: "#E8A50030", backgroundColor: isDark ? "rgba(232,165,0,0.06)" : "#FFFAED" }}>
-                    <LevelBadge title="Elite Agent" size={32} />
-                    <p className="font-bold text-base mt-1 text-[#E8A500]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>23</p>
+                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border glossy-glare"
+                    style={{ borderColor: "#E8A50040", backgroundColor: isDark ? "rgba(232,165,0,0.08)" : "#FFFAED" }}>
+                    <TrendingUp size={18} className="text-[#E8A500]" />
+                    <p className="font-bold text-base mt-1 text-[#E8A500] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>{AGENT_PROFILE.level}</p>
                     <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">LEVEL</p>
                   </div>
-                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
-                    style={{ borderColor: "#C8922A30", backgroundColor: isDark ? "rgba(200,146,42,0.06)" : "#FDF6E3" }}>
+                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border glossy-glare"
+                    style={{ borderColor: "#C8922A40", backgroundColor: isDark ? "rgba(200,146,42,0.08)" : "#FDF6E3" }}>
                     <Trophy size={18} className="text-[#C8922A]" />
-                    <p className="font-bold text-base mt-1 text-[#C8922A]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18</p>
+                    <p className="font-bold text-base mt-1 text-[#C8922A] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18</p>
                     <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">HOF HITS</p>
                   </div>
-                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border"
-                    style={{ borderColor: "#7040D030", backgroundColor: isDark ? "rgba(112,64,208,0.06)" : "#F5F0FD" }}>
+                  <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border glossy-glare"
+                    style={{ borderColor: "#7040D040", backgroundColor: isDark ? "rgba(112,64,208,0.08)" : "#F5F0FD" }}>
                     <Award size={18} className="text-[#7040D0]" />
-                    <p className="font-bold text-base mt-1 text-[#7040D0]" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18/25</p>
+                    <p className="font-bold text-base mt-1 text-[#7040D0] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18/25</p>
                     <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">BADGES</p>
                   </div>
                 </div>
@@ -465,14 +486,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 <button onClick={() => setShowShareModal(true)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border border-[#C8922A]/40 text-[#C8922A] bg-[#C8922A]/5 hover:bg-[#C8922A]/10 transition-all uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                   <Share2 size={13} /> Share Profile
                 </button>
-                
+
                 {onLogout && (
                   <button
                     onClick={onLogout}
                     className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-all border border-red-500/20 text-red-500 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/30"
                   >
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
                     </svg>
                     Logout
                   </button>
@@ -517,7 +538,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
         {/* ==================== RIGHT COLUMN ==================== */}
         <div className="lg:col-span-2 space-y-6">
-          
+
           {/* ==================== HALL OF FAME HISTORY ==================== */}
           <div
             className="relative overflow-hidden rounded-[28px] p-6 sm:p-8"
@@ -619,12 +640,12 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
-                { l: "Total Commission",  v: "Rp 4.250.000.000", icon: DollarSign, color: "#E8A500" },
-                { l: "Total Transactions", v: "127",              icon: TrendingUp, color: "#16A34A" },
-                { l: "Total Listings",    v: "892",               icon: Building2,  color: "#1A6FC4" },
-                { l: "Total Prospects",   v: "532",               icon: Users,      color: "#7B2FBE" },
-                { l: "Total Recruits",    v: "14",                icon: Star,       color: "#C8922A" },
-                { l: "Training Completed",v: "67",                icon: BookOpen,   color: "#308030" },
+                { l: "Total Commission", v: "Rp 4.250.000.000", icon: DollarSign, color: "#E8A500" },
+                { l: "Total Transactions", v: "127", icon: TrendingUp, color: "#16A34A" },
+                { l: "Total Listings", v: "892", icon: Building2, color: "#1A6FC4" },
+                { l: "Total Prospects", v: "532", icon: Users, color: "#7B2FBE" },
+                { l: "Total Recruits", v: "14", icon: Star, color: "#C8922A" },
+                { l: "Training Completed", v: "67", icon: BookOpen, color: "#308030" },
               ].map((s, i) => (
                 <div
                   key={i}
@@ -667,7 +688,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
             {/* circular ring + progress bars layout */}
             <div className="flex flex-col md:flex-row items-center justify-between border border-border/30 rounded-2xl p-5 bg-muted/10 gap-6 md:gap-12">
-              
+
               {/* Progress Circle (Left) */}
               <div className="flex items-center gap-5 justify-center flex-shrink-0">
                 <div className="relative flex items-center justify-center w-24 h-24 flex-shrink-0">
@@ -720,7 +741,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   const total = ALL_BADGES.filter(b => b.rarity === r).length;
                   const percent = total > 0 ? Math.round((count / total) * 100) : 0;
                   const activeColor = isDark ? c.darkColor : c.color;
-                  
+
                   return (
                     <div key={r} className="flex items-center gap-3 w-full">
                       <span className="w-20 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest text-left" style={{ color: activeColor, fontFamily: "'Rajdhani', sans-serif" }}>
@@ -779,14 +800,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     const isFeatured = featured.includes(b.name);
                     const asset = BADGE_ASSETS[b.name];
                     const c = RARITY_CFG[b.rarity];
-                    
+
                     if (b.locked) return null;
 
                     return (
                       <button key={i} onClick={() => handleToggleBadge(b.name)}
                         className="p-3.5 rounded-2xl border transition-all flex flex-col items-center justify-center relative text-center"
-                        style={{ 
-                          borderColor: isFeatured ? "#E8A500" : T.border, 
+                        style={{
+                          borderColor: isFeatured ? "#E8A500" : T.border,
                           backgroundColor: isFeatured ? (isDark ? "rgba(232, 165, 0, 0.08)" : "#FFFAED") : T.card,
                           boxShadow: isFeatured ? "0 0 10px rgba(232, 165, 0, 0.15)" : "none"
                         }}>
@@ -821,7 +842,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
               className="bg-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl border shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[90vh]"
               style={{ borderColor: T.border }}>
-              
+
               {/* Header with Language Tabs */}
               <div className="px-5 sm:px-6 py-4 border-b flex flex-col sm:flex-row gap-3 items-center justify-between bg-muted/10 flex-shrink-0" style={{ borderColor: T.border }}>
                 <div className="flex items-center justify-between w-full sm:w-auto gap-3">
@@ -836,9 +857,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   {(["ID", "EN", "CN"] as const).map(l => (
                     <button key={l} onClick={() => setActiveLang(l)}
                       className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
-                      style={{ 
+                      style={{
                         backgroundColor: activeLang === l ? "#E8A500" : "transparent",
-                        color: activeLang === l ? "white" : T.text3 
+                        color: activeLang === l ? "white" : T.text3
                       }}>
                       {l === "ID" ? "🇮🇩 ID" : l === "EN" ? "🇬🇧 EN" : "🇨🇳 中文"}
                     </button>
@@ -859,7 +880,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-[#C8922A]" />
                   <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-[#C8922A]" />
                   <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-[#C8922A]" />
-                  
+
                   {/* Plaque title */}
                   <div className="text-center mb-4">
                     <p className="text-[10px] font-black tracking-widest text-[#C8922A]" style={{ fontFamily: "var(--font-display)" }}>{L.title}</p>
@@ -868,7 +889,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
                   {/* Agent Info Row */}
                   <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border/20" style={{ borderColor: T.border }}>
-                    <img src={AGENT_PROFILE.photo} alt="Ronald Richy" 
+                    <img src={AGENT_PROFILE.photo} alt="Ronald Richy"
                       className="w-14 h-14 rounded-full object-cover object-top border border-[#C8922A] p-0.5 bg-card flex-shrink-0" />
                     <div>
                       <h4 className="font-extrabold text-xl leading-none text-gradient-gold" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{AGENT_PROFILE.name}</h4>

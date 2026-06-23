@@ -32,7 +32,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
 
   if (asset) {
     return (
-      <div className={`relative flex flex-col items-center gap-1 overflow-hidden transition-all hover:scale-105 ${cfg.pad}`}
+      <div className={`relative flex flex-col items-center gap-1 overflow-hidden transition-all hover:scale-105 glossy-glare ${cfg.pad}`}
         style={sharedCard}>
         {locked && (
           <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
@@ -52,7 +52,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
             transform: size !== "sm" && (name === "Billionaire Club" || name === "Perfectionist Agent") ? "scale(1.05)" : undefined,
           }} />
         {cfg.nameSz > 0 && (
-          <span className="text-center font-bold leading-tight w-full px-0.5"
+          <span className="text-center font-bold leading-tight w-full px-0.5 text-shine-3d"
             style={{
               color: badgeColor,
               fontFamily: "'Rajdhani', sans-serif",
@@ -97,7 +97,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
     : "M30,13 L46,20 L46,38 C46,49 30,59 30,59 C30,59 14,49 14,38 L14,20 Z";
 
   return (
-    <div className={`relative flex flex-col items-center gap-1 overflow-hidden transition-all hover:scale-105 ${cfg.pad}`}
+    <div className={`relative flex flex-col items-center gap-1 overflow-hidden transition-all hover:scale-105 glossy-glare ${cfg.pad}`}
       style={sharedCard}>
       {locked && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
@@ -131,7 +131,7 @@ export default function BadgeShield({ rarity, name, locked = false, size = "md" 
         <text x="30" y="41" textAnchor="middle" fontSize="20" fill={badgeColor} fontFamily="Arial">{icon}</text>
       </svg>
       {cfg.nameSz > 0 && (
-        <span className="text-center leading-tight font-bold w-full px-0.5"
+        <span className="text-center leading-tight font-bold w-full px-0.5 text-shine-3d"
           style={{
             color: badgeColor,
             fontFamily: "'Rajdhani', sans-serif",

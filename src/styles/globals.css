@@ -449,6 +449,58 @@ html.theme-transitioning *::after {
   box-shadow: 0 0 12px rgba(232,165,0,0.2);
 }
 
+/* ── 3D Glossy Glare Shimmer Animation ─────────────────────────── */
+@keyframes glare-sheen {
+  0% { transform: translate(-105%, -105%) rotate(45deg); }
+  100% { transform: translate(105%, 105%) rotate(45deg); }
+}
+
+.glossy-glare {
+  position: relative;
+  overflow: hidden;
+}
+
+.glossy-glare::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.42) 50%,
+    rgba(255, 255, 255, 0.08) 54%,
+    transparent 62%
+  );
+  transform: translate(-105%, -105%) rotate(45deg);
+  pointer-events: none;
+  animation: glare-sheen 4.2s infinite ease-in-out;
+}
+
+.glossy-glare:hover::after {
+  animation-duration: 1.8s;
+}
+
+/* ── 3D Shiny Glare Text Effect ────────────────────────────────── */
+.text-shine-3d {
+  text-shadow: 
+    0 1px 0 rgba(255,255,255,0.25), 
+    0 -1.2px 0 rgba(0,0,0,0.65), 
+    0 2px 4px rgba(0,0,0,0.4),
+    0 0 12px rgba(232,165,0,0.3);
+  letter-spacing: 0.05em;
+}
+
+.dark .text-shine-3d {
+  text-shadow: 
+    0 1px 0 rgba(255,255,255,0.15), 
+    0 -1.2px 0 rgba(0,0,0,0.85), 
+    0 2px 5px rgba(0,0,0,0.7),
+    0 0 14px rgba(232,165,0,0.5);
+}
+
 /* ── Reduced motion preference ─────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   .xp-bar-fill::after { animation: none; }
@@ -462,5 +514,7 @@ html.theme-transitioning *::after {
   .padi-sway-left,
   .padi-sway-right { animation: none; }
   .card-hover:hover { transform: none; }
+  .glossy-glare::after { animation: none; }
   * { transition-duration: 0ms !important; }
 }
+
