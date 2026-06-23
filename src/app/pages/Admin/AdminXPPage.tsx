@@ -41,17 +41,18 @@ export default function AdminXPPage() {
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: T.text2 }}>Tipe</label>
               <div className="flex gap-2">
                 {(["add","deduct"] as const).map(t => (
                   <button key={t} onClick={() => setType(t)}
+                    type="button"
                     className="flex-1 py-2.5 rounded-xl text-sm font-bold border transition-all"
                     style={{
-                      backgroundColor: type === t ? (t === "add" ? "#16A34A" : "#DC2626") : "white",
-                      color: type === t ? "white" : "#6B7280",
-                      borderColor: type === t ? (t === "add" ? "#16A34A" : "#DC2626") : "var(--border)",
+                      backgroundColor: type === t ? (t === "add" ? "#16A34A" : "#DC2626") : "transparent",
+                      color: type === t ? "white" : T.text3,
+                      borderColor: type === t ? (t === "add" ? "#16A34A" : "#DC2626") : T.border,
                     }}>
                     {t === "add" ? "+ Tambah" : "− Kurangi"}
                   </button>
@@ -63,7 +64,7 @@ export default function AdminXPPage() {
               <input type="number" value={amount} onChange={e => setAmount(e.target.value)}
                 placeholder="0"
                 className="w-full px-3.5 rounded-xl border outline-none bg-card"
-                style={{ height: 48, borderColor: T.border, fontSize: 14 }} />
+                style={{ height: 48, borderColor: T.border, fontSize: 14, color: T.text1 }} />
             </div>
           </div>
 

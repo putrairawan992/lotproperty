@@ -3,7 +3,7 @@ import { Check } from "lucide-react";
 import Card from "../../components/Card";
 import { T } from "../../types";
 import { useTabQuery } from "../../routes";
-import { COMMISSION_DATA_LIST } from "../../appData";
+import { COMMISSION_DATA_LIST, AGENT_PHOTOS } from "../../appData";
 
 export default function AdminCommissionPage() {
   const [claims, setClaims] = useState(COMMISSION_DATA_LIST);
@@ -47,47 +47,167 @@ export default function AdminCommissionPage() {
           ))}
         </div>
 
-        <div className="divide-y" style={{ borderColor: "var(--border)" }}>
-          {shown.map(c => (
-            <div key={c.id} className="flex items-center gap-4 px-5 py-4 flex-wrap">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <span className="font-semibold text-sm" style={{ color: T.text1 }}>{c.agent}</span>
-                  <span className="text-xs px-2 py-0.5 rounded font-bold"
-                    style={{ backgroundColor: typeBg[c.type] || "#F3F4F6", color: typeColor[c.type] || "#6B7280" }}>
-                    {c.type}
-                  </span>
+        {/* Mobile Card Layout */}
+        <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
+          {shown.map(c => {
+            const initials = c.agent.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+            const avatar = AGENT_PHOTOS[initials];
+            return (
+              <div key={c.id} className="p-4 space-y-3 relative">
+                {/* Top: Agent Info */}
+                <div className="flex items-center gap-3">
+                  {avatar ? (
+                    <img src={avatar} alt={c.agent} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ backgroundColor: "var(--muted)", color: T.text1 }}>
+                      {initials}
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="font-semibold text-sm" style={{ color: T.text1 }}>{c.agent}</span>
+                      <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider"
+                        style={{ backgroundColor: typeBg[c.type] || "var(--muted)", color: typeColor[c.type] || T.text3 }}>
+                        {c.type}
+                      </span>
+                    </div>
+                    <p className="text-[10px] mt-0.5" style={{ color: T.text3 }}>Diajukan: {c.submitted}</p>
+                  </div>
                 </div>
-                <p className="text-xs" style={{ color: T.text3 }}>{c.property}</p>
-                <p className="text-xs" style={{ color: T.text3 }}>{c.submitted}</p>
-              </div>
-              <div className="text-right flex-shrink-0">
-                <p className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 16, color: T.text1 }}>{c.amount}</p>
-                <p className="text-xs font-semibold" style={{ color: "#C8922A" }}>{c.xp}</p>
-              </div>
-              {tab === "Pending" && (
-                <div className="flex gap-2 flex-shrink-0">
-                  <button onClick={() => approve(c.id)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold transition-all"
-                    style={{ backgroundColor: "#16A34A", color: "white" }}>Approve</button>
-                  <button onClick={() => setRejectId(c.id)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold"
-                    style={{ backgroundColor: "#FEE2E2", color: "#DC2626" }}>Tolak</button>
+
+                {/* Middle: Property & Amount info */}
+                <div className="p-3 rounded-xl border space-y-1.5" style={{ borderColor: T.border, backgroundColor: T.muted }}>
+                  <p className="text-xs" style={{ color: T.text2 }}>{c.property}</p>
+                  <div className="flex items-center justify-between pt-1.5 border-t" style={{ borderColor: T.border }}>
+                    <p className="text-xs" style={{ color: T.text3 }}>Jumlah Komisi</p>
+                    <p className="font-bold text-sm" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>{c.amount}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs" style={{ color: T.text3 }}>Reward XP</p>
+                    <p className="text-xs font-bold" style={{ color: "#C8922A" }}>{c.xp}</p>
+                  </div>
                 </div>
-              )}
-              {tab !== "Pending" && (
-                <span className="text-xs px-2.5 py-1 rounded-full font-semibold flex-shrink-0"
-                  style={{ backgroundColor: tab === "Approved" ? "#DCFCE7" : "#FEE2E2", color: tab === "Approved" ? "#16A34A" : "#DC2626" }}>
-                  {tab}
-                </span>
-              )}
-            </div>
-          ))}
+
+                {/* Bottom: Action Buttons */}
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  {tab === "Pending" ? (
+                    <>
+                      <button onClick={() => setRejectId(c.id)}
+                        className="flex-1 py-2 rounded-xl text-xs font-bold border transition-all text-center"
+                        style={{ borderColor: "#DC2626", color: "#DC2626", backgroundColor: "transparent" }}>
+                        Tolak
+                      </button>
+                      <button onClick={() => approve(c.id)}
+                        className="flex-1 py-2 rounded-xl text-xs font-bold text-white text-center"
+                        style={{ backgroundColor: "#16A34A" }}>
+                        Approve
+                      </button>
+                    </>
+                  ) : (
+                    <div className="w-full flex justify-end">
+                      <span className="text-xs px-3 py-1 rounded-full font-bold uppercase tracking-wider"
+                        style={{
+                          backgroundColor: tab === "Approved" ? "#DCFCE7" : "#FEE2E2",
+                          color: tab === "Approved" ? "#16A34A" : "#DC2626"
+                        }}>
+                        {tab}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
           {shown.length === 0 && (
-            <div className="py-10 text-center" style={{ color: T.text3 }}>
+            <div className="py-10 text-center text-sm" style={{ color: T.text3 }}>
               Tidak ada klaim {tab.toLowerCase()}
             </div>
           )}
+        </div>
+
+        {/* Desktop Table Layout */}
+        <div className="hidden md:block overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b text-xs font-semibold" style={{ borderColor: T.border, color: T.text3 }}>
+                <th className="text-left px-5 py-3.5">AGENT</th>
+                <th className="text-left px-5 py-3.5">PROPERTI</th>
+                <th className="text-left px-5 py-3.5">JUMLAH KOMISI</th>
+                <th className="text-left px-5 py-3.5">XP REWARD</th>
+                <th className="text-left px-5 py-3.5">DIAJUKAN</th>
+                <th className="text-right px-5 py-3.5">ACTION</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y" style={{ borderColor: T.border }}>
+              {shown.map(c => {
+                const initials = c.agent.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+                const avatar = AGENT_PHOTOS[initials];
+                return (
+                  <tr key={c.id} className="hover:bg-muted/10 transition-colors">
+                    <td className="px-5 py-4">
+                      <div className="flex items-center gap-3">
+                        {avatar ? (
+                          <img src={avatar} alt={c.agent} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                            style={{ backgroundColor: "var(--muted)", color: T.text1 }}>
+                            {initials}
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-semibold text-sm" style={{ color: T.text1 }}>{c.agent}</p>
+                          <span className="inline-block text-[10px] px-2 py-0.5 mt-0.5 rounded font-bold uppercase tracking-wider"
+                            style={{ backgroundColor: typeBg[c.type] || "var(--muted)", color: typeColor[c.type] || T.text3 }}>
+                            {c.type}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-4 text-sm" style={{ color: T.text2 }}>{c.property}</td>
+                    <td className="px-5 py-4 text-sm font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>{c.amount}</td>
+                    <td className="px-5 py-4 text-sm font-semibold" style={{ color: "#C8922A" }}>{c.xp}</td>
+                    <td className="px-5 py-4 text-xs" style={{ color: T.text3 }}>{c.submitted}</td>
+                    <td className="px-5 py-4 text-right">
+                      {tab === "Pending" ? (
+                        <div className="flex gap-2 justify-end">
+                          <button onClick={() => setRejectId(c.id)}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border"
+                            style={{ borderColor: "#DC2626", color: "#DC2626", backgroundColor: "transparent" }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#FEE2E2")}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
+                            Tolak
+                          </button>
+                          <button onClick={() => approve(c.id)}
+                            className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-white transition-all"
+                            style={{ backgroundColor: "#16A34A" }}
+                            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#15803D")}
+                            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#16A34A")}>
+                            Approve
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="inline-block text-xs px-2.5 py-1 rounded-full font-semibold uppercase tracking-wider"
+                          style={{
+                            backgroundColor: tab === "Approved" ? "#DCFCE7" : "#FEE2E2",
+                            color: tab === "Approved" ? "#16A34A" : "#DC2626"
+                          }}>
+                          {tab}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+              {shown.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="py-10 text-center text-sm" style={{ color: T.text3 }}>
+                    Tidak ada klaim {tab.toLowerCase()}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </Card>
 
