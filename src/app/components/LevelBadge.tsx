@@ -22,18 +22,17 @@ export default function LevelBadge({
   // Increase image size slightly for better visibility
   const imgSize = Math.round(size * (showPlate ? 0.90 : 0.98));
   const isCircle = size < 44;
-  
-  // Calculate relative sizes for shadows and borders to prevent wash-out on small elements
   const shadowBlur = Math.max(3, Math.round(size * 0.12));
   const borderThickness = size < 40 ? 1 : 1.5;
+  const borderRadius = showPlate ? (isCircle ? "50%" : Math.max(10, Math.round(size * 0.22))) : undefined;
 
   return (
     <div
-      className="relative flex-shrink-0 flex items-center justify-center"
+      className={`relative flex-shrink-0 flex items-center justify-center ${showPlate ? "glossy-glare overflow-hidden" : ""}`}
       style={{
         width: size,
         height: size,
-        borderRadius: showPlate ? (isCircle ? "50%" : Math.max(10, Math.round(size * 0.22))) : 0,
+        borderRadius,
         background: showPlate
           ? isDark
             ? `radial-gradient(circle at 50% 30%, ${color}35 0%, rgba(255,255,255,0.06) 60%, rgba(0,0,0,0.2) 100%)`

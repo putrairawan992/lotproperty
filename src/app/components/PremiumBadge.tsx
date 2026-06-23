@@ -14,7 +14,7 @@ export default function PremiumBadge({ name, rarity, locked = false, size = 96 }
 
   return (
     <div className="flex flex-col items-center gap-2">
-      <div className="relative flex items-center justify-center rounded-2xl p-3"
+      <div className="relative flex items-center justify-center rounded-2xl p-3 overflow-hidden glossy-glare"
         style={{
           background: locked
             ? T.muted

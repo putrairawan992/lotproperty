@@ -50,7 +50,7 @@ export default function HofBadgeCoin({
           : `0 2px 8px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)`,
         flexShrink: 0,
       }}
-      className="relative transition-transform duration-200 hover:scale-110 cursor-pointer"
+      className="relative transition-transform duration-200 hover:scale-110 cursor-pointer overflow-hidden glossy-glare"
       title={badgeName}
     >
       <img
