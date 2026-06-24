@@ -92,7 +92,7 @@ export const PAGE_TITLE: Record<Page, string> = {
   event:         "Event Detail",
   attendance:    "Absensi",
   help:          "Help",
-  board:         "Forum Info Board",
+  board:         "LOT FJB",
 };
 
 export const NAV_TABS = [

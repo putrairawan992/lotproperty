@@ -1,8 +1,7 @@
 import { useState, useContext, useEffect, useMemo } from "react";
 import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2, ChevronRight, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import html2canvas from "html2canvas";
-import agentPhoto from "@/imports/PHOTO-2021-03-09-22-22-41.png";
+import html2canvas from "html2canvas-pro";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
 import LevelBadge from "../components/LevelBadge";
@@ -12,9 +11,10 @@ import useLoading from "../hooks/useLoading";
 import { T, Rarity, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
+import { ronaldRichyBase64 } from "@/imports/ronald-richy-base64";
+import { eliteAgentBase64 } from "@/imports/elite-agent-base64";
 import HofAwardLaurel from "../components/HofAwardLaurel";
 import HofFallingStars from "../components/HofFallingStars";
-import { getCategoryTheme } from "../components/HofSection";
 
 const getRankMedal = (rank: string) => {
   const norm = rank.replace("#", "").trim();
@@ -147,7 +147,7 @@ const AGENT_PROFILE = {
   totalListings: "892",
   totalProspects: "532",
   commission: "Rp 4.250.000.000",
-  photo: agentPhoto,
+  photo: ronaldRichyBase64,
 };
 
 function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
@@ -236,6 +236,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
   const [successToast, setSuccessToast] = useState("");
   const [errorAlert, setErrorAlert] = useState("");
+  const [isDownloading, setIsDownloading] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(search);
@@ -294,6 +295,187 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     }
   };
 
+  const drawRoundedRectPath = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number,
+  ) => {
+    const radius = Math.max(0, Math.min(r, w / 2, h / 2));
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + w - radius, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + radius);
+    ctx.lineTo(x + w, y + h - radius);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - radius, y + h);
+    ctx.lineTo(x + radius, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+  };
+
+  const loadDataImage = (src: string) =>
+    new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.decoding = "async";
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new Error("Failed to load image"));
+      img.src = src;
+    });
+
+  const buildCompatibilityCardCanvas = async () => {
+    const width = 1580;
+    const height = 1000;
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas 2D context unavailable");
+
+    const Lx = SHARE_LANG[activeLang];
+
+    ctx.save();
+    drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
+    ctx.clip();
+
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, "#1C1812");
+    bg.addColorStop(1, "#0A0A0A");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    const glow = ctx.createRadialGradient(width * 0.74, height * 0.26, 8, width * 0.74, height * 0.26, width * 0.5);
+    glow.addColorStop(0, "rgba(200,146,42,0.35)");
+    glow.addColorStop(1, "rgba(200,146,42,0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.restore();
+
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "rgba(200,146,42,0.55)";
+    drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
+    ctx.stroke();
+
+    ctx.fillStyle = "#E8A500";
+    ctx.font = "900 33px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(Lx.title, 62, 92);
+
+    ctx.fillStyle = "#8a8a8a";
+    ctx.font = "700 21px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("OFFICIAL AGENT", width - 250, 92);
+
+    ctx.strokeStyle = "rgba(255,255,255,0.11)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(52, 122);
+    ctx.lineTo(width - 52, 122);
+    ctx.stroke();
+
+    const leftX = 72;
+    ctx.fillStyle = "#FFFFFF";
+    ctx.font = "900 54px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(AGENT_PROFILE.name, leftX, 222);
+
+    ctx.fillStyle = "#C8922A";
+    ctx.font = "900 28px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(AGENT_PROFILE.tier.toUpperCase(), leftX, 264);
+
+    ctx.fillStyle = "#9ca3af";
+    ctx.font = "700 19px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(Lx.commission.toUpperCase(), leftX, 338);
+
+    ctx.fillStyle = "#E8A500";
+    ctx.font = "900 61px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(AGENT_PROFILE.commission, leftX, 412);
+
+    const statYTop = 460;
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(leftX, statYTop);
+    ctx.lineTo(960, statYTop);
+    ctx.stroke();
+
+    const statBlockW = 296;
+    const stats = [
+      { label: Lx.levelLabel.toUpperCase(), value: String(AGENT_PROFILE.level) },
+      { label: Lx.listings.toUpperCase(), value: AGENT_PROFILE.totalListings },
+      { label: Lx.prospects.toUpperCase(), value: AGENT_PROFILE.totalProspects },
+    ];
+
+    stats.forEach((s, i) => {
+      const x = leftX + i * statBlockW;
+      ctx.fillStyle = "#8a8a8a";
+      ctx.font = "700 17px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(s.label, x, 502);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 48px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(s.value, x, 558);
+
+      if (i < stats.length - 1) {
+        ctx.strokeStyle = "rgba(255,255,255,0.12)";
+        ctx.beginPath();
+        ctx.moveTo(x + statBlockW - 18, 478);
+        ctx.lineTo(x + statBlockW - 18, 560);
+        ctx.stroke();
+      }
+    });
+
+    try {
+      const photo = await loadDataImage(AGENT_PROFILE.photo);
+      const px = 1090;
+      const py = 188;
+      const pw = 382;
+      const ph = 538;
+
+      ctx.save();
+      drawRoundedRectPath(ctx, px, py, pw, ph, 28);
+      ctx.clip();
+      ctx.drawImage(photo, px, py, pw, ph);
+
+      const photoShade = ctx.createLinearGradient(0, py + ph * 0.55, 0, py + ph);
+      photoShade.addColorStop(0, "rgba(0,0,0,0)");
+      photoShade.addColorStop(1, "rgba(0,0,0,0.65)");
+      ctx.fillStyle = photoShade;
+      ctx.fillRect(px, py, pw, ph);
+      ctx.restore();
+
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = "#C8922A";
+      drawRoundedRectPath(ctx, px, py, pw, ph, 28);
+      ctx.stroke();
+
+      const tierImg = await loadDataImage(eliteAgentBase64);
+      const tierSize = 128;
+      ctx.drawImage(tierImg, px + pw - tierSize - 8, py + ph - tierSize + 16, tierSize, tierSize);
+    } catch {
+      ctx.fillStyle = "#171717";
+      drawRoundedRectPath(ctx, 1090, 188, 382, 538, 28);
+      ctx.fill();
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "700 24px 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("Photo unavailable", 1174, 470);
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(52, height - 72);
+    ctx.lineTo(width - 52, height - 72);
+    ctx.stroke();
+
+    ctx.fillStyle = "#7a7a7a";
+    ctx.font = "700 16px 'Segoe UI', Arial, sans-serif";
+    ctx.fillText("LOT PROPERTY", 60, height - 40);
+    ctx.fillText("CERTIFIED DIGITAL SCOREBOARD", width - 370, height - 40);
+
+    return canvas;
+  };
+
   const handleDownloadCard = async () => {
     const cardEl = document.getElementById("profile-scorecard-card");
     if (!cardEl) {
@@ -301,31 +483,81 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       return;
     }
 
-    triggerToast("Menyiapkan unduhan gambar kartu profil...");
-    
-    try {
-      // Small timeout to allow render states to settle
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      const canvas = await html2canvas(cardEl, {
-        useCORS: true,
-        scale: 3, // Premium high-resolution download
-        backgroundColor: null,
-        logging: false
-      });
-      
-      const dataUrl = canvas.toDataURL("image/png");
+    const downloadFromCanvas = async (canvas: HTMLCanvasElement) => {
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/png", 1)
+      );
+
+      if (!blob) throw new Error("Canvas export returned empty blob");
+
+      const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = dataUrl;
+      a.href = objectUrl;
       a.download = `LOT-Scorecard-${AGENT_PROFILE.slug}-${activeLang}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      URL.revokeObjectURL(objectUrl);
+    };
+
+    setIsDownloading(true);
+    triggerToast("Menyiapkan unduhan gambar kartu profil...");
+    
+    try {
+      // Small timeout to allow render states to settle
+      await new Promise(resolve => setTimeout(resolve, 600));
+
+      const renderDomCanvas = (scale: number, backgroundColor: string | null) =>
+        html2canvas(cardEl, {
+          useCORS: true,
+          allowTaint: false,
+          scale,
+          backgroundColor,
+          logging: false,
+          foreignObjectRendering: false,
+          removeContainer: true,
+          onclone: (clonedDoc) => {
+            const clonedCard = clonedDoc.getElementById("profile-scorecard-card");
+            if (!clonedCard) return;
+
+            clonedCard.querySelectorAll<HTMLElement>("*").forEach((node) => {
+              node.style.animation = "none";
+              node.style.transition = "none";
+              node.style.filter = "none";
+              node.style.backdropFilter = "none";
+              node.style.setProperty("font-family", "system-ui, -apple-system, 'Segoe UI', Arial, sans-serif", "important");
+            });
+
+            clonedCard.querySelectorAll<HTMLElement>(".text-gradient-gold").forEach((el) => {
+              el.style.background = "none";
+              el.style.color = "#E8A500";
+              el.style.setProperty("-webkit-text-fill-color", "#E8A500");
+            });
+          },
+        });
+
+      try {
+        const canvas = await renderDomCanvas(3, null);
+        await downloadFromCanvas(canvas);
+      } catch {
+        try {
+          // Fallback pass for browsers/styles that still taint the first render.
+          const fallbackCanvas = await renderDomCanvas(2, "#0A0A0A");
+          await downloadFromCanvas(fallbackCanvas);
+        } catch {
+          // Final fallback: render a local-only compatibility canvas (no DOM capture).
+          const compatibilityCanvas = await buildCompatibilityCardCanvas();
+          await downloadFromCanvas(compatibilityCanvas);
+          triggerToast("Mode kompatibilitas dipakai untuk unduhan kartu profil.");
+        }
+      }
       
       triggerToast("Gambar kartu profil berhasil diunduh!");
     } catch (err) {
       console.error(err);
       triggerError("Gagal mengunduh gambar kartu profil.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -445,7 +677,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   }}
                 />
                 <img
-                  src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"
+                  src={AGENT_PROFILE.photo}
                   alt="Ronald Richy"
                   className="w-full h-full object-cover object-top"
                   draggable={false}
@@ -1011,7 +1243,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                       </div>
                       {/* Floating level badge graphic */}
                       <div className="absolute -bottom-1.5 -right-1.5 z-20">
-                        <LevelBadge title={AGENT_PROFILE.tier} size={28} showPlate={false} />
+                        <LevelBadge title={AGENT_PROFILE.tier} size={28} showPlate={false} customAsset={eliteAgentBase64} />
                       </div>
                     </div>
                   </div>
@@ -1119,10 +1351,22 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
               {/* Share actions */}
               <div className="px-5 sm:px-6 py-4 border-t bg-card flex-shrink-0 flex gap-3" style={{ borderColor: T.border }}>
-                <button onClick={handleDownloadCard}
-                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#E8A500] text-white flex items-center justify-center gap-1.5 transition-all hover:bg-[#CC9200]"
-                  style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                  <Download size={14} /> Download Card
+                <button 
+                  onClick={handleDownloadCard}
+                  disabled={isDownloading}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#E8A500] text-white flex items-center justify-center gap-1.5 transition-all hover:bg-[#CC9200] disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ fontFamily: "'Rajdhani', sans-serif" }}
+                >
+                  {isDownloading ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download size={14} /> Download Card
+                    </>
+                  )}
                 </button>
                 <button onClick={closeShareModal}
                   className="flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all"

@@ -9,13 +9,15 @@ export default function LevelBadge({
   title,
   size = 64,
   showPlate = size >= 60,
+  customAsset,
 }: {
   title: string;
   size?: number;
   showPlate?: boolean;
+  customAsset?: string;
 }) {
   const { isDark } = useTheme();
-  const asset = LEVEL_ASSETS[title];
+  const asset = customAsset || LEVEL_ASSETS[title];
   if (!asset) return null;
 
   const color = levelColor(title);

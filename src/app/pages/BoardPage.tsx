@@ -84,6 +84,7 @@ export default function BoardPage() {
   const [category, setCategory] = useState<"WTB" | "WTR" | "INFO">("WTB");
   const [toast, setToast] = useState("");
   const [postsTodayCount, setPostsTodayCount] = useState(0);
+  const [isActive, setIsActive] = useState(false);
 
   // Initialize or fetch posts
   useEffect(() => {
@@ -216,25 +217,28 @@ export default function BoardPage() {
             className="font-extrabold text-2xl sm:text-3xl text-foreground flex items-center gap-2"
             style={{ fontFamily: "'Rajdhani', sans-serif", letterSpacing: "0.02em" }}
           >
-            <MessageSquare className="text-[#E8A500]" /> FORUM INFO BOARD
+            <MessageSquare className="text-[#E8A500]" /> LOT FJB
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            Media berbagi WTB, WTR, & Pengumuman Agen. Postingan otomatis terhapus setelah 7 hari.
+            Media Jual-Beli (FJB) & Info Agen. Postingan otomatis terhapus setelah 7 hari.
           </p>
         </div>
       </div>
 
-      {/* Write Post Box */}
-      <Card className="p-4 mb-6 border border-border/50 shadow-md">
-        <form onSubmit={handleCreatePost} className="space-y-4">
+      {/* Write Post Box - Threads style (Compact & Borderless border-b) */}
+      <div 
+        className="p-4 mb-5 border-b transition-colors duration-300 relative"
+        style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }}
+      >
+        <form onSubmit={handleCreatePost} className="space-y-3">
           <div className="flex gap-3">
             {/* My User Avatar */}
             <div className="flex-shrink-0">
               <div
-                className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold"
                 style={{
                   background: "linear-gradient(135deg, #E8A500, #C8922A)",
-                  fontSize: 12,
+                  fontSize: 11,
                   fontFamily: "'Rajdhani', sans-serif"
                 }}
               >
@@ -245,73 +249,90 @@ export default function BoardPage() {
             {/* Input field */}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold" style={{ color: T.text1 }}>
-                Ahmad Fadhil <span className="text-[10px] text-muted-foreground font-normal">· Senior Agent</span>
+                Ahmad Fadhil <span className="text-[9px] text-muted-foreground font-normal">· Senior Agent</span>
               </p>
               <textarea
                 value={content}
                 onChange={e => setContent(e.target.value)}
-                placeholder="Ada kebutuhan WTB / WTR baru? Tulis spesifikasinya disini..."
-                className="w-full mt-2 bg-transparent text-sm resize-none focus:outline-none placeholder-muted-foreground min-h-[70px]"
+                onFocus={() => setIsActive(true)}
+                onBlur={() => {
+                  setTimeout(() => {
+                    if (!content.trim()) setIsActive(false);
+                  }, 200);
+                }}
+                placeholder="Ada kebutuhan WTB, WTR, atau INFO? Tulis disini..."
+                className="w-full mt-1.5 bg-transparent text-sm resize-none focus:outline-none placeholder-muted-foreground/50 min-h-[40px] transition-all"
                 maxLength={300}
                 style={{ color: T.text1 }}
               />
             </div>
           </div>
 
-          {/* Action Row */}
-          <div className="flex items-center justify-between pt-3 border-t border-border/20 flex-wrap gap-2">
-            {/* Category Select Tabs */}
-            <div className="flex gap-1.5 p-1 bg-muted/40 rounded-xl" style={{ backgroundColor: T.muted }}>
-              {(["WTB", "WTR", "INFO"] as const).map(cat => {
-                const styles = getCategoryStyles(cat);
-                const active = category === cat;
-                return (
-                  <button
-                    key={cat}
-                    type="button"
-                    onClick={() => setCategory(cat)}
-                    className="px-3 py-1 rounded-lg text-[10px] font-bold tracking-wider transition-all"
-                    style={{
-                      backgroundColor: active ? styles.text : "transparent",
-                      color: active ? "white" : T.text3
-                    }}
-                  >
-                    {cat}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div className="flex items-center gap-3 ml-auto">
-              {/* Post Limit stats */}
-              <div className="text-right">
-                <p className="text-[10px] text-muted-foreground font-semibold">
-                  Post Hari Ini: <span className={postsTodayCount >= 3 ? "text-red-500 font-bold" : "text-[#E8A500] font-bold"}>{postsTodayCount}/3</span>
-                </p>
-              </div>
-
-              {/* Submit btn */}
-              <motion.button
-                type="submit"
-                disabled={!content.trim() || postsTodayCount >= 3}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="px-4 py-2 text-xs font-bold rounded-xl flex items-center gap-1 text-white transition-all shadow-sm"
-                style={{
-                  background: content.trim() && postsTodayCount < 3
-                    ? "linear-gradient(135deg, #E8A500, #C8922A)"
-                    : "rgba(100,100,100,0.15)",
-                  color: content.trim() && postsTodayCount < 3 ? "white" : "var(--muted-foreground)",
-                  cursor: content.trim() && postsTodayCount < 3 ? "pointer" : "not-allowed",
-                  fontFamily: "'Rajdhani', sans-serif"
-                }}
+          {/* Action Row - expands dynamically */}
+          <AnimatePresence>
+            {(isActive || content.trim()) && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
               >
-                <Plus size={13} strokeWidth={2.5} /> Posting
-              </motion.button>
-            </div>
-          </div>
+                <div className="flex items-center justify-between pt-2.5 border-t border-border/10 flex-wrap gap-2">
+                  {/* Category Select Tabs */}
+                  <div className="flex gap-1 p-0.5 bg-muted/40 rounded-xl" style={{ backgroundColor: T.muted }}>
+                    {(["WTB", "WTR", "INFO"] as const).map(cat => {
+                      const styles = getCategoryStyles(cat);
+                      const active = category === cat;
+                      return (
+                        <button
+                          key={cat}
+                          type="button"
+                          onClick={() => setCategory(cat)}
+                          className="px-2.5 py-0.5 rounded-lg text-[9px] font-bold tracking-wider transition-all cursor-pointer"
+                          style={{
+                            backgroundColor: active ? styles.text : "transparent",
+                            color: active ? "white" : T.text3
+                          }}
+                        >
+                          {cat}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex items-center gap-3 ml-auto">
+                    {/* Post Limit stats */}
+                    <div className="text-right">
+                      <p className="text-[9px] text-muted-foreground font-semibold">
+                        Post: <span className={postsTodayCount >= 3 ? "text-red-500 font-bold" : "text-[#E8A500] font-bold"}>{postsTodayCount}/3</span>
+                      </p>
+                    </div>
+
+                    {/* Submit btn */}
+                    <motion.button
+                      type="submit"
+                      disabled={!content.trim() || postsTodayCount >= 3}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="px-3.5 py-1.5 text-[11px] font-bold rounded-xl flex items-center gap-1 text-white transition-all shadow-sm cursor-pointer"
+                      style={{
+                        background: content.trim() && postsTodayCount < 3
+                          ? "linear-gradient(135deg, #E8A500, #C8922A)"
+                          : "rgba(100,100,100,0.12)",
+                        color: content.trim() && postsTodayCount < 3 ? "white" : "var(--muted-foreground)",
+                        cursor: content.trim() && postsTodayCount < 3 ? "pointer" : "not-allowed",
+                        fontFamily: "'Rajdhani', sans-serif"
+                      }}
+                    >
+                      <Plus size={11} strokeWidth={2.5} /> Posting
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </form>
-      </Card>
+      </div>
 
       {/* Posts Feed Stream */}
       <div className="space-y-4 relative">

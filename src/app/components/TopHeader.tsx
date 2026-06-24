@@ -82,7 +82,7 @@ export default function TopHeader({ page, onNav, onLogout }: {
               <div className="absolute right-0 top-full mt-1 rounded-xl border shadow-xl overflow-hidden"
                 style={{ minWidth: 180, backgroundColor: T.card, borderColor: T.border, zIndex: 60 }}>
                 {[
-                  { label: "Forum Board", icon: MessageSquare, page: "board" as Page },
+                  { label: "LOT FJB", icon: MessageSquare, page: "board" as Page },
                   { label: "Notification", icon: Bell, page: "notifications" as Page },
                   { label: "Help", icon: HelpCircle, page: "help" as Page },
                 ].map(({ label, icon: Icon, page: p }) => (
