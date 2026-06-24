@@ -264,7 +264,11 @@ export default function AdminAcademyPage() {
                   {m.videoUrl && (
                     <div className="text-[10px] text-muted-foreground bg-muted/20 px-3 py-2 rounded-xl flex items-center gap-2 border w-full sm:w-max min-w-0" style={{ borderColor: T.border }}>
                       <Play size={11} className="text-red-500 fill-red-500 flex-shrink-0" />
-                      <EllipsisTooltip text={m.videoUrl} className="font-mono text-muted-foreground/80 flex-1 min-w-0" />
+                      <EllipsisTooltip 
+                        text={m.videoUrl} 
+                        className="font-mono text-muted-foreground/80 truncate block" 
+                        containerClassName="flex-1 min-w-0"
+                      />
                     </div>
                   )}
                 </div>

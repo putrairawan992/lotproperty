@@ -13,7 +13,7 @@ interface EllipsisTooltipProps {
 export default function EllipsisTooltip({ 
   text, 
   className = "truncate max-w-full", 
-  containerClassName = "",
+  containerClassName = "block w-full",
   children,
   style
 }: EllipsisTooltipProps) {
@@ -48,7 +48,7 @@ export default function EllipsisTooltip({
 
   return (
     <div 
-      className={`relative inline-block max-w-full select-none ${containerClassName}`}
+      className={`relative max-w-full select-none ${containerClassName}`}
       onMouseEnter={() => isTruncated && setShow(true)}
       onMouseLeave={() => setShow(false)}
       onClick={handleToggle}
