@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Search, Users, Network, X } from "lucide-react";
+import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import LevelBadge from "../../components/LevelBadge";
@@ -14,6 +14,7 @@ interface TreeNodeData {
   recruitsCount: number;
   children: TreeNodeData[];
 }
+
 // Recursive TreeNode data structure based on recruitment relationships
 const TREE_ROOT: TreeNodeData = {
   name: "Rizki Pratama",
@@ -64,6 +65,34 @@ const TREE_ROOT: TreeNodeData = {
   ]
 };
 
+// Helper to map agent level to brand colors
+function getLevelColor(level: string): string {
+  if (level.includes("Legendary")) return "#C0392B";
+  if (level.includes("Super Elite")) return "#E8A500";
+  if (level.includes("Elite")) return "#7040D0";
+  if (level.includes("Senior")) return "#C8922A";
+  if (level.includes("Junior")) return "#2070C0";
+  return "#9CA3AF"; // Rookie Agent or default
+}
+
+// Recursive helper to calculate recruitment tree statistics
+function getTreeStats(node: TreeNodeData): { total: number; byLevel: Record<string, number> } {
+  let total = 1;
+  const byLevel: Record<string, number> = { [node.level]: 1 };
+
+  function recurse(n: TreeNodeData) {
+    n.children.forEach(child => {
+      total++;
+      byLevel[child.level] = (byLevel[child.level] || 0) + 1;
+      recurse(child);
+    });
+  }
+  
+  recurse(node);
+  return { total, byLevel };
+}
+
+// 1. Desktop TreeNode component (Horizontal layout chart)
 function TreeNode({
   node,
   search,
@@ -136,6 +165,143 @@ function TreeNode({
   );
 }
 
+// 2. Mobile TreeNode component (Collapsible nested list layout with hierarchy lines)
+function VerticalTreeNode({
+  node,
+  depth = 0,
+  search,
+  isDark,
+  onShowRecruits,
+}: {
+  node: TreeNodeData;
+  depth?: number;
+  search: string;
+  isDark: boolean;
+  onShowRecruits: (node: TreeNodeData) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(true);
+  const isMatch = search && node.name.toLowerCase().includes(search.toLowerCase());
+  const hasChildren = node.children && node.children.length > 0;
+  const lvlColor = getLevelColor(node.level);
+
+  const isAnyMatchActive = search.length > 0;
+  const isDimmed = isAnyMatchActive && !isMatch;
+
+  return (
+    <div className="w-full relative text-left py-1 select-none">
+      {/* Branch Line L-Shape for children (Themed gold threads) */}
+      {depth > 0 && (
+        <div 
+          className="absolute border-l border-b border-dashed transition-colors animate-fade-in"
+          style={{
+            left: "-14px",
+            top: "0px",
+            width: "14px",
+            height: "22px",
+            borderColor: isDark ? "rgba(232, 165, 0, 0.28)" : "rgba(200, 146, 42, 0.25)",
+            borderBottomLeftRadius: "6px",
+          }}
+        />
+      )}
+
+      <div 
+        className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-all border ${
+          isMatch 
+            ? "bg-[#E8A500]/10 border-[#E8A500] shadow-[0_0_12px_rgba(232,165,0,0.3)] scale-[1.01]" 
+            : isDark 
+              ? "bg-[#18181A]/80 border-[#2A2A2E] hover:bg-[#202024]/80 hover:border-[#3A3A40]" 
+              : "bg-white border-gray-100 hover:bg-gray-50/80 hover:shadow-sm"
+        }`}
+        style={{
+          borderLeftWidth: "4px",
+          borderLeftColor: lvlColor,
+          opacity: isDimmed ? 0.45 : 1.0,
+          filter: isDimmed ? "grayscale(0.2)" : "none"
+        }}
+      >
+        {/* Collapse/Expand Toggle */}
+        {hasChildren ? (
+          <button 
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-muted text-muted-foreground flex-shrink-0 transition-transform duration-200"
+            style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}
+          >
+            <ChevronRight size={14} />
+          </button>
+        ) : (
+          <div className="w-6 h-6 flex items-center justify-center flex-shrink-0">
+            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/30" />
+          </div>
+        )}
+
+        {/* Profile photo */}
+        <div className="w-8 h-8 rounded-full overflow-hidden border flex-shrink-0 shadow-sm" style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.06)" }}>
+          {node.photo ? (
+            <img src={node.photo} alt={node.name} className="w-full h-full object-cover" />
+          ) : (
+            <div 
+              className="w-full h-full flex items-center justify-center font-bold text-[10px]"
+              style={{ 
+                backgroundColor: lvlColor + "15", 
+                color: lvlColor 
+              }}
+            >
+              {node.initials}
+            </div>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-foreground truncate leading-tight">{node.name}</p>
+          <p 
+            className="text-[8px] font-extrabold uppercase tracking-widest leading-none mt-1"
+            style={{ color: lvlColor }}
+          >
+            {node.level}
+          </p>
+        </div>
+
+        {/* Recruits count badge */}
+        {node.recruitsCount > 0 && (
+          <button
+            onClick={() => onShowRecruits(node)}
+            className="px-2 py-0.5 bg-[#E8A500]/10 text-[#E8A500] font-black text-[8px] rounded-full uppercase tracking-wider hover:bg-[#E8A500]/25 transition-colors flex-shrink-0 cursor-pointer"
+            style={{ fontFamily: "'Rajdhani', sans-serif" }}
+          >
+            {node.recruitsCount} Recruits
+          </button>
+        )}
+      </div>
+
+      {/* Children container with animation */}
+      <AnimatePresence initial={false}>
+        {hasChildren && isOpen && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
+            className="w-full relative ml-3.5 pl-3.5 border-l border-dashed overflow-hidden"
+            style={{ borderColor: isDark ? "rgba(232, 165, 0, 0.2)" : "rgba(200, 146, 42, 0.15)" }}
+          >
+            {node.children.map((child, idx) => (
+              <VerticalTreeNode 
+                key={idx} 
+                node={child} 
+                depth={depth + 1} 
+                search={search} 
+                isDark={isDark} 
+                onShowRecruits={onShowRecruits} 
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function AdminAgentsPage() {
   const [activeTab, setActiveTab] = useState<"list" | "tree">("list");
   const [search, setSearch] = useState("");
@@ -143,6 +309,7 @@ export default function AdminAgentsPage() {
   const [agents, setAgents] = useState(AGENT_DATA_LIST);
   const [recruitsModal, setRecruitsModal] = useState<TreeNodeData | null>(null);
   const { isDark } = useTheme();
+  const stats = getTreeStats(TREE_ROOT);
 
   const filtered = agents.filter(a =>
     (statusFilter === "All" || a.status === statusFilter) &&
@@ -153,32 +320,34 @@ export default function AdminAgentsPage() {
     setAgents(prev => prev.map(a => a.id === id ? { ...a, status } : a));
 
   const StatusChip = ({ s }: { s: string }) => {
-    const cfg = s === "Active" ? { bg: "#DCFCE7", c: "#16A34A" }
-              : s === "Pending"   ? { bg: "#FEF3C7", c: "#D97706" }
-              : { bg: "#FEE2E2", c: "#DC2626" };
+    const cfg = s === "Active" ? { bg: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7", c: isDark ? "#34D399" : "#16A34A" }
+              : s === "Pending"   ? { bg: isDark ? "rgba(217, 119, 6, 0.15)" : "#FEF3C7", c: isDark ? "#F59E0B" : "#D97706" }
+              : { bg: isDark ? "rgba(220, 38, 38, 0.15)" : "#FEE2E2", c: isDark ? "#F87171" : "#DC2626" };
     return <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: cfg.bg, color: cfg.c }}>{s}</span>;
   };
 
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3.5 items-start border-b pb-4" style={{ borderColor: T.border }}>
         <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>Agent Management</h1>
         
-        {/* Tab switch */}
-        <div className="flex gap-1 p-1 rounded-xl" style={{ backgroundColor: T.muted }}>
+        {/* Tab switch placed below the title */}
+        <div className="flex gap-1 p-1 rounded-xl w-full sm:w-auto" style={{ backgroundColor: T.muted }}>
           <button onClick={() => { setActiveTab("list"); setSearch(""); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all"
             style={{ 
               backgroundColor: activeTab === "list" ? (isDark ? "#2A241C" : "white") : "transparent", 
-              color: activeTab === "list" ? "#E8A500" : "#6B7280" 
+              color: activeTab === "list" ? "#E8A500" : (isDark ? "#9CA3AF" : "#6B7280"),
+              boxShadow: activeTab === "list" && !isDark ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
             }}>
             <Users size={13} /> Daftar Agen
           </button>
           <button onClick={() => { setActiveTab("tree"); setSearch(""); }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all"
             style={{ 
               backgroundColor: activeTab === "tree" ? (isDark ? "#2A241C" : "white") : "transparent", 
-              color: activeTab === "tree" ? "#E8A500" : "#6B7280" 
+              color: activeTab === "tree" ? "#E8A500" : (isDark ? "#9CA3AF" : "#6B7280"),
+              boxShadow: activeTab === "tree" && !isDark ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
             }}>
             <Network size={13} /> Pohon Rekrutmen
           </button>
@@ -196,13 +365,18 @@ export default function AdminAgentsPage() {
                   <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: T.text3 }} />
                   <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                     placeholder="Cari nama atau email..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl border text-sm outline-none bg-card"
+                    className="w-full pl-9 pr-9 py-2 rounded-xl border text-sm outline-none bg-card"
                     style={{ borderColor: T.border }} />
+                  {search && (
+                    <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted text-muted-foreground transition-all cursor-pointer">
+                      <X size={12} />
+                    </button>
+                  )}
                 </div>
-                <div className="flex gap-1">
+                <div className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-none" style={{ scrollbarWidth: "none" }}>
                   {["All","Active","Pending","Suspended"].map(s => (
                     <button key={s} onClick={() => setStatusFilter(s)}
-                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                      className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex-shrink-0"
                       style={{ 
                         backgroundColor: statusFilter === s ? "#E8A500" : (isDark ? "rgba(255,255,255,0.05)" : "#F3F4F6"), 
                         color: statusFilter === s ? "white" : "var(--foreground)" 
@@ -213,7 +387,8 @@ export default function AdminAgentsPage() {
                 </div>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Desktop Table View (hidden on mobile) */}
+              <div className="overflow-x-auto hidden sm:block">
                 <table className="w-full">
                   <thead><tr className="border-b" style={{ borderColor: T.border }}>
                     {["AGENT","KANTOR","LEVEL","STATUS","BERGABUNG","AKSI"].map(h => (
@@ -259,6 +434,124 @@ export default function AdminAgentsPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Mobile Card List View (visible only on mobile) */}
+              <div className="block sm:hidden p-4 space-y-4 bg-muted/10">
+                {filtered.length === 0 ? (
+                  <div className="p-8 text-center text-sm" style={{ color: T.text3 }}>Tidak ada agen ditemukan</div>
+                ) : (
+                  filtered.map(a => {
+                    const statusBorderColor = a.status === "Active" ? "#10B981" : a.status === "Pending" ? "#F59E0B" : "#EF4444";
+                    const lvlColor = getLevelColor(a.level);
+                    const isCardMatch = search && (a.name.toLowerCase().includes(search.toLowerCase()) || a.email.toLowerCase().includes(search.toLowerCase()));
+                    const isAnySearchActive = search.length > 0;
+                    const isCardDimmed = isAnySearchActive && !isCardMatch;
+                    
+                    return (
+                      <motion.div 
+                        key={a.id} 
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`rounded-2xl border shadow-sm overflow-hidden transition-all bg-card flex flex-col ${
+                          isCardMatch 
+                            ? "ring-2 ring-[#E8A500] shadow-[0_0_12px_rgba(232,165,0,0.3)] scale-[1.01]" 
+                            : "hover:shadow-md hover:scale-[1.005]"
+                        }`}
+                        style={{ 
+                          borderColor: T.border,
+                          borderLeft: `4px solid ${statusBorderColor}`,
+                          opacity: isCardDimmed ? 0.5 : 1.0,
+                          filter: isCardDimmed ? "grayscale(0.1)" : "none"
+                        }}
+                      >
+                        {/* Upper info section */}
+                        <div className="p-4 space-y-3">
+                          <div className="flex items-center gap-3">
+                            <LevelBadge title={a.level} size={36} />
+                            <div className="flex-1 min-w-0 text-left">
+                              <p className="text-sm font-bold truncate text-foreground" style={{ color: T.text1 }}>{a.name}</p>
+                              <p className="text-xs truncate text-muted-foreground" style={{ color: T.text3 }}>{a.email}</p>
+                              <span 
+                                className="inline-block text-[8px] font-black uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded-md"
+                                style={{ backgroundColor: lvlColor + "12", color: lvlColor }}
+                              >
+                                {a.level}
+                              </span>
+                            </div>
+                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0 self-start">
+                              <StatusChip s={a.status} />
+                              <div className="flex items-center gap-1.5">
+                                {a.phone && (
+                                  <a 
+                                    href={`tel:${a.phone}`} 
+                                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-all bg-[#1A6FC4]/10 text-[#1A6FC4] dark:bg-[#1A6FC4]/25 dark:text-[#60A5FA] hover:scale-110 active:scale-95 cursor-pointer"
+                                    title="Hubungi Telepon"
+                                  >
+                                    <Phone size={12} />
+                                  </a>
+                                )}
+                                <a 
+                                  href={`mailto:${a.email}`} 
+                                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all bg-[#E8A500]/10 text-[#E8A500] dark:bg-[#E8A500]/25 dark:text-[#FBBF24] hover:scale-110 active:scale-95 cursor-pointer"
+                                  title="Kirim Email"
+                                >
+                                  <Mail size={12} />
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Office & Joined metadata with micro-icons */}
+                          <div className="grid grid-cols-2 gap-3 pt-3 text-xs border-t" style={{ borderColor: T.border }}>
+                            <div className="text-left flex items-start gap-1.5">
+                              <MapPin size={13} className="mt-0.5 text-muted-foreground flex-shrink-0" style={{ color: T.text3 }} />
+                              <div className="min-w-0">
+                                <p className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground" style={{ color: T.text3 }}>KANTOR</p>
+                                <p className="font-semibold text-foreground truncate mt-0.5" style={{ color: T.text2 }}>{a.office}</p>
+                              </div>
+                            </div>
+                            <div className="text-left flex items-start gap-1.5">
+                              <Calendar size={13} className="mt-0.5 text-muted-foreground flex-shrink-0" style={{ color: T.text3 }} />
+                              <div>
+                                <p className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground" style={{ color: T.text3 }}>BERGABUNG</p>
+                                <p className="font-semibold text-foreground mt-0.5" style={{ color: T.text2 }}>{a.joined}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Action buttons panel */}
+                        <div className="px-4 pb-3 flex gap-2">
+                          {a.status === "Pending" && (
+                            <button 
+                              onClick={() => updateStatus(a.id, "Active")}
+                              className="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#DCFCE7] text-[#16A34A] hover:bg-[#DCFCE7]/80 dark:bg-[#16A34A]/15 dark:text-[#34D399] dark:hover:bg-[#16A34A]/25"
+                            >
+                              <Check size={13} /> Approve
+                            </button>
+                          )}
+                          {a.status === "Active" && (
+                            <button 
+                              onClick={() => updateStatus(a.id, "Suspended")}
+                              className="flex-1 py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2]/80 dark:bg-[#DC2626]/15 dark:text-[#F87171] dark:hover:bg-[#DC2626]/25"
+                            >
+                              <ShieldAlert size={13} /> Suspend
+                            </button>
+                          )}
+                          {a.status === "Suspended" && (
+                            <button 
+                              onClick={() => updateStatus(a.id, "Active")}
+                              className="flex-1 py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#EEF5FC] text-[#1A6FC4] hover:bg-[#EEF5FC]/80 dark:bg-[#1A6FC4]/15 dark:text-[#60A5FA] dark:hover:bg-[#1A6FC4]/25"
+                            >
+                              <Check size={13} /> Aktifkan
+                            </button>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                )}
+              </div>
             </Card>
           </motion.div>
         )}
@@ -266,20 +559,60 @@ export default function AdminAgentsPage() {
         {/* TAB 2: RECRUITMENT TREE VIEW */}
         {activeTab === "tree" && (
           <motion.div key="tree" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+            {/* Tree Summary Stats Dashboard */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-2xl border text-left bg-card shadow-sm relative overflow-hidden" style={{ borderColor: T.border }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.text3 }}>Total Jaringan</p>
+                <p className="text-lg font-black mt-1" style={{ color: T.text1, fontFamily: "'Rajdhani', sans-serif" }}>{stats.total} Agen</p>
+                <div className="absolute right-2.5 bottom-2.5 text-muted-foreground/10"><Users size={20} /></div>
+              </div>
+              <div className="p-3.5 rounded-2xl border text-left bg-card shadow-sm relative overflow-hidden" style={{ borderColor: T.border }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.text3 }}>Elite Agent</p>
+                <p className="text-lg font-black mt-1" style={{ color: getLevelColor("Elite Agent"), fontFamily: "'Rajdhani', sans-serif" }}>
+                  {stats.byLevel["Elite Agent"] || 0}
+                </p>
+                <div className="absolute right-2.5 bottom-2.5" style={{ color: `${getLevelColor("Elite Agent")}10` }}><Award size={20} /></div>
+              </div>
+              <div className="p-3.5 rounded-2xl border text-left bg-card shadow-sm relative overflow-hidden" style={{ borderColor: T.border }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.text3 }}>Senior Agent</p>
+                <p className="text-lg font-black mt-1" style={{ color: getLevelColor("Senior Agent"), fontFamily: "'Rajdhani', sans-serif" }}>
+                  {stats.byLevel["Senior Agent"] || 0}
+                </p>
+                <div className="absolute right-2.5 bottom-2.5" style={{ color: `${getLevelColor("Senior Agent")}10` }}><Award size={20} /></div>
+              </div>
+              <div className="p-3.5 rounded-2xl border text-left bg-card shadow-sm relative overflow-hidden" style={{ borderColor: T.border }}>
+                <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.text3 }}>Junior & Rookie</p>
+                <p className="text-lg font-black mt-1" style={{ color: getLevelColor("Junior Agent"), fontFamily: "'Rajdhani', sans-serif" }}>
+                  {(stats.byLevel["Junior Agent"] || 0) + (stats.byLevel["Rookie Agent"] || 0)}
+                </p>
+                <div className="absolute right-2.5 bottom-2.5" style={{ color: `${getLevelColor("Junior Agent")}10` }}><Users size={20} /></div>
+              </div>
+            </div>
+
             <Card className="p-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative flex-1" style={{ minWidth: 200 }}>
                   <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: T.text3 }} />
                   <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                     placeholder="Cari agen dalam jaringan rekrutmen..."
-                    className="w-full pl-9 pr-4 py-2 rounded-xl border text-sm outline-none bg-card"
+                    className="w-full pl-9 pr-9 py-2 rounded-xl border text-sm outline-none bg-card"
                     style={{ borderColor: T.border }} />
+                  {search && (
+                    <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted text-muted-foreground transition-all cursor-pointer">
+                      <X size={12} />
+                    </button>
+                  )}
                 </div>
               </div>
               
-              {/* Tree scroll window wrapper */}
+              {/* Mobile View: Vertical Folder Tree (visible on mobile) */}
+              <div className="block lg:hidden w-full border rounded-2xl p-2.5 bg-card/20" style={{ borderColor: T.border }}>
+                <VerticalTreeNode node={TREE_ROOT} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
+              </div>
+
+              {/* Desktop View: Horizontal Tree Scroll (visible on desktop) */}
               <div
-                className="w-full overflow-x-auto overscroll-x-contain py-8 bg-card/40 rounded-2xl border min-h-[500px]"
+                className="hidden lg:block w-full overflow-x-auto overscroll-x-contain py-8 bg-card/40 rounded-2xl border min-h-[500px]"
                 style={{ borderColor: T.border, WebkitOverflowScrolling: "touch" }}
               >
                 <div className="w-max min-w-full mx-auto px-8 sm:px-12">
@@ -313,7 +646,7 @@ export default function AdminAgentsPage() {
               onClick={e => e.stopPropagation()}
             >
               <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: T.border }}>
-                <div>
+                <div className="text-left">
                   <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: T.text3 }}>Daftar Rekrut</p>
                   <h3 className="font-bold text-base" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>
                     {recruitsModal.name}
@@ -325,7 +658,7 @@ export default function AdminAgentsPage() {
               </div>
 
               <div className="p-4 space-y-2 max-h-[60vh] overflow-y-auto">
-                <p className="text-xs mb-3" style={{ color: T.text3 }}>
+                <p className="text-xs mb-3 text-left" style={{ color: T.text3 }}>
                   {recruitsModal.recruitsCount} agen direkrut oleh {recruitsModal.name.split(" ")[0]}:
                 </p>
                 {recruitsModal.children.map((recruit, i) => (
@@ -341,11 +674,11 @@ export default function AdminAgentsPage() {
                         <div className="w-full h-full flex items-center justify-center bg-muted text-xs font-bold">{recruit.initials}</div>
                       )}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 text-left">
                       <p className="text-sm font-semibold truncate" style={{ color: T.text1 }}>{recruit.name}</p>
                       <p className="text-[10px] uppercase font-semibold tracking-wider" style={{ color: T.text3 }}>{recruit.level}</p>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "#E8A50015", color: "#E8A500" }}>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(232, 165, 0, 0.1)", color: "#E8A500" }}>
                       #{i + 1}
                     </span>
                   </div>

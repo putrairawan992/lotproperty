@@ -138,15 +138,16 @@ export default function AdminEventsPage() {
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between">
-        <div>
+      {/* Responsive stack header layout */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: T.border }}>
+        <div className="text-left">
           <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }} className="animate-fade-in">
             Event Management
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Kelola event khusus agen, tetapkan reward XP, dan atur banner promosi</p>
         </div>
         <button onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md">
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md w-full sm:w-auto self-start sm:self-auto cursor-pointer">
           {showAddForm ? "Batal" : <><Plus size={14} /> Buat Event</>}
         </button>
       </div>
@@ -264,60 +265,71 @@ export default function AdminEventsPage() {
       <div className="space-y-4">
         <h3 className="font-bold text-xs text-muted-foreground uppercase tracking-wider text-left">Daftar Event</h3>
         
-        {events.map((ev) => (
-          <Card key={ev.id} className="p-5 flex flex-col justify-between overflow-hidden" style={{ borderColor: ev.status === "Active" ? "rgba(232,165,0,0.3)" : "var(--border)" }}>
-            <div className="flex flex-col sm:flex-row gap-4">
-              
-              {/* Banner / Graphic placeholder */}
-              <div className="w-full sm:w-48 aspect-[1200/500] sm:aspect-square bg-muted rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0 border" style={{ borderColor: T.border }}>
-                {ev.banner ? (
-                  <img src={ev.banner} alt={ev.title} className="w-full h-full object-cover" />
-                ) : (
-                  <FileImage size={32} className="text-muted-foreground/30" />
-                )}
-              </div>
-
-              {/* Event details */}
-              <div className="flex-1 space-y-2 text-left">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-bold text-base text-foreground" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{ev.title}</h4>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border" style={{ borderColor: T.border }}>{ev.id}</span>
+        {events.map((ev, idx) => {
+          const statusColor = ev.status === "Active" ? "#E8A500" : "#2563EB";
+          
+          return (
+            <motion.div
+              key={ev.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: idx * 0.05 }}
+            >
+              <Card className="p-5 flex flex-col justify-between overflow-hidden relative hover:shadow-md transition-shadow duration-200" style={{ borderLeft: `4px solid ${statusColor}` }}>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  
+                  {/* Banner / Graphic placeholder */}
+                  <div className="w-full sm:w-48 aspect-[1200/500] sm:aspect-square bg-muted rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0 border" style={{ borderColor: T.border }}>
+                    {ev.banner ? (
+                      <img src={ev.banner} alt={ev.title} className="w-full h-full object-cover animate-fade-in" />
+                    ) : (
+                      <FileImage size={32} className="text-muted-foreground/30" />
+                    )}
                   </div>
-                  <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full ${ev.status === "Active" ? "bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20" : "bg-blue-500/10 text-blue-500 border border-blue-500/20"}`}>
-                    {ev.status}
-                  </span>
+
+                  {/* Event details */}
+                  <div className="flex-1 space-y-2.5 text-left">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
+                        <h4 className="font-bold text-base text-foreground leading-tight" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{ev.title}</h4>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border" style={{ borderColor: T.border }}>{ev.id}</span>
+                      </div>
+                      <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full flex-shrink-0 tracking-wider ${ev.status === "Active" ? "bg-[#16A34A]/10 text-[#16A34A] border border-[#16A34A]/20" : "bg-blue-500/10 text-blue-500 border border-blue-500/20"}`}>
+                        {ev.status}
+                      </span>
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{ev.desc}</p>
+                    
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs border-t border-border/40" style={{ borderColor: T.border }}>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Calendar size={13} className="text-[#E8A500]" />
+                        <span>{ev.start} s/d {ev.end}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground font-semibold">
+                        <span className="w-4 h-4 rounded bg-[#E8A500]/10 border border-[#E8A500]/20 text-[#E8A500] text-[8px] flex items-center justify-center font-bold">XP</span>
+                        <span className="text-[#E8A500]">{ev.xpPool.toLocaleString("id-ID")} XP</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Award size={13} className="text-[#7040D0]" />
+                        <span className="truncate max-w-[120px]">{ev.badge}</span>
+                      </div>
+                    </div>
+                  </div>
+
                 </div>
-                
-                <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{ev.desc}</p>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Calendar size={13} className="text-[#E8A500]" />
-                    <span>{ev.start} s/d {ev.end}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground font-semibold">
-                    <span className="w-4 h-4 rounded bg-[#E8A500]/10 border border-[#E8A500]/20 text-[#E8A500] text-[8px] flex items-center justify-center">XP</span>
-                    <span className="text-[#E8A500]">{ev.xpPool.toLocaleString("id-ID")} XP</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Award size={13} className="text-[#7040D0]" />
-                    <span>{ev.badge}</span>
-                  </div>
+
+                <div className="flex justify-end gap-2 border-t mt-4 pt-3" style={{ borderColor: T.border }}>
+                  <button onClick={() => handleDeleteEvent(ev.id)}
+                    className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20 cursor-pointer"
+                    title="Hapus Event">
+                    <Trash2 size={15} />
+                  </button>
                 </div>
-              </div>
-
-            </div>
-
-            <div className="flex justify-end gap-2 border-t mt-4 pt-3" style={{ borderColor: T.border }}>
-              <button onClick={() => handleDeleteEvent(ev.id)}
-                className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20"
-                title="Hapus Event">
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </Card>
-        ))}
+              </Card>
+            </motion.div>
+          );
+        })}
 
         {events.length === 0 && (
           <div className="text-center py-12 text-muted-foreground text-sm border border-dashed rounded-2xl" style={{ borderColor: T.border }}>

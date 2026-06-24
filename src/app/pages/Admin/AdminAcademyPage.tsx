@@ -132,15 +132,16 @@ export default function AdminAcademyPage() {
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between">
-        <div>
+      {/* Responsive stack header layout */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: T.border }}>
+        <div className="text-left">
           <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }} className="animate-fade-in">
             Academy Course Management
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Kelola modul pembelajaran, unggah materi edukasi, dan atur reward XP agen</p>
         </div>
         <button onClick={() => setShowAddForm(!showAddForm)}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md">
+          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md w-full sm:w-auto self-start sm:self-auto cursor-pointer">
           {showAddForm ? "Batal" : <><Plus size={14} /> Tambah Modul</>}
         </button>
       </div>
@@ -203,7 +204,7 @@ export default function AdminAcademyPage() {
                     style={{ borderColor: T.border }} />
                 </div>
 
-                <button type="submit" className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md">
+                <button type="submit" className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer">
                   Simpan & Rilis Modul
                 </button>
               </form>
@@ -216,59 +217,68 @@ export default function AdminAcademyPage() {
       <div className="space-y-4">
         <h3 className="font-bold text-xs text-muted-foreground uppercase tracking-wider text-left">Daftar Modul Pembelajaran</h3>
 
-        {modules.map((m) => (
-          <Card key={m.id} className="p-5 flex flex-col justify-between overflow-hidden" style={{ borderLeft: `4px solid ${m.color}` }}>
-            <div className="flex flex-col sm:flex-row gap-4">
-              
-              {/* Info detail */}
-              <div className="flex-1 space-y-2.5 text-left">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h4 className="font-bold text-base text-foreground" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{m.title}</h4>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-muted/65 text-muted-foreground border" style={{ borderColor: T.border }}>{m.id}</span>
+        {modules.map((m, idx) => (
+          <motion.div
+            key={m.id}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.05 }}
+          >
+            <Card className="p-5 flex flex-col justify-between overflow-hidden relative hover:shadow-md transition-shadow duration-200" style={{ borderLeft: `4px solid ${m.color}` }}>
+              <div className="flex flex-col sm:flex-row gap-4">
+                
+                {/* Info detail */}
+                <div className="flex-1 space-y-3 text-left">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex flex-col gap-1.5 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-bold text-base text-foreground leading-tight" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{m.title}</h4>
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border" style={{ borderColor: T.border }}>{m.id}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full flex-shrink-0 tracking-wider" style={{ backgroundColor: `${m.color}15`, color: m.color }}>
+                      {m.cat}
+                    </span>
                   </div>
-                  <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full" style={{ backgroundColor: `${m.color}15`, color: m.color }}>
-                    {m.cat}
-                  </span>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2 pb-1 text-xs border-t border-b border-border/40" style={{ borderColor: T.border }}>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock size={14} className="text-[#E8A500]" />
+                      <span className="font-medium text-foreground">{m.dur}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground font-semibold">
+                      <span className="w-4 h-4 rounded bg-[#E8A500]/10 border border-[#E8A500]/20 text-[#E8A500] text-[8px] flex items-center justify-center font-bold">XP</span>
+                      <span className="text-[#E8A500]">+{m.xp} XP</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <CheckCircle size={14} className="text-[#16A34A]" />
+                      <span className="font-medium text-foreground">{m.completers} Selesai</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Users size={14} className="text-[#1A6FC4]" />
+                      <span className="font-medium text-foreground">{m.inProgress} Belajar</span>
+                    </div>
+                  </div>
+
+                  {m.videoUrl && (
+                    <div className="text-[10px] text-muted-foreground bg-muted/20 px-3 py-2 rounded-xl flex items-center gap-2 border w-full sm:w-max min-w-0" style={{ borderColor: T.border }}>
+                      <Play size={11} className="text-red-500 fill-red-500 flex-shrink-0" />
+                      <span className="truncate font-mono text-muted-foreground/80 flex-1">{m.videoUrl}</span>
+                    </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1 text-xs">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Clock size={13} className="text-[#E8A500]" />
-                    <span>{m.dur}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground font-semibold">
-                    <span className="w-4 h-4 rounded bg-[#E8A500]/10 border border-[#E8A500]/20 text-[#E8A500] text-[8px] flex items-center justify-center">XP</span>
-                    <span className="text-[#E8A500]">+{m.xp} XP</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <CheckCircle size={13} className="text-[#16A34A]" />
-                    <span>{m.completers} Agen Selesai</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <Users size={13} className="text-[#1A6FC4]" />
-                    <span>{m.inProgress} Sedang Belajar</span>
-                  </div>
-                </div>
-
-                {m.videoUrl && (
-                  <div className="text-[11px] text-muted-foreground bg-muted/30 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 border" style={{ borderColor: T.border }}>
-                    <Play size={10} className="text-red-500 fill-red-500" />
-                    <span className="truncate max-w-md font-mono">{m.videoUrl}</span>
-                  </div>
-                )}
               </div>
 
-            </div>
-
-            <div className="flex justify-end gap-2 border-t mt-4 pt-3" style={{ borderColor: T.border }}>
-              <button onClick={() => handleDeleteModule(m.id)}
-                className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20"
-                title="Hapus Modul">
-                <Trash2 size={15} />
-              </button>
-            </div>
-          </Card>
+              <div className="flex justify-end gap-2 border-t mt-4 pt-3" style={{ borderColor: T.border }}>
+                <button onClick={() => handleDeleteModule(m.id)}
+                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20 cursor-pointer"
+                  title="Hapus Modul">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            </Card>
+          </motion.div>
         ))}
 
         {modules.length === 0 && (
