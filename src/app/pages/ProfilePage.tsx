@@ -1,6 +1,7 @@
 import { useState, useContext, useEffect, useMemo } from "react";
-import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2, ChevronRight } from "lucide-react";
+import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2, ChevronRight, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import html2canvas from "html2canvas";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
 import LevelBadge from "../components/LevelBadge";
@@ -292,10 +293,41 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     }
   };
 
-  const handleDownloadCard = () => {
-    triggerToast("Menyiapkan unduhan kartu profil...");
-    const text = buildShareText(activeLang, featured);
-    setTimeout(() => {
+  const handleDownloadCard = async () => {
+    const cardEl = document.getElementById("profile-scorecard-card");
+    if (!cardEl) {
+      triggerError("Elemen kartu tidak ditemukan!");
+      return;
+    }
+
+    triggerToast("Menyiapkan unduhan gambar kartu profil...");
+    
+    try {
+      // Small timeout to allow render states to settle
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      const canvas = await html2canvas(cardEl, {
+        useCORS: true,
+        scale: 3, // Premium high-resolution download
+        backgroundColor: null,
+        logging: false
+      });
+      
+      const dataUrl = canvas.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `LOT-Scorecard-${AGENT_PROFILE.slug}-${activeLang}.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      triggerToast("Gambar kartu profil berhasil diunduh!");
+    } catch (err) {
+      console.error(err);
+      triggerError("Gagal mengunduh gambar kartu. Mengunduh teks cadangan...");
+      
+      // Fallback text download if canvas rendering fails
+      const text = buildShareText(activeLang, featured);
       const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -305,8 +337,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-      triggerToast(`Kartu profil (${activeLang}) berhasil diunduh!`);
-    }, 800);
+    }
   };
 
   const handleShareLink = async () => {
@@ -333,6 +364,20 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     } catch {
       triggerError("Gagal menyalin link. Silakan coba lagi.");
     }
+  };
+
+  const handleSocialShare = async (platform: string) => {
+    const text = buildShareText(activeLang, featured);
+    const payload = `${text}\n\n🔗 ${shareUrl}`;
+
+    try {
+      await navigator.clipboard.writeText(payload);
+    } catch (e) {
+      // Ignore
+    }
+
+    handleDownloadCard();
+    triggerToast(`Membuka ${platform}... Scorecard diunduh & deskripsi disalin!`);
   };
 
   const closeShareModal = () => {
@@ -428,13 +473,12 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   style={{
                     fontFamily: "'Rajdhani', sans-serif",
                     backgroundColor: isDark ? "rgba(112, 64, 208, 0.16)" : "rgba(112, 64, 208, 0.08)",
-                    border: `1px solid ${isDark ? "rgba(112, 64, 208, 0.45)" : "rgba(112, 64, 208, 0.25)"}`,
                     boxShadow: isDark
                       ? "0 0 14px rgba(112, 64, 208, 0.35), inset 0 1px 0 rgba(255,255,255,0.18)"
                       : "0 2px 8px rgba(112, 64, 208, 0.12), inset 0 1px 0 rgba(255,255,255,0.6)"
                   }}
                 >
-                  <LevelBadge title={AGENT_PROFILE.tier} size={26} showPlate={false} />
+                  <LevelBadge title={AGENT_PROFILE.tier} size={34} showPlate={false} />
                   <span
                     className="font-black"
                     style={{
@@ -867,124 +911,209 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 </div>
               </div>
 
-              {/* Shareable Plaque Card Display Area */}
+              {/* Shareable Score Card Display Area */}
               <div className="p-4 sm:p-6 flex flex-col items-center bg-zinc-950/20 flex-1 overflow-y-auto min-h-0">
-                <div className="w-full rounded-2xl p-5 border relative overflow-hidden flex flex-col"
+                <div id="profile-scorecard-card" className="w-full max-w-[440px] rounded-2xl border relative overflow-hidden p-4 sm:p-5 flex flex-col justify-between"
                   style={{
-                    background: isDark ? "linear-gradient(135deg, #1C1812 0%, #0A0A0A 100%)" : "linear-gradient(135deg, #FFFFFF 0%, #FFFDF5 100%)",
+                    background: "linear-gradient(135deg, #1C1812 0%, #0A0A0A 100%)",
                     borderColor: "#C8922A60",
-                    borderWidth: "2px"
+                    borderWidth: "1.5px",
+                    boxShadow: "0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)",
+                    aspectRatio: "1.58 / 1"
                   }}>
-                  {/* Decorative corner borders */}
-                  <div className="absolute top-2 left-2 w-5 h-5 border-t-2 border-l-2 border-[#C8922A]" />
-                  <div className="absolute top-2 right-2 w-5 h-5 border-t-2 border-r-2 border-[#C8922A]" />
-                  <div className="absolute bottom-2 left-2 w-5 h-5 border-b-2 border-l-2 border-[#C8922A]" />
-                  <div className="absolute bottom-2 right-2 w-5 h-5 border-b-2 border-r-2 border-[#C8922A]" />
+                  {/* Background overlay glimmers */}
+                  <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-30 z-0"
+                    style={{ background: "radial-gradient(circle at 70% 30%, rgba(200, 146, 42, 0.35), transparent 70%)" }} />
 
-                  {/* Plaque title */}
-                  <div className="text-center mb-4">
-                    <p className="text-[10px] font-black tracking-widest text-[#C8922A]" style={{ fontFamily: "var(--font-display)" }}>{L.title}</p>
-                    <div className="w-12 h-0.5 bg-[#C8922A]/40 mx-auto mt-1" />
-                  </div>
+                  {/* Corner brackets decoration */}
+                  <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-[#C8922A] opacity-60" />
+                  <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-[#C8922A] opacity-60" />
+                  <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-[#C8922A] opacity-60" />
+                  <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[#C8922A] opacity-60" />
 
-                  {/* Agent Info Row */}
-                  <div className="flex items-center gap-4 mb-4 pb-4 border-b border-border/20" style={{ borderColor: T.border }}>
-                    <img src={AGENT_PROFILE.photo} alt="Ronald Richy"
-                      className="w-14 h-14 rounded-full object-cover object-top border border-[#C8922A] p-0.5 bg-card flex-shrink-0" />
+                  {/* Top Bar inside card */}
+                  <div className="flex justify-between items-center z-10 border-b border-white/10 pb-2">
                     <div>
-                      <h4 className="font-extrabold text-xl leading-none text-gradient-gold" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{AGENT_PROFILE.name}</h4>
-                      <p className="text-[10px] text-muted-foreground uppercase font-bold mt-1 tracking-wider">{AGENT_PROFILE.title}</p>
-                      <span className="inline-block text-[9px] px-2 py-0.5 bg-[#7040D0]/10 text-[#7040D0] rounded font-black border border-[#7040D0]/20 uppercase tracking-widest mt-1">
-                        {L.levelLabel}: {AGENT_PROFILE.level} · {AGENT_PROFILE.tier}
-                      </span>
+                      <p className="text-[7.5px] font-black tracking-widest text-[#E8A500]" style={{ fontFamily: "var(--font-display)" }}>
+                        {L.title}
+                      </p>
                     </div>
+                    <span className="text-[7.5px] font-black text-zinc-400 tracking-wider">
+                      OFFICIAL AGENT
+                    </span>
                   </div>
 
-                  {/* Stats Grid */}
-                  <div className="grid grid-cols-3 gap-2 mb-4">
-                    <div className="p-2 rounded-xl border border-border/20 bg-muted/10 text-center">
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase">{L.rank}</p>
-                      <p className="font-black text-sm text-[#E8A500] mt-0.5 font-display" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{AGENT_PROFILE.careerRank}</p>
-                    </div>
-                    <div className="p-2 rounded-xl border border-border/20 bg-muted/10 text-center">
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase">{L.listings}</p>
-                      <p className="font-black text-sm text-[#E8A500] mt-0.5 font-display" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{AGENT_PROFILE.totalListings}</p>
-                    </div>
-                    <div className="p-2 rounded-xl border border-border/20 bg-muted/10 text-center">
-                      <p className="text-[8px] font-bold text-muted-foreground uppercase">{L.prospects}</p>
-                      <p className="font-black text-sm text-[#E8A500] mt-0.5 font-display" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{AGENT_PROFILE.totalProspects}</p>
-                    </div>
-                  </div>
+                  {/* Body Content: Split Left/Right */}
+                  <div className="flex gap-4 items-center z-10 flex-1 py-2">
+                    {/* Left: Stats */}
+                    <div className="flex-1 space-y-2 text-left">
+                      <div>
+                        <h4 className="font-extrabold text-[13px] leading-none text-white" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                          {AGENT_PROFILE.name}
+                        </h4>
+                        <p className="text-[8px] text-[#C8922A] uppercase font-black mt-0.5 tracking-wider">
+                          {AGENT_PROFILE.tier}
+                        </p>
+                      </div>
 
-                  <div className="mb-4">
-                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-1.5 tracking-wider">{L.commission}</p>
-                    <p className="font-black text-xl text-gradient-gold font-display leading-none" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{AGENT_PROFILE.commission}</p>
-                  </div>
+                      {/* Main Metric: Career Commission */}
+                      <div>
+                        <p className="text-[7px] text-zinc-400 font-bold tracking-wider uppercase">{L.commission}</p>
+                        <h2 className="font-black text-base text-gradient-gold leading-none mt-0.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                          {AGENT_PROFILE.commission}
+                        </h2>
+                      </div>
 
-                  {/* HOF Achievements list summary */}
-                  <div className="mb-4 space-y-1.5">
-                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-wider">{L.hofTitle}</p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {HOF_ACHIEVEMENTS.slice(0, 4).map((h, i) => (
-                        <div key={i} className="flex justify-between items-center p-1.5 rounded bg-muted/20 border border-border/10 text-[9px] font-bold text-foreground">
-                          <span className="truncate">{h.cat}</span>
-                          <span className="text-[#C8922A] ml-1">{h.rank}</span>
+                      {/* Smaller stats: horizontal clean layout with vertical dividers */}
+                      <div className="flex items-center justify-between pt-1.5 border-t border-white/10 mt-1">
+                        <div className="flex-1 text-center">
+                          <p className="text-[6.5px] font-black text-zinc-400 uppercase tracking-wide">{L.levelLabel}</p>
+                          <p className="font-black text-[11px] text-white leading-none mt-0.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                            {AGENT_PROFILE.level}
+                          </p>
                         </div>
-                      ))}
+                        <div className="w-[1px] h-4 bg-white/10" />
+                        <div className="flex-1 text-center">
+                          <p className="text-[6.5px] font-black text-zinc-400 uppercase tracking-wide">{L.listings}</p>
+                          <p className="font-black text-[11px] text-white leading-none mt-0.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                            {AGENT_PROFILE.totalListings}
+                          </p>
+                        </div>
+                        <div className="w-[1px] h-4 bg-white/10" />
+                        <div className="flex-1 text-center">
+                          <p className="text-[6.5px] font-black text-zinc-400 uppercase tracking-wide">{L.prospects}</p>
+                          <p className="font-black text-[11px] text-white leading-none mt-0.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                            {AGENT_PROFILE.totalProspects}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right: Picture Card */}
+                    <div className="flex-shrink-0 relative">
+                      <div className="w-[84px] h-[104px] rounded-xl overflow-hidden border border-[#C8922A] shadow-md bg-zinc-950">
+                        <img src={AGENT_PROFILE.photo} alt="Ronald Richy" className="w-full h-full object-cover object-top" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                      </div>
+                      {/* Floating level badge graphic */}
+                      <div className="absolute -bottom-1.5 -right-1.5 z-20">
+                        <LevelBadge title={AGENT_PROFILE.tier} size={28} showPlate={false} />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Badges Display Row */}
-                  <div>
-                    <p className="text-[9px] font-black text-muted-foreground uppercase mb-2 tracking-wider">{L.featuredBadges}</p>
-                    <div className="flex gap-2">
-                      {featured.slice(0, 3).map((name, i) => {
-                        const b = ALL_BADGES.find(item => item.name === name);
-                        if (!b) return null;
-                        const asset = BADGE_ASSETS[b.name];
-                        const c = RARITY_CFG[b.rarity];
-                        return (
-                          <div key={i} className="flex items-center gap-1 px-2 py-1 rounded bg-card border text-[9px]" style={{ borderColor: `${c.color}25` }}>
-                            {asset && <img src={asset} alt={name} className="w-5 h-5 object-contain" />}
-                            <span className="font-bold truncate text-muted-foreground" style={{ maxWidth: 80 }}>{name}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* LotProperty watermark logo */}
-                  <div className="flex justify-end mt-4 pt-3 border-t border-border/20 text-[9px] font-black text-muted-foreground/40 italic font-display" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                    LOT PROPERTY OFFICIAL CERTIFIED AGENT
+                  {/* Footer watermark */}
+                  <div className="flex justify-between items-center z-10 border-t border-white/10 pt-1 text-[6.5px] font-bold text-zinc-500 uppercase tracking-widest leading-none">
+                    <span>LOT PROPERTY</span>
+                    <span>CERTIFIED DIGITAL SCOREBOARD</span>
                   </div>
                 </div>
+
                 <p className="text-[10px] text-muted-foreground text-center mt-3">{L.desc}</p>
 
-                {/* Share link preview */}
-                <div className="w-full mt-3 p-3 rounded-xl border bg-muted/20" style={{ borderColor: T.border }}>
-                  <p className="text-[9px] font-bold uppercase tracking-wider mb-1.5" style={{ color: T.text3 }}>Share Link</p>
+                {/* Share Link Preview Row */}
+                <div className="w-full mt-3 p-2.5 rounded-xl border bg-muted/20 text-left" style={{ borderColor: T.border }}>
+                  <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: T.text3 }}>Share Link</p>
                   <p className="text-[10px] break-all font-mono" style={{ color: "#E8A500" }}>{shareUrl}</p>
+                </div>
+
+                {/* SHARE TO SECTION */}
+                <div className="w-full mt-4 border-t pt-3" style={{ borderColor: T.border }}>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 text-center">
+                    Share to social media
+                  </p>
+                  
+                  {/* Scrollable list of custom social shares */}
+                  <div className="flex gap-4 overflow-x-auto justify-center pb-1 scrollbar-none" style={{ scrollbarWidth: "none" }}>
+                    {[
+                      {
+                        name: "Share via",
+                        icon: (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                          </svg>
+                        ),
+                        bg: "linear-gradient(135deg, #4B5563, #374151)",
+                        action: handleShareLink
+                      },
+                      {
+                        name: "Story",
+                        icon: (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                          </svg>
+                        ),
+                        bg: "linear-gradient(135deg, #F9CE34 0%, #EE2A7B 50%, #6228D7 100%)",
+                        action: () => handleSocialShare("Instagram Story")
+                      },
+                      {
+                        name: "Post",
+                        icon: (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
+                          </svg>
+                        ),
+                        bg: "linear-gradient(135deg, #FD1D1D, #E1306C)",
+                        action: () => handleSocialShare("Instagram Post")
+                      },
+                      {
+                        name: "Facebook",
+                        icon: (
+                          <span className="font-extrabold text-lg leading-none font-serif select-none lowercase">f</span>
+                        ),
+                        bg: "linear-gradient(135deg, #1877F2, #0A53BE)",
+                        action: () => handleSocialShare("Facebook")
+                      },
+                      {
+                        name: "Threads",
+                        icon: (
+                          <span className="font-extrabold text-[15px] leading-none select-none font-sans">@</span>
+                        ),
+                        bg: "linear-gradient(135deg, #101010, #222222)",
+                        action: () => handleSocialShare("Threads")
+                      },
+                      {
+                        name: "Messages",
+                        icon: (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                          </svg>
+                        ),
+                        bg: "linear-gradient(135deg, #25D366, #128C7E)",
+                        action: () => handleSocialShare("WhatsApp")
+                      }
+                    ].map((ch, idx) => (
+                      <button
+                        key={idx}
+                        onClick={ch.action}
+                        className="flex flex-col items-center gap-1.5 flex-shrink-0 cursor-pointer group"
+                      >
+                        <div
+                          className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-sm transition-transform group-hover:scale-105"
+                          style={{ background: ch.bg }}
+                        >
+                          {ch.icon}
+                        </div>
+                        <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-wide">
+                          {ch.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
               {/* Share actions */}
-              <div className="px-4 sm:px-6 py-4 border-t bg-card flex-shrink-0 space-y-2" style={{ borderColor: T.border }}>
-                <div className="flex gap-2">
-                  <button onClick={handleShareLink}
-                    className="flex-1 px-3 py-2.5 rounded-xl text-xs font-bold border flex items-center justify-center gap-1.5 transition-all hover:bg-muted"
-                    style={{ borderColor: "#C8922A60", color: "#C8922A", fontFamily: "'Rajdhani', sans-serif" }}>
-                    <Link2 size={14} /> {L.shareLinkBtn}
-                  </button>
-                  <button onClick={handleDownloadCard}
-                    className="flex-1 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#E8A500] text-white flex items-center justify-center gap-1.5 transition-all hover:bg-[#CC9200]"
-                    style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                    <Download size={14} /> {L.downloadBtn}
-                  </button>
-                </div>
+              <div className="px-5 sm:px-6 py-4 border-t bg-card flex-shrink-0 flex gap-3" style={{ borderColor: T.border }}>
+                <button onClick={handleDownloadCard}
+                  className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#E8A500] text-white flex items-center justify-center gap-1.5 transition-all hover:bg-[#CC9200]"
+                  style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                  <Download size={14} /> Download Card
+                </button>
                 <button onClick={closeShareModal}
-                  className="w-full py-2.5 rounded-xl text-xs font-semibold border transition-all"
+                  className="flex-1 py-2.5 rounded-xl text-xs font-semibold border transition-all"
                   style={{ borderColor: T.border, color: T.text3 }}>
-                  {L.closeBtn}
+                  Cancel
                 </button>
               </div>
             </motion.div>

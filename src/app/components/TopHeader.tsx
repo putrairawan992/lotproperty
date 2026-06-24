@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Page, T, useTheme } from "../types";
 import { PAGE_TITLE } from "../routes";
 import Logo from "./Logo";
-import { Bell, ChevronRight, GraduationCap, HelpCircle } from "lucide-react";
+import { Bell, ChevronRight, GraduationCap, HelpCircle, MessageSquare } from "lucide-react";
 
 export default function TopHeader({ page, onNav, onLogout }: {
   page: Page;
@@ -49,6 +49,15 @@ export default function TopHeader({ page, onNav, onLogout }: {
               style={{ backgroundColor: "#E8A500" }} />
           </button>
 
+          {/* Board icon */}
+          <button onClick={() => onNav("board")}
+            className="p-2 rounded-xl transition-all"
+            style={{ color: T.text2 }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
+            <MessageSquare size={20} />
+          </button>
+
           {/* Avatar + dropdown */}
           <div className="relative">
             <button
@@ -73,6 +82,7 @@ export default function TopHeader({ page, onNav, onLogout }: {
               <div className="absolute right-0 top-full mt-1 rounded-xl border shadow-xl overflow-hidden"
                 style={{ minWidth: 180, backgroundColor: T.card, borderColor: T.border, zIndex: 60 }}>
                 {[
+                  { label: "Forum Board", icon: MessageSquare, page: "board" as Page },
                   { label: "Notification", icon: Bell, page: "notifications" as Page },
                   { label: "Help", icon: HelpCircle, page: "help" as Page },
                 ].map(({ label, icon: Icon, page: p }) => (

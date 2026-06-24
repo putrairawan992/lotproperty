@@ -5,7 +5,7 @@ import { Home, Target, Building2, Users, Trophy, User, GraduationCap } from "luc
 // Helper to check current pathname and normalize it to our Page type
 export function getPageFromUrl(): Page {
   const path = window.location.pathname.replace(/^\//, "");
-  const validPages: Page[] = ["home", "quest", "listing", "prospect", "academy", "leaderboard", "profile", "notifications", "event", "attendance", "help"];
+  const validPages: Page[] = ["home", "quest", "listing", "prospect", "academy", "leaderboard", "profile", "notifications", "event", "attendance", "help", "board"];
   if (validPages.includes(path as Page)) {
     return path as Page;
   }
@@ -92,6 +92,7 @@ export const PAGE_TITLE: Record<Page, string> = {
   event:         "Event Detail",
   attendance:    "Absensi",
   help:          "Help",
+  board:         "Forum Info Board",
 };
 
 export const NAV_TABS = [

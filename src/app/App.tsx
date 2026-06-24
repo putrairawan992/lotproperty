@@ -29,6 +29,7 @@ import NotificationsPage from "./pages/NotificationsPage";
 import EventDetailPage from "./pages/EventDetailPage";
 import AttendancePage, { ThreeJsCheckmark } from "./pages/AttendancePage";
 import HelpPage from "./pages/HelpPage";
+import BoardPage from "./pages/BoardPage";
 
 // Pages (Admin)
 import AdminLoginPage from "./pages/Admin/AdminLoginPage";
@@ -152,6 +153,7 @@ export default function App() {
       case "leaderboard": return <LeaderboardPage />;
       case "profile": return <ProfilePage />;
       case "notifications": return <NotificationsPage />;
+      case "board": return <BoardPage />;
       case "event": return <EventDetailPage onBack={() => handlePageChange("home")} />;
       case "attendance": return <AttendancePage />;
       case "help": return <HelpPage onNav={handlePageChange} />;

@@ -23,7 +23,7 @@ export const T = {
   podiumArea: "var(--bg-podium-area)",
 } as const;
 
-export type Page = "home" | "quest" | "listing" | "prospect" | "academy" | "leaderboard" | "profile" | "notifications" | "event" | "attendance" | "help";
+export type Page = "home" | "quest" | "listing" | "prospect" | "academy" | "leaderboard" | "profile" | "notifications" | "event" | "attendance" | "help" | "board";
 
 export type Rarity = "mythic" | "legendary" | "epic" | "rare" | "common";
 
