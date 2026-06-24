@@ -2,6 +2,7 @@ import { useState, useContext, useEffect, useMemo } from "react";
 import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2, ChevronRight, MessageSquare } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import html2canvas from "html2canvas";
+import agentPhoto from "@/imports/PHOTO-2021-03-09-22-22-41.png";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
 import LevelBadge from "../components/LevelBadge";
@@ -146,7 +147,7 @@ const AGENT_PROFILE = {
   totalListings: "892",
   totalProspects: "532",
   commission: "Rp 4.250.000.000",
-  photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
+  photo: agentPhoto,
 };
 
 function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
@@ -324,19 +325,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       triggerToast("Gambar kartu profil berhasil diunduh!");
     } catch (err) {
       console.error(err);
-      triggerError("Gagal mengunduh gambar kartu. Mengunduh teks cadangan...");
-      
-      // Fallback text download if canvas rendering fails
-      const text = buildShareText(activeLang, featured);
-      const blob = new Blob([text], { type: "text/plain;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `LOT-Profile-${AGENT_PROFILE.slug}-${activeLang}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      triggerError("Gagal mengunduh gambar kartu profil.");
     }
   };
 
@@ -376,8 +365,33 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       // Ignore
     }
 
-    handleDownloadCard();
-    triggerToast(`Membuka ${platform}... Scorecard diunduh & deskripsi disalin!`);
+    // Trigger PNG image download
+    await handleDownloadCard();
+
+    // Small delay to let the download start, then open the platform link
+    setTimeout(() => {
+      let url = "";
+      if (platform === "Instagram Story" || platform === "Instagram Post") {
+        url = "https://instagram.com";
+      } else if (platform === "Facebook") {
+        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+      } else if (platform === "Threads") {
+        url = `https://threads.net/intent/post?text=${encodeURIComponent(payload)}`;
+      } else if (platform === "WhatsApp") {
+        url = `https://api.whatsapp.com/send?text=${encodeURIComponent(payload)}`;
+      }
+
+      if (url) {
+        window.open(url, "_blank");
+      }
+    }, 1200);
+
+    // Provide helpful user toast instructions based on platform behavior
+    if (platform.includes("Instagram") || platform === "Facebook") {
+      triggerToast(`Membuka ${platform}... Gambar diunduh! Silakan tempel (paste) deskripsi dari clipboard.`);
+    } else {
+      triggerToast(`Membuka ${platform}... Gambar diunduh & teks caption disalin!`);
+    }
   };
 
   const closeShareModal = () => {
