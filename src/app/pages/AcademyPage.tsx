@@ -8,6 +8,7 @@ import Card from "../components/Card";
 import XPBar from "../components/XPBar";
 import { T, ThemeCtx, useTheme } from "../types";
 import { useTabQuery } from "../routes";
+import EllipsisTooltip from "../components/EllipsisTooltip";
 import { AnimatePresence, motion } from "motion/react";
 
 // Rich Mock Dataset for Module Details (representing content loaded from Admin panel)
@@ -610,7 +611,11 @@ export default function AcademyPage() {
                               <FileText size={16} />
                             </div>
                             <div className="min-w-0">
-                              <p className="text-xs font-bold leading-tight truncate text-foreground" style={{ color: T.text1 }}>{mat.title}</p>
+                              <EllipsisTooltip 
+                                text={mat.title} 
+                                className="text-xs font-bold leading-tight truncate text-foreground block w-full text-left" 
+                                style={{ color: T.text1 }} 
+                              />
                               <span className="text-[10px] font-semibold opacity-60 text-muted-foreground" style={{ color: T.text3 }}>
                                 {mat.type} · {mat.size}
                               </span>
@@ -771,10 +776,11 @@ export default function AcademyPage() {
                                 <Video size={14} className="text-zinc-500 group-hover:text-foreground" />
                               )}
                             </span>
-                            <span className="text-xs font-bold leading-tight truncate text-foreground" 
-                              style={{ color: isActive ? activeModule.color : T.text1 }}>
-                              {ch.title}
-                            </span>
+                            <EllipsisTooltip 
+                              text={ch.title} 
+                              className="text-xs font-bold leading-tight truncate text-foreground block w-full text-left" 
+                              style={{ color: isActive ? activeModule.color : T.text1 }} 
+                            />
                           </div>
                           <span className="text-[10px] font-semibold text-zinc-500 font-mono flex-shrink-0">
                             {ch.duration}

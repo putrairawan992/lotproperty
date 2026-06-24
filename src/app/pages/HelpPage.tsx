@@ -6,6 +6,7 @@ import BadgeShield from "../components/BadgeShield";
 import LevelBadge from "../components/LevelBadge";
 import { T, Page, useTheme } from "../types";
 import { useTabQuery } from "../routes";
+import EllipsisTooltip from "../components/EllipsisTooltip";
 import { FAQ_DATA, TERMS_SECTIONS } from "../appData";
 import { LEVEL_TIERS, RARITY_CFG } from "../badgeAssets";
 import { ALL_BADGES } from "./ProfilePage";
@@ -324,7 +325,11 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                             style={{ backgroundColor: s.color + "18" }}>
                             <span style={{ fontSize: 14 }}>{s.icon}</span>
                           </div>
-                          <span className="truncate" style={{ color: T.text1 }}>{s.label}</span>
+                          <EllipsisTooltip 
+                            text={s.label} 
+                            className="truncate block" 
+                            style={{ color: T.text1 }} 
+                          />
                         </div>
 
                         {/* Col 2: XP Reward (col-span-3) */}
@@ -562,7 +567,10 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                             }}>
                             {fb.type}
                           </span>
-                          <h5 className="font-semibold text-sm truncate text-foreground">{fb.subject}</h5>
+                           <EllipsisTooltip 
+                            text={fb.subject} 
+                            className="font-semibold text-sm truncate text-foreground block" 
+                          />
                         </div>
                         <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{fb.message}</p>
                         <span className="text-[10px] text-muted-foreground block">{fb.date}</span>
@@ -691,8 +699,15 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                     <span style={{ fontSize: 22 }}>{c.icon}</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-left text-foreground truncate" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 16 }}>{c.label}</p>
-                    <p className="text-sm text-left text-muted-foreground truncate">{c.sub}</p>
+                     <EllipsisTooltip 
+                      text={c.label} 
+                      className="font-bold text-left text-foreground truncate block" 
+                      style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 16 }} 
+                    />
+                    <EllipsisTooltip 
+                      text={c.sub} 
+                      className="text-sm text-left text-muted-foreground truncate block" 
+                    />
                   </div>
                   <div className="flex items-center gap-1.5 font-semibold text-sm flex-shrink-0"
                     style={{ color: c.color }}>

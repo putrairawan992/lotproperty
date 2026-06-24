@@ -9,6 +9,7 @@ import { ListingPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { T } from "../types";
 import { useTabQuery, useLocation } from "../routes";
+import EllipsisTooltip from "../components/EllipsisTooltip";
 
 interface Listing {
   id: string;
@@ -359,13 +360,18 @@ export default function ListingPage() {
 
                 <div className="flex items-start justify-between gap-3 mb-2 pr-24">
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold leading-snug line-clamp-2" style={{ color: T.text1 }}>
-                      {l.title}
-                    </p>
-                    <p className="text-xs flex items-center gap-1 mt-1 truncate" style={{ color: T.text3 }}>
+                    <EllipsisTooltip 
+                      text={l.title} 
+                      className="text-sm font-semibold leading-snug line-clamp-2 text-left block w-full" 
+                      style={{ color: T.text1 }} 
+                    />
+                    <div className="text-xs flex items-center gap-1 mt-1 min-w-0" style={{ color: T.text3 }}>
                       <MapPin size={11} className="flex-shrink-0" />
-                      <span className="truncate">{l.loc} · {l.owner}</span>
-                    </p>
+                      <EllipsisTooltip 
+                        text={`${l.loc} · ${l.owner}`} 
+                        className="truncate text-left block w-full" 
+                      />
+                    </div>
                   </div>
                 </div>
 

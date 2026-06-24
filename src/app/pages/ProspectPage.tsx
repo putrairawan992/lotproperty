@@ -10,6 +10,7 @@ import { ProspectPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { T } from "../types";
 import { useTabQuery, useLocation } from "../routes";
+import EllipsisTooltip from "../components/EllipsisTooltip";
 
 const STATUS_CFG: Record<string, { color: string; bg: string }> = {
   "New Lead":  { color: "#1A6FC4", bg: "#EEF5FC" },
@@ -498,7 +499,11 @@ export default function ProspectPage() {
                     <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
                       style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate" style={{ color: T.text1 }}>{p.name}</p>
+                      <EllipsisTooltip 
+                        text={p.name} 
+                        className="font-semibold text-sm truncate block" 
+                        style={{ color: T.text1 }} 
+                      />
                       <div className="mt-1">
                         <span className="inline-block text-[10px] px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap uppercase tracking-wider"
                           style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
@@ -682,7 +687,11 @@ export default function ProspectPage() {
                     {detailFormData.initials}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-base truncate" style={{ color: T.text1 }}>{detailFormData.name}</p>
+                    <EllipsisTooltip 
+                      text={detailFormData.name} 
+                      className="font-bold text-base truncate block" 
+                      style={{ color: T.text1 }} 
+                    />
                     <p className="text-sm flex items-center gap-1" style={{ color: T.text3 }}>
                       <Phone size={12} /> {detailFormData.phone}
                     </p>

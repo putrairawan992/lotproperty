@@ -3,6 +3,7 @@ import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar,
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import LevelBadge from "../../components/LevelBadge";
+import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T, useTheme } from "../../types";
 import { AGENT_DATA_LIST, AGENT_PHOTOS } from "../../appData";
 
@@ -122,7 +123,10 @@ function TreeNode({
             <div className="w-full h-full flex items-center justify-center bg-muted text-xs font-bold">{node.initials}</div>
           )}
         </div>
-        <p className="font-bold text-xs text-foreground truncate w-full px-0.5 leading-snug">{node.name}</p>
+        <EllipsisTooltip 
+          text={node.name} 
+          className="font-bold text-xs text-foreground truncate w-full px-0.5 leading-snug"
+        />
         <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider leading-snug">{node.level}</p>
         {node.recruitsCount > 0 && (
           <button
@@ -253,7 +257,10 @@ function VerticalTreeNode({
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-foreground truncate leading-tight">{node.name}</p>
+          <EllipsisTooltip 
+            text={node.name} 
+            className="text-xs font-bold text-foreground truncate leading-tight" 
+          />
           <p 
             className="text-[8px] font-extrabold uppercase tracking-widest leading-none mt-1"
             style={{ color: lvlColor }}
@@ -469,8 +476,16 @@ export default function AdminAgentsPage() {
                           <div className="flex items-center gap-3">
                             <LevelBadge title={a.level} size={36} />
                             <div className="flex-1 min-w-0 text-left">
-                              <p className="text-sm font-bold truncate text-foreground" style={{ color: T.text1 }}>{a.name}</p>
-                              <p className="text-xs truncate text-muted-foreground" style={{ color: T.text3 }}>{a.email}</p>
+                              <EllipsisTooltip 
+                                text={a.name} 
+                                className="text-sm font-bold truncate text-foreground block"
+                                style={{ color: T.text1 }}
+                              />
+                              <EllipsisTooltip 
+                                text={a.email} 
+                                className="text-xs truncate text-muted-foreground block"
+                                style={{ color: T.text3 }}
+                              />
                               <span 
                                 className="inline-block text-[8px] font-black uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded-md"
                                 style={{ backgroundColor: lvlColor + "12", color: lvlColor }}
@@ -507,7 +522,11 @@ export default function AdminAgentsPage() {
                               <MapPin size={13} className="mt-0.5 text-muted-foreground flex-shrink-0" style={{ color: T.text3 }} />
                               <div className="min-w-0">
                                 <p className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground" style={{ color: T.text3 }}>KANTOR</p>
-                                <p className="font-semibold text-foreground truncate mt-0.5" style={{ color: T.text2 }}>{a.office}</p>
+                                <EllipsisTooltip 
+                                  text={a.office} 
+                                  className="font-semibold text-foreground truncate mt-0.5 block"
+                                  style={{ color: T.text2 }}
+                                />
                               </div>
                             </div>
                             <div className="text-left flex items-start gap-1.5">
@@ -675,7 +694,11 @@ export default function AdminAgentsPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
-                      <p className="text-sm font-semibold truncate" style={{ color: T.text1 }}>{recruit.name}</p>
+                      <EllipsisTooltip 
+                        text={recruit.name} 
+                        className="text-sm font-semibold truncate block"
+                        style={{ color: T.text1 }}
+                      />
                       <p className="text-[10px] uppercase font-semibold tracking-wider" style={{ color: T.text3 }}>{recruit.level}</p>
                     </div>
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ backgroundColor: "rgba(232, 165, 0, 0.1)", color: "#E8A500" }}>

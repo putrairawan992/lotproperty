@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import * as THREE from "three";
 import { T, useTheme } from "../types";
 import AgentAvatar from "../components/AgentAvatar";
+import EllipsisTooltip from "../components/EllipsisTooltip";
 import QrCameraScanner from "../components/QrCameraScanner";
 
 function QRCodeDisplay({ value }: { value: string }) {
@@ -546,7 +547,11 @@ export default function AttendancePage() {
                       <span style={{ fontSize: 18 }}>🎥</span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm truncate" style={{ color: T.text1 }}>{m.title}</p>
+                      <EllipsisTooltip 
+                        text={m.title} 
+                        className="font-semibold text-sm truncate block" 
+                        style={{ color: T.text1 }} 
+                      />
                       <p className="text-xs" style={{ color: T.text3 }}>{m.time}</p>
                     </div>
                     <motion.a href={m.link} target="_blank" rel="noreferrer"

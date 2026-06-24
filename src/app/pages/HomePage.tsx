@@ -10,10 +10,11 @@ import useLoading from "../hooks/useLoading";
 import HofSection from "../components/HofSection";
 import HofFallingStars from "../components/HofFallingStars";
 import EventBannerSlider from "../components/EventBannerSlider";
-import { T, Page } from "../types";
+import { T, Page, useTheme } from "../types";
 import { useTabQuery } from "../routes";
 import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
 import { getLevelTierColor } from "../badgeAssets";
+import EllipsisTooltip from "../components/EllipsisTooltip";
 
 export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) => void; onShowLevelUp?: () => void }) {
   const loading = useLoading(1400);
@@ -214,17 +215,23 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                 >
                   <AgentAvatar initials={agent.initials} photo={agent.photo} size={44} isMe={agent.isMe} />
                 </div>
-                <div className="flex-1 min-w-0">
-                  {agent.level && (
-                    <p className="text-xs font-bold mb-0.5 truncate" style={{ color: getLevelTierColor(agent.level), fontFamily: "'Rajdhani',sans-serif", letterSpacing: "0.02em" }}>
-                      {agent.level}
-                    </p>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-medium truncate" style={{ color: T.text1 }}>{agent.isMe ? "Anda" : agent.name}</span>
-                    {agent.isMe && <span className="text-xs px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{ backgroundColor: "#E8A500", color: "white", fontSize: 9 }}>You</span>}
+                  <div className="flex-1 min-w-0">
+                    {agent.level && (
+                      <EllipsisTooltip 
+                        text={agent.level} 
+                        className="text-xs font-bold mb-0.5 truncate block" 
+                        style={{ color: getLevelTierColor(agent.level), fontFamily: "'Rajdhani',sans-serif", letterSpacing: "0.02em" }} 
+                      />
+                    )}
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <EllipsisTooltip 
+                        text={agent.isMe ? "Anda" : agent.name} 
+                        className="text-sm font-medium truncate block" 
+                        style={{ color: T.text1 }} 
+                      />
+                      {agent.isMe && <span className="text-xs px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{ backgroundColor: "#E8A500", color: "white", fontSize: 9 }}>You</span>}
+                    </div>
                   </div>
-                </div>
                 <p className="font-bold text-xs flex-shrink-0" style={{ fontFamily: "'Rajdhani',sans-serif", color: "#E8A500" }}>
                   {agent.value}
                 </p>

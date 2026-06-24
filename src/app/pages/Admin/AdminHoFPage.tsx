@@ -2,7 +2,8 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Award, ShieldAlert, Check, Save, ToggleLeft, ToggleRight } from "lucide-react";
 import Card from "../../components/Card";
-import { T } from "../../types";
+import { T, useTheme } from "../../types";
+import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { AGENT_DATA_LIST } from "../../appData";
 
 export default function AdminHoFPage() {
@@ -87,9 +88,11 @@ export default function AdminHoFPage() {
               <div>
                 <div className="flex items-center justify-between mb-3 border-b pb-2" style={{ borderColor: T.border }}>
                   <div className="min-w-0">
-                    <h3 className="font-bold text-sm tracking-wide text-foreground uppercase truncate" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                      {section.cat}
-                    </h3>
+                    <EllipsisTooltip 
+                      text={section.cat} 
+                      className="font-bold text-sm tracking-wide text-foreground uppercase truncate block" 
+                      style={{ fontFamily: "'Rajdhani', sans-serif" }} 
+                    />
                   </div>
                   
                   {/* Category Type Badge */}

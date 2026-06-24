@@ -3,6 +3,7 @@ import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileIma
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import { DateInput } from "../../components/DateTimeInput";
+import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T } from "../../types";
 
 export default function AdminEventsPage() {
@@ -299,7 +300,7 @@ export default function AdminEventsPage() {
                       </span>
                     </div>
                     
-                    <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">{ev.desc}</p>
+                    <EllipsisTooltip text={ev.desc} className="text-xs text-muted-foreground leading-relaxed line-clamp-3 text-left w-full" />
                     
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs border-t border-border/40" style={{ borderColor: T.border }}>
                       <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -310,9 +311,9 @@ export default function AdminEventsPage() {
                         <span className="w-4 h-4 rounded bg-[#E8A500]/10 border border-[#E8A500]/20 text-[#E8A500] text-[8px] flex items-center justify-center font-bold">XP</span>
                         <span className="text-[#E8A500]">{ev.xpPool.toLocaleString("id-ID")} XP</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Award size={13} className="text-[#7040D0]" />
-                        <span className="truncate max-w-[120px]">{ev.badge}</span>
+                      <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+                        <Award size={13} className="text-[#7040D0] flex-shrink-0" />
+                        <EllipsisTooltip text={ev.badge} className="truncate max-w-[120px] text-left" />
                       </div>
                     </div>
                   </div>

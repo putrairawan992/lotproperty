@@ -15,6 +15,7 @@ import { ronaldRichyBase64 } from "@/imports/ronald-richy-base64";
 import { eliteAgentBase64 } from "@/imports/elite-agent-base64";
 import HofAwardLaurel from "../components/HofAwardLaurel";
 import HofFallingStars from "../components/HofFallingStars";
+import EllipsisTooltip from "../components/EllipsisTooltip";
 
 const getRankMedal = (rank: string) => {
   const norm = rank.replace("#", "").trim();
@@ -945,13 +946,15 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     <s.icon size={18} style={{ color: s.color }} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p
-                      className="font-extrabold leading-tight text-[15px] sm:text-[17px] text-foreground whitespace-nowrap truncate"
-                      style={{ fontFamily: "'Rajdhani', sans-serif" }}
-                    >
-                      {s.v}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground font-semibold mt-0.5 tracking-wide whitespace-nowrap truncate">{s.l}</p>
+                    <EllipsisTooltip 
+                      text={s.v} 
+                      className="font-extrabold leading-tight text-[15px] sm:text-[17px] text-foreground whitespace-nowrap truncate block w-full text-left" 
+                      style={{ fontFamily: "'Rajdhani', sans-serif" }} 
+                    />
+                    <EllipsisTooltip 
+                      text={s.l} 
+                      className="text-[10px] text-muted-foreground font-semibold mt-0.5 tracking-wide whitespace-nowrap truncate block w-full text-left" 
+                    />
                   </div>
                 </div>
               ))}

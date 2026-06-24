@@ -4,6 +4,7 @@ import { MessageSquare, Plus, Calendar, AlertCircle, Check, Trash2, ShieldAlert 
 import Card from "../components/Card";
 import AgentAvatar from "../components/AgentAvatar";
 import { T, useTheme } from "../types";
+import EllipsisTooltip from "../components/EllipsisTooltip";
 
 interface Post {
   id: string;
@@ -379,9 +380,11 @@ export default function BoardPage() {
                       {/* Name & Tier header */}
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <p className="font-extrabold text-sm truncate" style={{ color: T.text1, fontFamily: "'Rajdhani', sans-serif" }}>
-                            {post.name}
-                          </p>
+                          <EllipsisTooltip 
+                            text={post.name} 
+                            className="font-extrabold text-sm truncate block" 
+                            style={{ color: T.text1, fontFamily: "'Rajdhani', sans-serif" }} 
+                          />
                           <span
                             className="text-[9px] px-1.5 py-0.5 rounded font-black border uppercase tracking-wider flex-shrink-0"
                             style={{

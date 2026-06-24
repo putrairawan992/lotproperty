@@ -2,6 +2,7 @@ import { useState } from "react";
 import { GraduationCap, BookOpen, Clock, Award, Plus, Trash2, CheckCircle, AlertCircle, Play, Users } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
+import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T } from "../../types";
 
 const CATEGORIES = ["SOP Internal", "Sales Training", "Negotiation", "Marketing", "Social Media", "Product Knowledge"];
@@ -263,7 +264,7 @@ export default function AdminAcademyPage() {
                   {m.videoUrl && (
                     <div className="text-[10px] text-muted-foreground bg-muted/20 px-3 py-2 rounded-xl flex items-center gap-2 border w-full sm:w-max min-w-0" style={{ borderColor: T.border }}>
                       <Play size={11} className="text-red-500 fill-red-500 flex-shrink-0" />
-                      <span className="truncate font-mono text-muted-foreground/80 flex-1">{m.videoUrl}</span>
+                      <EllipsisTooltip text={m.videoUrl} className="font-mono text-muted-foreground/80 flex-1 min-w-0" />
                     </div>
                   )}
                 </div>

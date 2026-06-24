@@ -1,6 +1,7 @@
 import { Users, AlertCircle, DollarSign, Zap, TrendingUp, CheckCircle } from "lucide-react";
 import Card from "../../components/Card";
 import { T, useTheme } from "../../types";
+import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { AGENT_DATA_LIST, COMMISSION_DATA_LIST, LOG_DATA_LIST } from "../../appData";
 
 export default function AdminDashboard() {
@@ -38,7 +39,11 @@ export default function AdminDashboard() {
             </div>
             <div className="min-w-0">
               <p className="font-bold leading-none" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 20, color: s.color }}>{s.value}</p>
-              <p className="text-[10px] mt-1.5 uppercase tracking-wider font-semibold truncate" style={{ color: T.text3 }}>{s.label}</p>
+              <EllipsisTooltip 
+                text={s.label} 
+                className="text-[10px] mt-1.5 uppercase tracking-wider font-semibold truncate block" 
+                style={{ color: T.text3 }} 
+              />
             </div>
           </Card>
         ))}
@@ -67,7 +72,11 @@ export default function AdminDashboard() {
                   {a.name.split(" ").map(n => n[0]).join("").slice(0,2)}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: T.text1 }}>{a.name}</p>
+                  <EllipsisTooltip 
+                    text={a.name} 
+                    className="text-sm font-semibold truncate block" 
+                    style={{ color: T.text1 }} 
+                  />
                   <p className="text-xs" style={{ color: T.text3 }}>{a.office} · {a.joined}</p>
                 </div>
                 <div className="flex gap-1.5">
@@ -108,8 +117,16 @@ export default function AdminDashboard() {
             {COMMISSION_DATA.filter(c => c.status === "Pending").slice(0, 4).map(c => (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: T.muted }}>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: T.text1 }}>{c.agent}</p>
-                  <p className="text-xs truncate" style={{ color: T.text3 }}>{c.property}</p>
+                  <EllipsisTooltip 
+                    text={c.agent} 
+                    className="text-sm font-semibold truncate block" 
+                    style={{ color: T.text1 }} 
+                  />
+                  <EllipsisTooltip 
+                    text={c.property} 
+                    className="text-xs truncate block" 
+                    style={{ color: T.text3 }} 
+                  />
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-sm font-bold" style={{ color: T.text1, fontFamily: "'Rajdhani', sans-serif" }}>{c.amount}</p>
