@@ -719,10 +719,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full font-extrabold text-xs text-white backdrop-blur-md uppercase tracking-wider glossy-glare transition-all"
                   style={{
                     fontFamily: "'Rajdhani', sans-serif",
-                    backgroundColor: isDark ? "rgba(112, 64, 208, 0.16)" : "rgba(112, 64, 208, 0.08)",
+                    backgroundColor: isDark ? "rgba(255, 255, 255, 0.03)" : "rgba(255, 255, 255, 0.25)",
+                    border: isDark ? "1px solid rgba(255, 255, 255, 0.08)" : "1px solid rgba(0, 0, 0, 0.06)",
                     boxShadow: isDark
-                      ? "0 0 14px rgba(112, 64, 208, 0.35), inset 0 1px 0 rgba(255,255,255,0.18)"
-                      : "0 2px 8px rgba(112, 64, 208, 0.12), inset 0 1px 0 rgba(255,255,255,0.6)"
+                      ? "0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12)"
+                      : "0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.6)"
                   }}
                 >
                   <LevelBadge title={AGENT_PROFILE.tier} size={34} showPlate={false} />
@@ -731,7 +732,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     style={{
                       color: isDark ? "#FFD700" : "#7040D0",
                       textShadow: isDark
-                        ? "0 0 10px rgba(112,64,208,0.85), 0 1.5px 2px rgba(0,0,0,0.95)"
+                        ? "0 1.5px 2.5px rgba(0,0,0,0.8)"
                         : "0 1px 1px rgba(255,255,255,0.85)"
                     }}
                   >
