@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect, useMemo } from "react";
-import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2, ChevronRight, MessageSquare } from "lucide-react";
+import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import html2canvas from "html2canvas-pro";
 import Card from "../components/Card";
@@ -503,7 +503,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
     setIsDownloading(true);
     triggerToast("Menyiapkan unduhan gambar kartu profil...");
-    
+
     try {
       // Small timeout to allow render states to settle
       await new Promise(resolve => setTimeout(resolve, 600));
@@ -552,7 +552,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
           triggerToast("Mode kompatibilitas dipakai untuk unduhan kartu profil.");
         }
       }
-      
+
       triggerToast("Gambar kartu profil berhasil diunduh!");
     } catch (err) {
       console.error(err);
@@ -946,14 +946,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     <s.icon size={18} style={{ color: s.color }} />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <EllipsisTooltip 
-                      text={s.v} 
-                      className="font-extrabold leading-tight text-[15px] sm:text-[17px] text-foreground whitespace-nowrap truncate block w-full text-left" 
-                      style={{ fontFamily: "'Rajdhani', sans-serif" }} 
+                    <EllipsisTooltip
+                      text={s.v}
+                      className="font-extrabold leading-tight text-[15px] sm:text-[17px] text-foreground whitespace-nowrap truncate block w-full text-left"
+                      style={{ fontFamily: "'Rajdhani', sans-serif" }}
                     />
-                    <EllipsisTooltip 
-                      text={s.l} 
-                      className="text-[10px] text-muted-foreground font-semibold mt-0.5 tracking-wide whitespace-nowrap truncate block w-full text-left" 
+                    <EllipsisTooltip
+                      text={s.l}
+                      className="text-[10px] text-muted-foreground font-semibold mt-0.5 tracking-wide whitespace-nowrap truncate block w-full text-left"
                     />
                   </div>
                 </div>
@@ -1271,7 +1271,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 text-center">
                     Share to social media
                   </p>
-                  
+
                   {/* Scrollable list of custom social shares */}
                   <div className="flex gap-4 overflow-x-auto justify-center pb-1 scrollbar-none" style={{ scrollbarWidth: "none" }}>
                     {[
@@ -1279,7 +1279,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         name: "Share via",
                         icon: (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                            <circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><line x1="8.59" y1="13.51" x2="15.42" y2="17.49" /><line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
                           </svg>
                         ),
                         bg: "linear-gradient(135deg, #4B5563, #374151)",
@@ -1289,7 +1289,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         name: "Story",
                         icon: (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5" /><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" /><line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
                           </svg>
                         ),
                         bg: "linear-gradient(135deg, #F9CE34 0%, #EE2A7B 50%, #6228D7 100%)",
@@ -1299,7 +1299,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         name: "Post",
                         icon: (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/>
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="9" y1="9" x2="15" y2="9" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" />
                           </svg>
                         ),
                         bg: "linear-gradient(135deg, #FD1D1D, #E1306C)",
@@ -1325,7 +1325,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         name: "Messages",
                         icon: (
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                           </svg>
                         ),
                         bg: "linear-gradient(135deg, #25D366, #128C7E)",
@@ -1354,7 +1354,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
               {/* Share actions */}
               <div className="px-5 sm:px-6 py-4 border-t bg-card flex-shrink-0 flex gap-3" style={{ borderColor: T.border }}>
-                <button 
+                <button
                   onClick={handleDownloadCard}
                   disabled={isDownloading}
                   className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#E8A500] text-white flex items-center justify-center gap-1.5 transition-all hover:bg-[#CC9200] disabled:opacity-60 disabled:cursor-not-allowed"

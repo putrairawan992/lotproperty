@@ -49,15 +49,6 @@ export default function TopHeader({ page, onNav, onLogout }: {
               style={{ backgroundColor: "#E8A500" }} />
           </button>
 
-          {/* Board icon */}
-          <button onClick={() => onNav("board")}
-            className="p-2 rounded-xl transition-all"
-            style={{ color: T.text2 }}
-            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
-            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
-            <MessageSquare size={20} />
-          </button>
-
           {/* Avatar + dropdown */}
           <div className="relative">
             <button
