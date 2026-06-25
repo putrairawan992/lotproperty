@@ -318,8 +318,3 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
     </div>
   );
 }
-
-// Simple useTheme proxy inside components if types aren't directly using Context
-import { ThemeCtx } from "../types";
-import { useContext } from "react";
-const useTheme = () => useContext(ThemeCtx);

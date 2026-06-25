@@ -80,7 +80,7 @@ const HOF_ACHIEVEMENTS = [
 ];
 
 // Profile Share Language Data
-const SHARE_LANG: Record<string, {
+const SHARE_LANG: Record<"ID" | "EN" | "CN", {
   title: string;
   rank: string;
   commission: string;
@@ -93,6 +93,10 @@ const SHARE_LANG: Record<string, {
   downloadBtn: string;
   shareLinkBtn: string;
   desc: string;
+  transactions: string;
+  level: string;
+  hof: string;
+  badges: string;
 }> = {
   ID: {
     title: "KARTU RINGKASAN AGEN",
@@ -107,6 +111,10 @@ const SHARE_LANG: Record<string, {
     downloadBtn: "Unduh Kartu",
     shareLinkBtn: "Bagikan Link",
     desc: "Kartu ringkasan performa dan pencapaian resmi agen LOT Property.",
+    transactions: "Total Transaksi",
+    level: "Level",
+    hof: "HOF Hits",
+    badges: "Lencana",
   },
   EN: {
     title: "AGENT PROFILE SUMMARY",
@@ -121,6 +129,10 @@ const SHARE_LANG: Record<string, {
     downloadBtn: "Download Card",
     shareLinkBtn: "Share Link",
     desc: "Official performance summary card for LOT Property agent.",
+    transactions: "Total Transactions",
+    level: "Level",
+    hof: "HOF Hits",
+    badges: "Badges",
   },
   CN: {
     title: "LOT PROPERTY 精英经纪人档案",
@@ -135,6 +147,10 @@ const SHARE_LANG: Record<string, {
     downloadBtn: "下载名片",
     shareLinkBtn: "分享链接",
     desc: "LOT Property 官方认证经纪人成就与表现摘要名片。",
+    transactions: "交易总数",
+    level: "等级",
+    hof: "名人堂",
+    badges: "勋章",
   }
 };
 
@@ -147,6 +163,7 @@ const AGENT_PROFILE = {
   careerRank: "#7",
   totalListings: "892",
   totalProspects: "532",
+  totalTransactions: "127",
   commission: "Rp 4.250.000.000",
   photo: ronaldRichyBase64,
 };
@@ -163,9 +180,10 @@ function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
       ``,
       `${L.levelLabel}: ${AGENT_PROFILE.level} · ${AGENT_PROFILE.tier}`,
       `${L.rank}: ${AGENT_PROFILE.careerRank}`,
-      `${L.listings}: ${AGENT_PROFILE.totalListings}`,
-      `${L.prospects}: ${AGENT_PROFILE.totalProspects}`,
-      `${L.commission}: ${AGENT_PROFILE.commission}`,
+      `${L.transactions}: ${AGENT_PROFILE.totalTransactions} Transactions`,
+      `${L.level}: ${AGENT_PROFILE.level}`,
+      `${L.hof}: 18`,
+      `${L.badges}: 18/25`,
       ``,
       `${L.hofTitle}:`,
       hofLines,
@@ -184,9 +202,10 @@ function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
       ``,
       `${L.levelLabel}: ${AGENT_PROFILE.level} · ${AGENT_PROFILE.tier}`,
       `${L.rank}: ${AGENT_PROFILE.careerRank}`,
-      `${L.listings}: ${AGENT_PROFILE.totalListings}`,
-      `${L.prospects}: ${AGENT_PROFILE.totalProspects}`,
-      `${L.commission}: ${AGENT_PROFILE.commission}`,
+      `${L.transactions}: ${AGENT_PROFILE.totalTransactions} 笔交易`,
+      `${L.level}: ${AGENT_PROFILE.level}`,
+      `${L.hof}: 18`,
+      `${L.badges}: 18/25`,
       ``,
       `${L.hofTitle}:`,
       hofLines,
@@ -202,9 +221,10 @@ function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
     ``,
     `${L.levelLabel}: ${AGENT_PROFILE.level} · ${AGENT_PROFILE.tier}`,
     `${L.rank}: ${AGENT_PROFILE.careerRank}`,
-    `${L.listings}: ${AGENT_PROFILE.totalListings}`,
-    `${L.prospects}: ${AGENT_PROFILE.totalProspects}`,
-    `${L.commission}: ${AGENT_PROFILE.commission}`,
+    `${L.transactions}: ${AGENT_PROFILE.totalTransactions} Transaksi`,
+    `${L.level}: ${AGENT_PROFILE.level}`,
+    `${L.hof}: 18`,
+    `${L.badges}: 18/25`,
     ``,
     `${L.hofTitle}:`,
     hofLines,
@@ -343,16 +363,29 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.clip();
 
     const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, "#1C1812");
-    bg.addColorStop(1, "#0A0A0A");
+    bg.addColorStop(0, "#2D1A05");
+    bg.addColorStop(0.5, "#150D02");
+    bg.addColorStop(1, "#050301");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
-    const glow = ctx.createRadialGradient(width * 0.74, height * 0.26, 8, width * 0.74, height * 0.26, width * 0.5);
-    glow.addColorStop(0, "rgba(200,146,42,0.35)");
-    glow.addColorStop(1, "rgba(200,146,42,0)");
-    ctx.fillStyle = glow;
+    ctx.save();
+    ctx.globalCompositeOperation = "screen";
+    ctx.globalAlpha = 0.40;
+
+    const glow1 = ctx.createRadialGradient(width * 0.8, height * 0.2, 0, width * 0.8, height * 0.2, width * 0.65);
+    glow1.addColorStop(0, "rgba(232, 165, 0, 0.45)");
+    glow1.addColorStop(1, "rgba(232, 165, 0, 0)");
+    ctx.fillStyle = glow1;
     ctx.fillRect(0, 0, width, height);
+
+    const glow2 = ctx.createRadialGradient(width * 0.2, height * 0.8, 0, width * 0.2, height * 0.8, width * 0.5);
+    glow2.addColorStop(0, "rgba(249, 115, 22, 0.15)");
+    glow2.addColorStop(1, "rgba(249, 115, 22, 0)");
+    ctx.fillStyle = glow2;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.restore();
 
     ctx.restore();
 
@@ -362,11 +395,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.stroke();
 
     ctx.fillStyle = "#E8A500";
-    ctx.font = "900 33px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "900 36px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
     ctx.fillText(Lx.title, 62, 92);
 
     ctx.fillStyle = "#8a8a8a";
-    ctx.font = "700 21px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
     ctx.fillText("OFFICIAL AGENT", width - 250, 92);
 
     ctx.strokeStyle = "rgba(255,255,255,0.11)";
@@ -378,22 +411,22 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
     const leftX = 72;
     ctx.fillStyle = "#FFFFFF";
-    ctx.font = "900 54px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(AGENT_PROFILE.name, leftX, 222);
+    ctx.font = "900 64px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(AGENT_PROFILE.name, leftX, 310);
 
     ctx.fillStyle = "#C8922A";
-    ctx.font = "900 28px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(AGENT_PROFILE.tier.toUpperCase(), leftX, 264);
+    ctx.font = "900 32px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(AGENT_PROFILE.tier.toUpperCase(), leftX, 370);
 
     ctx.fillStyle = "#9ca3af";
-    ctx.font = "700 19px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.commission.toUpperCase(), leftX, 338);
+    ctx.font = "700 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(Lx.transactions.toUpperCase(), leftX, 490);
 
     ctx.fillStyle = "#E8A500";
-    ctx.font = "900 61px 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(AGENT_PROFILE.commission, leftX, 412);
+    ctx.font = "900 76px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(`${AGENT_PROFILE.totalTransactions} ${activeLang === "ID" ? "Transaksi" : activeLang === "CN" ? "笔交易" : "Transactions"}`, leftX, 585);
 
-    const statYTop = 460;
+    const statYTop = 665;
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -403,35 +436,35 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
     const statBlockW = 296;
     const stats = [
-      { label: Lx.levelLabel.toUpperCase(), value: String(AGENT_PROFILE.level) },
-      { label: Lx.listings.toUpperCase(), value: AGENT_PROFILE.totalListings },
-      { label: Lx.prospects.toUpperCase(), value: AGENT_PROFILE.totalProspects },
+      { label: Lx.level.toUpperCase(), value: String(AGENT_PROFILE.level) },
+      { label: Lx.hof.toUpperCase(), value: "18" },
+      { label: Lx.badges.toUpperCase(), value: "18/25" },
     ];
 
     stats.forEach((s, i) => {
       const x = leftX + i * statBlockW;
       ctx.fillStyle = "#8a8a8a";
-      ctx.font = "700 17px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.label, x, 502);
+      ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(s.label, x, 735);
       ctx.fillStyle = "#ffffff";
-      ctx.font = "900 48px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.value, x, 558);
+      ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(s.value, x, 815);
 
       if (i < stats.length - 1) {
         ctx.strokeStyle = "rgba(255,255,255,0.12)";
         ctx.beginPath();
-        ctx.moveTo(x + statBlockW - 18, 478);
-        ctx.lineTo(x + statBlockW - 18, 560);
+        ctx.moveTo(x + statBlockW - 18, 735);
+        ctx.lineTo(x + statBlockW - 18, 820);
         ctx.stroke();
       }
     });
 
     try {
       const photo = await loadDataImage(AGENT_PROFILE.photo);
-      const px = 1090;
-      const py = 188;
-      const pw = 382;
-      const ph = 538;
+      const px = 1070;
+      const py = 245;
+      const pw = 420;
+      const ph = 560;
 
       ctx.save();
       drawRoundedRectPath(ctx, px, py, pw, ph, 28);
@@ -451,15 +484,15 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       ctx.stroke();
 
       const tierImg = await loadDataImage(eliteAgentBase64);
-      const tierSize = 128;
-      ctx.drawImage(tierImg, px + pw - tierSize - 8, py + ph - tierSize + 16, tierSize, tierSize);
+      const tierSize = 160;
+      ctx.drawImage(tierImg, px + pw - tierSize + 24, py + ph - tierSize + 24, tierSize, tierSize);
     } catch {
       ctx.fillStyle = "#171717";
-      drawRoundedRectPath(ctx, 1090, 188, 382, 538, 28);
+      drawRoundedRectPath(ctx, 1070, 245, 420, 560, 28);
       ctx.fill();
       ctx.fillStyle = "#9ca3af";
-      ctx.font = "700 24px 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("Photo unavailable", 1174, 470);
+      ctx.font = "700 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("Photo unavailable", 1154, 545);
     }
 
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
@@ -470,7 +503,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.stroke();
 
     ctx.fillStyle = "#7a7a7a";
-    ctx.font = "700 16px 'Segoe UI', Arial, sans-serif";
+    ctx.font = "700 18px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
     ctx.fillText("LOT PROPERTY", 60, height - 40);
     ctx.fillText("CERTIFIED DIGITAL SCOREBOARD", width - 370, height - 40);
 
@@ -478,15 +511,17 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   };
 
   const handleDownloadCard = async () => {
-    const cardEl = document.getElementById("profile-scorecard-card");
-    if (!cardEl) {
-      triggerError("Elemen kartu tidak ditemukan!");
-      return;
-    }
+    setIsDownloading(true);
+    triggerToast("Menyiapkan unduhan gambar kartu profil...");
 
-    const downloadFromCanvas = async (canvas: HTMLCanvasElement) => {
+    try {
+      // Small timeout to allow render states to settle
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      const compatibilityCanvas = await buildCompatibilityCardCanvas();
+      
       const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob(resolve, "image/png", 1)
+        compatibilityCanvas.toBlob(resolve, "image/png", 1)
       );
 
       if (!blob) throw new Error("Canvas export returned empty blob");
@@ -499,59 +534,6 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(objectUrl);
-    };
-
-    setIsDownloading(true);
-    triggerToast("Menyiapkan unduhan gambar kartu profil...");
-
-    try {
-      // Small timeout to allow render states to settle
-      await new Promise(resolve => setTimeout(resolve, 600));
-
-      const renderDomCanvas = (scale: number, backgroundColor: string | null) =>
-        html2canvas(cardEl, {
-          useCORS: true,
-          allowTaint: false,
-          scale,
-          backgroundColor,
-          logging: false,
-          foreignObjectRendering: false,
-          removeContainer: true,
-          onclone: (clonedDoc) => {
-            const clonedCard = clonedDoc.getElementById("profile-scorecard-card");
-            if (!clonedCard) return;
-
-            clonedCard.querySelectorAll<HTMLElement>("*").forEach((node) => {
-              node.style.animation = "none";
-              node.style.transition = "none";
-              node.style.filter = "none";
-              node.style.backdropFilter = "none";
-              node.style.setProperty("font-family", "system-ui, -apple-system, 'Segoe UI', Arial, sans-serif", "important");
-            });
-
-            clonedCard.querySelectorAll<HTMLElement>(".text-gradient-gold").forEach((el) => {
-              el.style.background = "none";
-              el.style.color = "#E8A500";
-              el.style.setProperty("-webkit-text-fill-color", "#E8A500");
-            });
-          },
-        });
-
-      try {
-        const canvas = await renderDomCanvas(3, null);
-        await downloadFromCanvas(canvas);
-      } catch {
-        try {
-          // Fallback pass for browsers/styles that still taint the first render.
-          const fallbackCanvas = await renderDomCanvas(2, "#0A0A0A");
-          await downloadFromCanvas(fallbackCanvas);
-        } catch {
-          // Final fallback: render a local-only compatibility canvas (no DOM capture).
-          const compatibilityCanvas = await buildCompatibilityCardCanvas();
-          await downloadFromCanvas(compatibilityCanvas);
-          triggerToast("Mode kompatibilitas dipakai untuk unduhan kartu profil.");
-        }
-      }
 
       triggerToast("Gambar kartu profil berhasil diunduh!");
     } catch (err) {
@@ -598,33 +580,22 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       // Ignore
     }
 
-    // Trigger PNG image download
-    await handleDownloadCard();
-
-    // Small delay to let the download start, then open the platform link
-    setTimeout(() => {
-      let url = "";
-      if (platform === "Instagram Story" || platform === "Instagram Post") {
-        url = "https://instagram.com";
-      } else if (platform === "Facebook") {
-        url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
-      } else if (platform === "Threads") {
-        url = `https://threads.net/intent/post?text=${encodeURIComponent(payload)}`;
-      } else if (platform === "WhatsApp") {
-        url = `https://api.whatsapp.com/send?text=${encodeURIComponent(payload)}`;
-      }
-
-      if (url) {
-        window.open(url, "_blank");
-      }
-    }, 1200);
-
-    // Provide helpful user toast instructions based on platform behavior
-    if (platform.includes("Instagram") || platform === "Facebook") {
-      triggerToast(`Membuka ${platform}... Gambar diunduh! Silakan tempel (paste) deskripsi dari clipboard.`);
-    } else {
-      triggerToast(`Membuka ${platform}... Gambar diunduh & teks caption disalin!`);
+    let url = "";
+    if (platform === "Instagram Story" || platform === "Instagram Post") {
+      url = "https://instagram.com";
+    } else if (platform === "Facebook") {
+      url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+    } else if (platform === "Threads") {
+      url = `https://threads.net/intent/post?text=${encodeURIComponent(payload)}`;
+    } else if (platform === "WhatsApp") {
+      url = `https://api.whatsapp.com/send?text=${encodeURIComponent(payload)}`;
     }
+
+    if (url) {
+      window.open(url, "_blank");
+    }
+
+    triggerToast(`Membuka ${platform}... Teks caption berhasil disalin!`);
   };
 
   const closeShareModal = () => {
@@ -640,8 +611,8 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       <AnimatePresence>
         {successToast && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#16A34A] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-semibold border border-green-500/20">
-            <Check size={16} /> {successToast}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-[80] bg-[#16A34A] text-white px-5 py-3 rounded-xl shadow-lg flex items-center justify-center text-center gap-2 text-sm font-semibold border border-green-500/20 w-[80vw] max-w-md">
+            <Check size={16} className="flex-shrink-0" /> <span className="text-xs sm:text-sm">{successToast}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -650,8 +621,8 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       <AnimatePresence>
         {errorAlert && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#DC2626] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-semibold border border-red-500/20">
-            <AlertCircle size={16} /> {errorAlert}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-[80] bg-[#DC2626] text-white px-5 py-3 rounded-xl shadow-lg flex items-center justify-center text-center gap-2 text-sm font-semibold border border-red-500/20 w-[80vw] max-w-md">
+            <AlertCircle size={16} className="flex-shrink-0" /> <span className="text-xs sm:text-sm">{errorAlert}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -1131,10 +1102,10 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       {/* ── MODAL: SHARE PROFILE CARD (MULTI-LANGUAGE ID, EN, CN) ── */}
       <AnimatePresence>
         {showShareModal && (
-          <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4" style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}>
+          <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center sm:p-4 share-modal-backdrop-wrap" style={{ paddingBottom: "max(5rem, env(safe-area-inset-bottom))" }}>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeShareModal} className="absolute inset-0 bg-black/60" />
             <motion.div initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="bg-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl border shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[90vh]"
+              className="bg-card w-full max-w-lg rounded-t-3xl sm:rounded-3xl border shadow-2xl overflow-hidden relative z-10 flex flex-col max-h-[calc(100dvh-5.5rem)] sm:max-h-[90vh] share-modal-container"
               style={{ borderColor: T.border }}>
 
               {/* Header with Language Tabs */}
@@ -1161,19 +1132,18 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 </div>
               </div>
 
-              {/* Shareable Score Card Display Area */}
-              <div className="p-4 sm:p-6 flex flex-col items-center bg-zinc-950/20 flex-1 overflow-y-auto min-h-0">
-                <div id="profile-scorecard-card" className="w-full max-w-[440px] rounded-2xl border relative overflow-hidden p-4 sm:p-5 flex flex-col justify-between"
+              <div className="p-4 sm:p-6 flex flex-col items-center bg-zinc-950/20 flex-1 overflow-y-auto min-h-0 share-modal-body">
+                <div id="profile-scorecard-card" className="w-full max-w-[440px] rounded-2xl border relative overflow-hidden p-4 sm:p-5 flex flex-col justify-between share-scorecard-card"
                   style={{
-                    background: "linear-gradient(135deg, #1C1812 0%, #0A0A0A 100%)",
+                    background: "linear-gradient(135deg, #2D1A05 0%, #150D02 50%, #050301 100%)",
                     borderColor: "#C8922A60",
                     borderWidth: "1.5px",
                     boxShadow: "0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)",
                     aspectRatio: "1.58 / 1"
                   }}>
                   {/* Background overlay glimmers */}
-                  <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-30 z-0"
-                    style={{ background: "radial-gradient(circle at 70% 30%, rgba(200, 146, 42, 0.35), transparent 70%)" }} />
+                  <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-40 z-0"
+                    style={{ background: "radial-gradient(circle at 80% 20%, rgba(232, 165, 0, 0.45), transparent 65%), radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.15), transparent 50%)" }} />
 
                   {/* Corner brackets decoration */}
                   <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-[#C8922A] opacity-60" />
@@ -1194,46 +1164,46 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   </div>
 
                   {/* Body Content: Split Left/Right */}
-                  <div className="flex gap-4 items-center z-10 flex-1 py-2">
+                  <div className="flex gap-5 items-center z-10 flex-1 py-3">
                     {/* Left: Stats */}
-                    <div className="flex-1 space-y-2 text-left">
+                    <div className="flex-1 space-y-3.5 text-left">
                       <div>
-                        <h4 className="font-extrabold text-[13px] leading-none text-white" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                        <h4 className="font-extrabold text-[17px] leading-tight text-white tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                           {AGENT_PROFILE.name}
                         </h4>
-                        <p className="text-[8px] text-[#C8922A] uppercase font-black mt-0.5 tracking-wider">
+                        <p className="text-[9px] text-[#C8922A] uppercase font-black mt-0.5 tracking-wider">
                           {AGENT_PROFILE.tier}
                         </p>
                       </div>
 
-                      {/* Main Metric: Career Commission */}
+                      {/* Main Metric: Total Transactions */}
                       <div>
-                        <p className="text-[7px] text-zinc-400 font-bold tracking-wider uppercase">{L.commission}</p>
-                        <h2 className="font-black text-base text-gradient-gold leading-none mt-0.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                          {AGENT_PROFILE.commission}
+                        <p className="text-[8px] text-zinc-400 font-bold tracking-wider uppercase">{L.transactions}</p>
+                        <h2 className="font-black text-xl text-gradient-gold leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                          {AGENT_PROFILE.totalTransactions} {activeLang === "ID" ? "Transaksi" : activeLang === "CN" ? "笔交易" : "Transactions"}
                         </h2>
                       </div>
 
                       {/* Smaller stats: horizontal clean layout with vertical dividers */}
-                      <div className="flex items-center justify-between pt-1.5 border-t border-white/10 mt-1">
+                      <div className="flex items-center justify-between pt-2.5 border-t border-white/10 mt-2">
                         <div className="flex-1 text-center">
-                          <p className="text-[6.5px] font-black text-zinc-400 uppercase tracking-wide">{L.levelLabel}</p>
-                          <p className="font-black text-[11px] text-white leading-none mt-0.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                          <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.level}</p>
+                          <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                             {AGENT_PROFILE.level}
                           </p>
                         </div>
-                        <div className="w-[1px] h-4 bg-white/10" />
+                        <div className="w-[1px] h-5 bg-white/10" />
                         <div className="flex-1 text-center">
-                          <p className="text-[6.5px] font-black text-zinc-400 uppercase tracking-wide">{L.listings}</p>
-                          <p className="font-black text-[11px] text-white leading-none mt-0.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {AGENT_PROFILE.totalListings}
+                          <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.hof}</p>
+                          <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                            18
                           </p>
                         </div>
-                        <div className="w-[1px] h-4 bg-white/10" />
+                        <div className="w-[1px] h-5 bg-white/10" />
                         <div className="flex-1 text-center">
-                          <p className="text-[6.5px] font-black text-zinc-400 uppercase tracking-wide">{L.prospects}</p>
-                          <p className="font-black text-[11px] text-white leading-none mt-0.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {AGENT_PROFILE.totalProspects}
+                          <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.badges}</p>
+                          <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                            18/25
                           </p>
                         </div>
                       </div>
@@ -1241,13 +1211,13 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
                     {/* Right: Picture Card */}
                     <div className="flex-shrink-0 relative">
-                      <div className="w-[84px] h-[104px] rounded-xl overflow-hidden border border-[#C8922A] shadow-md bg-zinc-950">
+                      <div className="w-[104px] h-[135px] rounded-xl overflow-hidden border border-[#C8922A] shadow-md bg-zinc-950">
                         <img src={AGENT_PROFILE.photo} alt="Ronald Richy" className="w-full h-full object-cover object-top" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                       </div>
                       {/* Floating level badge graphic */}
-                      <div className="absolute -bottom-1.5 -right-1.5 z-20">
-                        <LevelBadge title={AGENT_PROFILE.tier} size={28} showPlate={false} customAsset={eliteAgentBase64} />
+                      <div className="absolute -bottom-2 -right-2 z-20">
+                        <LevelBadge title={AGENT_PROFILE.tier} size={36} showPlate={false} customAsset={eliteAgentBase64} />
                       </div>
                     </div>
                   </div>
@@ -1259,16 +1229,16 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   </div>
                 </div>
 
-                <p className="text-[10px] text-muted-foreground text-center mt-3">{L.desc}</p>
+                <p className="text-[10px] text-muted-foreground text-center mt-3 share-modal-desc">{L.desc}</p>
 
                 {/* Share Link Preview Row */}
-                <div className="w-full mt-3 p-2.5 rounded-xl border bg-muted/20 text-left" style={{ borderColor: T.border }}>
+                <div className="w-full mt-3 p-2.5 rounded-xl border bg-muted/20 text-left share-modal-link-box" style={{ borderColor: T.border }}>
                   <p className="text-[9px] font-bold uppercase tracking-wider mb-1" style={{ color: T.text3 }}>Share Link</p>
                   <p className="text-[10px] break-all font-mono" style={{ color: "#E8A500" }}>{shareUrl}</p>
                 </div>
 
                 {/* SHARE TO SECTION */}
-                <div className="w-full mt-4 border-t pt-3" style={{ borderColor: T.border }}>
+                <div className="w-full mt-4 border-t pt-3 share-modal-social-box" style={{ borderColor: T.border }}>
                   <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-3 text-center">
                     Share to social media
                   </p>

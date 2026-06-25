@@ -518,3 +518,36 @@ html.theme-transitioning *::after {
   * { transition-duration: 0ms !important; }
 }
 
+/* ── Compact styling for Share Profile Card Modal on small screens (height < 700px) ── */
+@media (max-height: 700px) {
+  .share-modal-backdrop-wrap {
+    padding-bottom: 12px !important;
+    align-items: center !important;
+  }
+  .share-modal-container {
+    max-height: calc(100dvh - 24px) !important;
+    border-radius: 20px !important;
+  }
+  .share-modal-body {
+    padding-top: 12px !important;
+    padding-bottom: 12px !important;
+  }
+  .share-scorecard-card {
+    max-width: 320px !important;
+  }
+  .share-modal-desc {
+    display: none !important;
+  }
+  .share-modal-link-box {
+    margin-top: 6px !important;
+    padding: 6px 10px !important;
+  }
+  .share-modal-social-box {
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+  }
+  .share-modal-social-box p {
+    margin-bottom: 6px !important;
+  }
+}
+
