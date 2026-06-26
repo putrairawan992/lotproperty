@@ -379,9 +379,11 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
       />
 
       {/* Event Banner Slider placed below Hall of Fame and above Weekly Leaderboard */}
-      <div className="my-2">
-        <EventBannerSlider isDark={isDark} onNav={onNav} events={eventData} />
-      </div>
+      {eventData && eventData.length > 0 && (
+        <div className="my-2">
+          <EventBannerSlider isDark={isDark} onNav={onNav} events={eventData} />
+        </div>
+      )}
 
 
       {/* Weekly LB + Progress + Quest */}

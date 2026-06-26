@@ -151,28 +151,33 @@ export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   const goTo = useCallback((index: number) => {
+    if (!events || events.length === 0) return;
     setCurrent(index % events.length);
-  }, [events.length]);
+  }, [events]);
 
   const next = useCallback(() => {
+    if (!events || events.length === 0) return;
     setCurrent((prev) => (prev + 1) % events.length);
-  }, [events.length]);
+  }, [events]);
 
   const prev = useCallback(() => {
+    if (!events || events.length === 0) return;
     setCurrent((prev) => (prev - 1 + events.length) % events.length);
-  }, [events.length]);
+  }, [events]);
 
   const resetAutoplay = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
+    if (!events || events.length === 0) return;
     timerRef.current = setInterval(next, AUTO_PLAY_MS);
-  }, [next]);
+  }, [next, events]);
 
   useEffect(() => {
+    if (!events || events.length === 0) return;
     resetAutoplay();
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [resetAutoplay]);
+  }, [resetAutoplay, events]);
 
   const handlePrev = useCallback(() => {
     prev();
@@ -183,6 +188,8 @@ export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }
     next();
     resetAutoplay();
   }, [next, resetAutoplay]);
+
+  if (!events || events.length === 0) return null;
 
   const activeEvent = events[current];
 
