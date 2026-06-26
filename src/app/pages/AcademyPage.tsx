@@ -177,8 +177,6 @@ export default function AcademyPage() {
     load();
   }, [isGuest]);
 
-  if (loading) return <AcademyPageSkeleton />;
-
   const categories = ["Semua", "SOP Internal", "Sales Training", "Negotiation", "Marketing", "Social Media", "Product Knowledge"];
 
   // Active module detailed state (null if listing view is active)
@@ -250,6 +248,8 @@ export default function AcademyPage() {
     }
     return () => clearInterval(timer);
   }, [isPlaying, activeChapterId, activeModule, playbackSpeed]);
+
+  if (loading) return <AcademyPageSkeleton />;
 
   const triggerToast = (msg: string) => {
     setToastMessage(msg);
