@@ -6,6 +6,7 @@ import { T, useTheme } from "../types";
 import AgentAvatar from "../components/AgentAvatar";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import QrCameraScanner from "../components/QrCameraScanner";
+import { api } from "../services/api";
 
 function QRCodeDisplay({ value }: { value: string }) {
   // 21x21 grid — hardcoded realistic QR pattern
@@ -42,6 +43,7 @@ function QRCodeDisplay({ value }: { value: string }) {
           v ? <rect key={`${r}-${c}`} x={4 + c * cell} y={4 + r * cell} width={cell - 1} height={cell - 1} fill="#1A1A1A" rx="1.5"/> : null
         )
       )}
+      <text x={size / 2} y={size - 6} textAnchor="middle" fontSize="6" fill="#6B7280">{value.slice(0, 24)}</text>
     </svg>
   );
 }
@@ -208,13 +210,12 @@ export function ThreeJsCheckmark() {
 const DAY_NAMES = ["Min","Sen","Sel","Rab","Kam","Jum","Sab"];
 
 export default function AttendancePage() {
-  const today = 19;
-  const firstDay = 0;
-  const daysInMonth = 30;
+  const now = new Date();
+  const today = now.getDate();
+  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const [activeTab, setActiveTab] = useState<"checkin"|"qr"|"scan"|"meeting">("checkin");
-  const [checkedDays, setCheckedDays] = useState<Set<number>>(
-    new Set([1,2,3,4,5,6,7,8,9,10,11,13,14,15,16,17,18])
-  );
+  const [checkedDays, setCheckedDays] = useState<Set<number>>(new Set());
   const [checkedToday, setCheckedToday] = useState(false);
   const [showSuccess, setShowSuccess]   = useState(false);
   const [showThreeJsPopup, setShowThreeJsPopup] = useState(false);
@@ -222,15 +223,59 @@ export default function AttendancePage() {
   const [scanDone, setScanDone]         = useState(false);
   const [manualCode, setManualCode]     = useState("");
   const [cameraRequested, setCameraRequested] = useState(false);
-  const { isDark } = useTheme();
+  const [streak, setStreak] = useState(0);
+  const [monthlyPresent, setMonthlyPresent] = useState(0);
+  const [qrCode, setQrCode] = useState("");
+  const [agentName, setAgentName] = useState("Agent");
+  const [agentTitle, setAgentTitle] = useState("Agent");
+  const [agentLevel, setAgentLevel] = useState(1);
+  const [agentPhoto, setAgentPhoto] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastEarnedXP, setLastEarnedXP] = useState(100);
+  const [toastMsg, setToastMsg] = useState("");
+  const { isDark, isGuest, onLoginRequest } = useTheme();
 
   useEffect(() => {
-    const todayStr = new Date().toDateString();
-    const isAbsenToday = localStorage.getItem("lotproperty-attendance-date") === todayStr;
-    if (isAbsenToday) {
-      setCheckedToday(true);
+    if (toastMsg) {
+      const t = setTimeout(() => setToastMsg(""), 3500);
+      return () => clearTimeout(t);
     }
-  }, []);
+  }, [toastMsg]);
+
+  useEffect(() => {
+    if (isGuest) {
+      setCheckedDays(new Set([1, 2, 4, 5, 8, 9, 12, 13, 14, 15]));
+      setCheckedToday(false);
+      setStreak(5);
+      setMonthlyPresent(10);
+      setQrCode("GUEST-QR-1234");
+      setAgentName("Guest Agent");
+      setAgentTitle("Rookie Agent");
+      setAgentLevel(1);
+      setAgentPhoto("");
+      return;
+    }
+    const loadStatus = async () => {
+      try {
+        const res = await api.attendance.getStatus();
+        const days = Array.isArray(res?.checked_days) ? res.checked_days : [];
+        setCheckedDays(new Set(days.map((d: any) => Number(d)).filter((d: number) => !Number.isNaN(d))));
+        setCheckedToday(Boolean(res?.checked_today));
+        setStreak(Number(res?.streak || 0));
+        setMonthlyPresent(Number(res?.monthly_present || 0));
+        setQrCode(String(res?.qr_code || ""));
+        setAgentName(String(res?.agent?.name || "Agent"));
+        setAgentTitle(String(res?.agent?.title || "Agent"));
+        setAgentLevel(Number(res?.agent?.level || 1));
+        setAgentPhoto(String(res?.agent?.photo_url || ""));
+        setToastMsg("");
+      } catch (error) {
+        setToastMsg(error instanceof Error ? error.message : "Gagal memuat status attendance");
+      }
+    };
+
+    loadStatus();
+  }, [isGuest]);
 
   useEffect(() => {
     if (activeTab !== "scan") {
@@ -238,35 +283,69 @@ export default function AttendancePage() {
     }
   }, [activeTab]);
 
-  const streak = (() => {
-    let s = 0;
-    for (let d = today - 1; d >= 1; d--) {
-      if (checkedDays.has(d)) s++; else break;
-    }
-    return s + (checkedToday ? 1 : 0);
-  })();
-
-  const handleCheckIn = () => {
+  const markSuccess = (xpEarned: number, newStreak?: number) => {
     setCheckedDays(prev => new Set([...prev, today]));
     setCheckedToday(true);
-    localStorage.setItem("lotproperty-attendance-date", new Date().toDateString());
+    setLastEarnedXP(xpEarned);
+    if (typeof newStreak === "number") {
+      setStreak(newStreak);
+    }
+    setMonthlyPresent(prev => Math.max(prev, checkedToday ? prev : prev + 1));
     setShowThreeJsPopup(true);
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
   };
 
-  const handleQrScan = (_data: string) => {
-    if (scanDone) return;
-    setScanDone(true);
-    setCameraRequested(false);
-    handleCheckIn();
+  const submitAttendance = async (kind: "checkin" | "qr" | "scan" | "meeting", value?: string) => {
+    if (isGuest) {
+      onLoginRequest();
+      return false;
+    }
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    setToastMsg("");
+    try {
+      let res: any;
+      if (kind === "checkin") {
+        res = await api.attendance.checkIn();
+      } else if (kind === "qr") {
+        res = await api.attendance.submitQr(String(value || ""));
+      } else if (kind === "scan") {
+        res = await api.attendance.submitScan(String(value || ""));
+      } else {
+        res = await api.attendance.joinMeeting(String(value || ""));
+      }
+
+      const xpEarned = Number(res?.xp_earned || 0);
+      const newStreak = Number(res?.streak || streak);
+      markSuccess(xpEarned, newStreak);
+      return true;
+    } catch (error) {
+      setToastMsg(error instanceof Error ? error.message : "Gagal mengirim attendance");
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleManualSubmit = () => {
-    if (!manualCode.trim() || scanDone) return;
+  const handleCheckIn = async () => {
+    await submitAttendance("checkin");
+  };
+
+  const handleQrScan = async (data: string) => {
+    if (scanDone) return;
+    const ok = await submitAttendance("scan", data || qrCode || "scan-camera");
+    if (!ok) return;
     setScanDone(true);
     setCameraRequested(false);
-    handleCheckIn();
+  };
+
+  const handleManualSubmit = async () => {
+    if (!manualCode.trim() || scanDone) return;
+    const ok = await submitAttendance("scan", manualCode.trim());
+    if (!ok) return;
+    setScanDone(true);
+    setCameraRequested(false);
   };
 
   const handleScanAgain = () => {
@@ -304,12 +383,30 @@ export default function AttendancePage() {
     <div className="p-4 lg:p-6 max-w-2xl mx-auto space-y-5">
       <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>Absensi & Kehadiran</h1>
 
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -24, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -24, x: "-50%" }}
+            className="fixed top-20 left-1/2 z-[90] px-5 py-3.5 rounded-2xl bg-[#DC2626] text-white shadow-xl flex items-center gap-2.5 text-sm font-semibold border border-red-500/30 max-w-sm w-[90vw]"
+          >
+            <span className="text-base">⚠️</span>
+            <span className="flex-1 text-xs sm:text-sm">{toastMsg}</span>
+            <button onClick={() => setToastMsg("")} className="p-0.5 rounded hover:bg-white/10">
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Stat cards */}
       <div className="grid grid-cols-3 gap-3">
         {[
           { label: "Streak", value: `${streak} Hari`, icon: "🔥", color: "#E8A500", bg: "#FFFAED" },
-          { label: "Hadir",  value: `${checkedDays.size + (checkedToday ? 1 : 0)} Hari`, icon: "✅", color: "#16A34A", bg: "#F0FDF4" },
-          { label: "XP Login", value: `${(checkedDays.size + (checkedToday ? 1 : 0)) * 100}`, icon: "⚡", color: "#7B2FBE", bg: "#F5F0FD" },
+          { label: "Hadir",  value: `${monthlyPresent} Hari`, icon: "✅", color: "#16A34A", bg: "#F0FDF4" },
+          { label: "XP Login", value: `${monthlyPresent * 100}`, icon: "⚡", color: "#7B2FBE", bg: "#F5F0FD" },
         ].map(s => (
           <div key={s.label} className="bg-card rounded-2xl border p-3 text-center" style={{ borderColor: T.border }}>
             <div className="text-lg mb-0.5">{s.icon}</div>
@@ -346,8 +443,8 @@ export default function AttendancePage() {
                 <motion.button key="btn" onClick={handleCheckIn}
                   className="w-full rounded-2xl font-bold relative overflow-hidden"
                   style={{ height: 64, background: "linear-gradient(135deg,#E8A500,#C8922A)", color: "white", fontFamily: "'Rajdhani', sans-serif", fontSize: 20, letterSpacing: "0.05em" }}
-                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
-                  📍 ABSENSI SEKARANG
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }} disabled={isSubmitting}>
+                  {isSubmitting ? "MEMPROSES..." : "📍 ABSENSI SEKARANG"}
                 </motion.button>
               ) : (
                 <motion.div key="done"
@@ -363,7 +460,9 @@ export default function AttendancePage() {
             {/* Calendar */}
             <div className="bg-card rounded-2xl border p-4" style={{ borderColor: T.border }}>
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                <h3 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 16, color: T.text1 }}>Juni 2025</h3>
+                <h3 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 16, color: T.text1 }}>
+                  {now.toLocaleString("id-ID", { month: "long", year: "numeric" })}
+                </h3>
                 <div className="flex gap-2">
                   {[{ c:"#16A34A", bg:"#DCFCE7", l:"Hadir" }, { c:"#DC2626", bg:"#FEE2E2", l:"Absen" }, { c:"#E8A500", bg:"#FFFAED", l:"Hari ini" }].map(l => (
                     <div key={l.l} className="flex items-center gap-1">
@@ -409,7 +508,7 @@ export default function AttendancePage() {
                       </div>
                       <div className="flex-1">
                         <p className="text-sm font-medium" style={{ color: T.text1 }}>
-                          {i === 0 ? "Hari ini" : i === 1 ? "Kemarin" : `${i} hari lalu`} · {day} Jun 2025
+                          {i === 0 ? "Hari ini" : i === 1 ? "Kemarin" : `${i} hari lalu`} · {day} {now.toLocaleString("id-ID", { month: "short", year: "numeric" })}
                         </p>
                       </div>
                       {isChecked && <span className="text-xs font-bold" style={{ color: "#C8922A" }}>+100 XP</span>}
@@ -427,20 +526,24 @@ export default function AttendancePage() {
             <div className="bg-card rounded-2xl border p-6 flex flex-col items-center gap-4" style={{ borderColor: T.border }}>
               <p className="text-sm font-medium" style={{ color: T.text3 }}>QR Code Absensi Kamu</p>
               <div className="p-3 rounded-2xl" style={{ backgroundColor: T.muted, border: "2px solid #E5E7EB" }}>
-                <QRCodeDisplay value="LOT-2022-0047-AHMAD-FADHIL" />
+                <QRCodeDisplay value={qrCode || `LOT-AGENT-${today}`} />
               </div>
               <div className="text-center">
-                <p className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 16, color: T.text1 }}>Ahmad Fadhil</p>
-                <p className="text-xs" style={{ color: T.text3 }}>ID: LOT-2022-0047 · Senior Agent Lv 45</p>
+                <div className="flex justify-center mb-2">
+                  <AgentAvatar src={agentPhoto} name={agentName} size={48} />
+                </div>
+                <p className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 16, color: T.text1 }}>{agentName}</p>
+                <p className="text-xs" style={{ color: T.text3 }}>QR: {qrCode || "-"} · {agentTitle} Lv {agentLevel}</p>
               </div>
               <div className="w-full p-3 rounded-xl text-center text-sm font-semibold" style={{ backgroundColor: "var(--accent)", color: "#E8A500" }}>
                 Tunjukkan QR ini ke admin / scanner di lokasi event
               </div>
               <motion.button
+                onClick={() => submitAttendance("qr", qrCode || `LOT-AGENT-${today}`)}
                 className="w-full py-3 rounded-xl font-bold text-sm"
                 style={{ backgroundColor: T.muted, color: T.text2, fontFamily: "'Rajdhani', sans-serif", fontSize: 15 }}
                 whileTap={{ scale: 0.97 }}>
-                📥 Download QR Code
+                ✅ Klaim Attendance via QR
               </motion.button>
             </div>
             <div className="bg-card rounded-2xl border p-4" style={{ borderColor: T.border }}>
@@ -498,9 +601,9 @@ export default function AttendancePage() {
                       style={{ backgroundColor: T.muted, color: T.text2, fontFamily: "'Rajdhani', sans-serif" }}
                       whileTap={{ scale: 0.95 }}
                       onClick={handleManualSubmit}
-                      disabled={!manualCode.trim()}
+                      disabled={!manualCode.trim() || isSubmitting}
                     >
-                      Submit
+                      {isSubmitting ? "Mengirim..." : "Submit"}
                     </motion.button>
                   </div>
                 </div>
@@ -517,7 +620,7 @@ export default function AttendancePage() {
                 </div>
                 <div className="w-full p-3 rounded-xl text-center" style={{ backgroundColor: "var(--accent)" }}>
                   <p className="text-xs" style={{ color: T.text3 }}>XP Didapat</p>
-                  <p className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 28, color: "#C8922A" }}>+100 XP</p>
+                  <p className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 28, color: "#C8922A" }}>+{lastEarnedXP} XP</p>
                 </div>
                 <button onClick={handleScanAgain} className="text-sm" style={{ color: T.text3 }}>
                   Scan QR lain
@@ -554,12 +657,18 @@ export default function AttendancePage() {
                       />
                       <p className="text-xs" style={{ color: T.text3 }}>{m.time}</p>
                     </div>
-                    <motion.a href={m.link} target="_blank" rel="noreferrer"
+                    <motion.button
                       className="px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0"
                       style={{ backgroundColor: m.color, color: "white", fontFamily: "'Rajdhani', sans-serif" }}
-                      whileTap={{ scale: 0.95 }}>
+                      whileTap={{ scale: 0.95 }}
+                      onClick={async () => {
+                        const ok = await submitAttendance("meeting", m.link);
+                        if (ok) {
+                          window.open(m.link, "_blank", "noopener,noreferrer");
+                        }
+                      }}>
                       Join
-                    </motion.a>
+                    </motion.button>
                   </motion.div>
                 ))}
               </div>
@@ -574,17 +683,23 @@ export default function AttendancePage() {
                   className="flex-1 px-3.5 py-2.5 rounded-xl border outline-none bg-card text-sm"
                   style={{ borderColor: T.border }} />
               </div>
-              <motion.a href={meetingUrl || "#"} target="_blank" rel="noreferrer"
+              <motion.button
                 className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-sm"
                 style={{
                   backgroundColor: meetingUrl ? "#E8A500" : "var(--border)",
                   color: meetingUrl ? "white" : "#9CA3AF",
                   fontFamily: "'Rajdhani', sans-serif", fontSize: 15, letterSpacing: "0.04em",
-                  pointerEvents: meetingUrl ? "auto" : "none",
                 }}
-                whileTap={meetingUrl ? { scale: 0.97 } : {}}>
+                whileTap={meetingUrl ? { scale: 0.97 } : {}}
+                disabled={!meetingUrl || isSubmitting}
+                onClick={async () => {
+                  const ok = await submitAttendance("meeting", meetingUrl);
+                  if (ok) {
+                    window.open(meetingUrl, "_blank", "noopener,noreferrer");
+                  }
+                }}>
                 🎥 JOIN MEETING SEKARANG
-              </motion.a>
+              </motion.button>
             </div>
 
             {/* Platform quick links */}
@@ -622,7 +737,7 @@ export default function AttendancePage() {
             <span>✅</span>
             <div>
               <p className="font-semibold text-sm">Absensi berhasil!</p>
-              <p style={{ fontSize: 12, color: T.text3 }}>+100 XP ditambahkan</p>
+              <p style={{ fontSize: 12, color: T.text3 }}>+{lastEarnedXP} XP ditambahkan</p>
             </div>
           </motion.div>
         )}
@@ -704,7 +819,7 @@ export default function AttendancePage() {
                     className="font-bold text-2xl flex items-center gap-1"
                     style={{ fontFamily: "'Rajdhani', sans-serif", color: "#C8922A" }}
                   >
-                    ⚡ <span className="text-[#E8A500]">+100</span> <span className="text-xs font-semibold text-text3">XP</span>
+                    ⚡ <span className="text-[#E8A500]">+{lastEarnedXP}</span> <span className="text-xs font-semibold text-text3">XP</span>
                   </p>
                 </div>
               </div>

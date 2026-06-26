@@ -10,6 +10,7 @@ import useLoading from "../hooks/useLoading";
 import { T, Page, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
+import { api } from "../services/api";
 import petiHartaKarun from "../../imports/peti-harta-karun.png";
 
 const TreasureChestIcon = ({ size = 22, className = "" }: { size?: number; className?: string }) => (
@@ -228,8 +229,11 @@ interface QuestItem {
 }
 
 export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
-  const loading = useLoading(1200);
-  const { isDark } = useTheme();
+  const loadingTime = useLoading(1200);
+  const { isDark, isGuest, user, refreshUser } = useTheme();
+  const [apiLoading, setApiLoading] = useState(true);
+
+  const loading = loadingTime || (isGuest ? false : apiLoading);
   const { navigate } = useLocation();
 
   // 3D Card Tilt Motion Values and Springs
@@ -256,10 +260,10 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   // Quest states
   const [dailyQuests, setDailyQuests] = useState<QuestItem[]>([
-    { name: "Daily Login", progress: 1, total: 1, xp: 100, done: true, id: "daily_login" },
-    { name: "New Listing", progress: 2, total: 3, xp: 100, note: "Max 300 XP/hari", id: "new_listing" },
+    { name: "Daily Login", progress: 0, total: 1, xp: 100, done: false, id: "daily_login" },
+    { name: "New Listing", progress: 0, total: 3, xp: 100, note: "Max 300 XP/hari", id: "new_listing" },
     { name: "New Content (IG/TikTok/YT)", progress: 0, total: 1, xp: 300, id: "new_content" },
-    { name: "Listing Promotion", progress: 1, total: 3, xp: 100, note: "Max 300 XP/hari", id: "listing_promo" },
+    { name: "Listing Promotion", progress: 0, total: 3, xp: 100, note: "Max 300 XP/hari", id: "listing_promo" },
   ]);
 
   const [weeklyQuests, setWeeklyQuests] = useState<QuestItem[]>([
@@ -286,6 +290,118 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const [contentUrl, setContentUrl] = useState("");
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [promoUrl, setPromoUrl] = useState("");
+  const [weeklyRank, setWeeklyRank] = useState("#-");
+
+  const activeAgent = isGuest ? {
+    name: "Ronald Richy",
+    title: "Senior Agent",
+    level: 23,
+    total_xp: 24680,
+    weekly_xp: 1620,
+    photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
+  } : (user || {
+    name: "Ronald Richy",
+    title: "Senior Agent",
+    level: 23,
+    total_xp: 24680,
+    weekly_xp: 1620,
+    photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
+  });
+
+  const LEVEL_TIERS = [
+    { title: "Rookie Agent",  range: "1–19",  xp: "0",          color: "#9CA3AF" },
+    { title: "Junior Agent",  range: "20–39", xp: "50.000",     color: "#2070C0" },
+    { title: "Senior Agent",  range: "40–59", xp: "200.000",    color: "#C8922A" },
+    { title: "Elite Agent",   range: "60–79", xp: "800.000",    color: "#7040D0" },
+    { title: "Super Elite Agent", range: "80–98", xp: "2.000.000",  color: "#E8A500" },
+    { title: "LOT Legendary", range: "99",    xp: "5.000.000+", color: "#C0392B" },
+  ] as const;
+
+  const currentTier = LEVEL_TIERS.find(t => t.title === activeAgent?.title) || LEVEL_TIERS[0];
+  const nextTierIdx = LEVEL_TIERS.findIndex(t => t.title === activeAgent?.title) + 1;
+  const nextTier = nextTierIdx < LEVEL_TIERS.length ? LEVEL_TIERS[nextTierIdx] : null;
+
+  const parseXp = (xpStr: string) => {
+    return Number(xpStr.replace(/\./g, "").replace("+", ""));
+  };
+
+  const currentTierXp = parseXp(currentTier.xp);
+  const nextTierXp = nextTier ? parseXp(nextTier.xp) : 5000000;
+  const totalXp = Number(activeAgent?.total_xp || 0);
+  const nextTierTitle = nextTier ? nextTier.title : "LOT Legendary";
+
+  const applyDailyQuestStatus = (quest: any) => {
+    setDailyQuests(prev => prev.map(item => {
+      if (item.id === "daily_login") {
+        const progress = quest?.login_completed ? 1 : 0;
+        return { ...item, progress, done: progress >= item.total };
+      }
+      if (item.id === "new_listing") {
+        const progress = Math.min(Number(quest?.listings_count || 0), item.total);
+        return { ...item, progress, done: progress >= item.total };
+      }
+      if (item.id === "new_content") {
+        const progress = Math.min(Number(quest?.contents_count || 0), item.total);
+        return { ...item, progress, done: progress >= item.total };
+      }
+      if (item.id === "listing_promo") {
+        const progress = Math.min(Number(quest?.promotions_count || 0), item.total);
+        return { ...item, progress, done: progress >= item.total };
+      }
+      return item;
+    }));
+  };
+
+  const loadQuestStatus = async () => {
+    if (isGuest) {
+      setApiLoading(false);
+      return;
+    }
+    try {
+      setApiLoading(true);
+      const [statusRes, academyRes, weeklyRes] = await Promise.all([
+        api.quests.getStatus(),
+        api.academy.getModules().catch(() => []),
+        api.dashboard.getWeeklyLeaderboard().catch(() => [])
+      ]);
+      applyDailyQuestStatus(statusRes?.daily_quest || {});
+
+      setWeeklyQuests(prev => prev.map(item => {
+        if (item.id === "new_prospect") {
+          const progress = Math.min(Number(activeAgent?.total_prospects || 0), 10);
+          return { ...item, progress, done: progress >= item.total };
+        }
+        return item;
+      }));
+
+      const completedModules = Array.isArray(academyRes) ? academyRes.filter((m: any) => m.status === "Completed").length : 0;
+      setSkillQuests(prev => prev.map(item => {
+        if (item.id === "new_recruit") {
+          const progress = Math.min(Number(activeAgent?.total_recruits || 0), 1);
+          return { ...item, progress, done: progress >= item.total };
+        }
+        if (item.id === "academy") {
+          const progress = Math.min(completedModules, 5);
+          return { ...item, progress, done: progress >= item.total };
+        }
+        return item;
+      }));
+
+      if (Array.isArray(weeklyRes) && user?.id) {
+        const found = weeklyRes.find((r: any) => Number(r.id) === Number(user.id));
+        if (found) setWeeklyRank(`#${found.rank}`);
+      }
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal memuat status quest");
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadQuestStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeAgent]);
 
   if (loading) return <QuestPageSkeleton />;
 
@@ -295,7 +411,17 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   };
 
   const handleGo = (q: any) => {
-    if (q.id === "new_recruit") {
+    if (q.id === "daily_login") {
+      api.quests.markAttendance()
+        .then((res: any) => {
+          const xp = Number(res?.xp_earned || 0);
+          triggerToast(xp > 0 ? `Attendance sukses! +${xp} XP` : "Attendance hari ini sudah tercatat.");
+          loadQuestStatus();
+        })
+        .catch((error: unknown) => {
+          triggerToast(error instanceof Error ? error.message : "Gagal submit attendance");
+        });
+    } else if (q.id === "new_recruit") {
       setShowRecruitModal(true);
     } else if (q.id === "event_participation") {
       setShowEventModal(true);
@@ -331,26 +457,32 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     triggerToast("Kode event berhasil diverifikasi! +1.000 XP ditambahkan.");
   };
 
-  const handleContentSubmit = () => {
+  const handleContentSubmit = async () => {
     if (!contentUrl.trim()) return;
-    setDailyQuests(prev => prev.map(q => q.id === "new_content" ? { ...q, progress: 1, done: true } : q));
-    setShowContentModal(false);
-    setContentUrl("");
-    triggerToast("Link konten berhasil disubmit! +300 XP ditambahkan.");
+    try {
+      const res = await api.quests.submitContent(contentUrl.trim());
+      const xp = Number(res?.xp_earned || 0);
+      setShowContentModal(false);
+      setContentUrl("");
+      triggerToast(`Link konten berhasil disubmit! +${xp || 300} XP ditambahkan.`);
+      await loadQuestStatus();
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal submit konten");
+    }
   };
 
-  const handlePromoSubmit = () => {
+  const handlePromoSubmit = async () => {
     if (!promoUrl.trim()) return;
-    setDailyQuests(prev => prev.map(q => {
-      if (q.id === "listing_promo") {
-        const nextProgress = Math.min(q.progress + 1, q.total);
-        return { ...q, progress: nextProgress, done: nextProgress >= q.total };
-      }
-      return q;
-    }));
-    setShowPromoModal(false);
-    setPromoUrl("");
-    triggerToast("Link promosi listing berhasil disubmit! +100 XP ditambahkan.");
+    try {
+      const res = await api.quests.submitPromotion(promoUrl.trim());
+      const xp = Number(res?.xp_earned || 0);
+      setShowPromoModal(false);
+      setPromoUrl("");
+      triggerToast(`Link promosi listing berhasil disubmit! +${xp || 100} XP ditambahkan.`);
+      await loadQuestStatus();
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal submit promosi listing");
+    }
   };
 
   function QuestRow({ q, accent }: { q: any; accent: string }) {
@@ -431,24 +563,30 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       {/* XP Header */}
       <Card className="p-5" style={{ background: isDark ? "var(--gradient-banner)" : "linear-gradient(135deg,#FFFCF0,#FFFAED)", borderColor: isDark ? "#C8922A25" : "#E8A50025" }}>
         <div className="flex items-center gap-4 mb-3">
-          <div className="flex-shrink-0"><LevelBadge title="Senior Agent" size={64} /></div>
+          <div className="flex-shrink-0"><LevelBadge title={activeAgent?.title || "Rookie Agent"} size={64} /></div>
           <div className="flex-1">
             <p style={{ fontSize: 10, color: T.text3, letterSpacing: "0.08em" }}>RANK SAAT INI</p>
-            <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 20 }}>Senior Agent</p>
-            <p style={{ fontSize: 11, color: T.text3 }}>Level 45 · <span className="text-gradient-gold font-bold" style={{ fontFamily: "var(--font-numeric)" }}>648,450 XP</span></p>
+            <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 20 }}>{activeAgent?.title || "Rookie Agent"}</p>
+            <p style={{ fontSize: 11, color: T.text3 }}>Level {activeAgent?.level || 1} · <span className="text-gradient-gold font-bold" style={{ fontFamily: "var(--font-numeric)" }}>{Number(totalXp).toLocaleString("id-ID")} XP</span></p>
           </div>
           <div className="text-right flex-shrink-0">
             <p style={{ fontSize: 10, color: T.text3 }}>Weekly Rank</p>
-            <p className="font-bold" style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 28, color: "#E8A500" }}>#7</p>
+            <p className="font-bold" style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 28, color: "#E8A500" }}>{isGuest ? "#7" : weeklyRank}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex-1">
-            <XPBar value={648450} max={800000} showLabel />
-            <p className="text-xs mt-1.5" style={{ color: T.text3 }}>151,550 XP lagi menuju <span style={{ color: "#7040D0", fontWeight: 600 }}>Elite Agent</span></p>
+            <XPBar value={totalXp - currentTierXp} max={nextTierXp - currentTierXp} showLabel />
+            {nextTier ? (
+              <p className="text-xs mt-1.5" style={{ color: T.text3 }}>
+                {Number(nextTierXp - totalXp).toLocaleString("id-ID")} XP lagi menuju <span style={{ color: getLevelTierColor(nextTierTitle), fontWeight: 600 }}>{nextTierTitle}</span>
+              </p>
+            ) : (
+              <p className="text-xs mt-1.5" style={{ color: T.text3 }}>Pangkat Maksimum Tercapai! 🔥</p>
+            )}
           </div>
           <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-            <LevelBadge title="Elite Agent" size={40} />
+            <LevelBadge title={nextTierTitle} size={40} />
             <span style={{ fontSize: 8, color: T.text3 }}>NEXT</span>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Award, Target, AlertCircle, Trophy, DollarSign, Pin } from "lucide-react";
 import { NotificationsPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
@@ -6,62 +6,69 @@ import { useTabQuery } from "../routes";
 import { T, Rarity, useTheme } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { ALL_BADGES } from "./ProfilePage";
+import { api } from "../services/api";
+
+interface NotifItem {
+  id: number;
+  type: string;
+  title: string;
+  body: string;
+  time: string;
+  unread: boolean;
+  pinned?: boolean;
+}
+
+const FALLBACK_NOTIFS: NotifItem[] = [
+  { id: 0, type: "achievement", title: "Badge Unlocked: Dedicated Agent", body: "Selamat! Kamu berhasil menyelesaikan Daily Quest 7 hari berturut-turut.", time: "2 jam lalu", unread: true },
+  { id: 1, type: "system", title: "Listing Hampir Kadaluarsa", body: "The Spring Studio akan kadaluarsa dalam 14 hari. Perbarui sekarang.", time: "5 jam lalu", unread: true, pinned: true },
+  { id: 2, type: "leaderboard", title: "Kamu Naik ke Ranking #7!", body: "Ahmad Fadhil sekarang di posisi #7 Weekly Leaderboard. Terus semangat!", time: "1 hari lalu", unread: false },
+  { id: 3, type: "commission", title: "Commission Claim Disetujui", body: "Komisi Rumah 3BR Bintaro disetujui. +7.500 XP ditambahkan.", time: "2 hari lalu", unread: false },
+  { id: 4, type: "achievement", title: "Level Up! Level 12 — Senior Agent", body: "Selamat! Kamu mencapai Level 12. Lanjutkan perjalananmu menuju Elite!", time: "3 hari lalu", unread: false },
+  { id: 5, type: "system", title: "Prospect Reminder", body: "Follow Up Budi Hartono dijadwalkan hari ini. Jangan lupa!", time: "3 hari lalu", unread: false, pinned: true },
+];
 
 export default function NotificationsPage() {
   const loading = useLoading(900);
   const { isDark } = useTheme();
   const [tab, setTab] = useTabQuery("tab", "All");
+  const [notifs, setNotifs] = useState<NotifItem[]>(FALLBACK_NOTIFS);
+
+  useEffect(() => {
+    const loadNotifs = async () => {
+      try {
+        const data = await api.notifications.getList();
+        if (Array.isArray(data) && data.length > 0) {
+          setNotifs(data.map((n: any) => ({
+            id: Number(n.id),
+            type: n.category || "system",
+            title: n.title || "",
+            body: n.content || "",
+            time: formatTimeAgo(n.created_at),
+            unread: !n.is_read,
+            pinned: n.category === "system" && (n.title || "").toLowerCase().includes("reminder"),
+          })));
+        }
+      } catch {
+        // Keep fallback
+      }
+    };
+    loadNotifs();
+  }, []);
+
+  function formatTimeAgo(dateStr: string): string {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (Number.isNaN(d.getTime())) return "";
+    const diffMs = Date.now() - d.getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 60) return `${mins} menit lalu`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} jam lalu`;
+    const days = Math.floor(hours / 24);
+    return `${days} hari lalu`;
+  }
 
   if (loading) return <NotificationsPageSkeleton />;
-
-  // Filtered out ordinary quest completion notifications.
-  // Pinned Listing and Prospect reminders with "pinned: true".
-  const notifs = [
-    { 
-      type: "achievement", 
-      title: "Badge Unlocked: Dedicated Agent", 
-      body: "Selamat! Kamu berhasil menyelesaikan Daily Quest 7 hari berturut-turut.", 
-      time: "2 jam lalu", 
-      unread: true 
-    },
-    { 
-      type: "system",      
-      title: "Listing Hampir Kadaluarsa", 
-      body: "The Spring Studio akan kadaluarsa dalam 14 hari. Perbarui sekarang.", 
-      time: "5 jam lalu", 
-      unread: true, 
-      pinned: true 
-    },
-    { 
-      type: "leaderboard", 
-      title: "Kamu Naik ke Ranking #7!", 
-      body: "Ahmad Fadhil sekarang di posisi #7 Weekly Leaderboard. Terus semangat!", 
-      time: "1 hari lalu", 
-      unread: false 
-    },
-    { 
-      type: "commission",  
-      title: "Commission Claim Disetujui", 
-      body: "Komisi Rumah 3BR Bintaro disetujui. +7.500 XP ditambahkan.", 
-      time: "2 hari lalu", 
-      unread: false 
-    },
-    { 
-      type: "achievement", 
-      title: "Level Up! Level 12 — Senior Agent", 
-      body: "Selamat! Kamu mencapai Level 12. Lanjutkan perjalananmu menuju Elite!", 
-      time: "3 hari lalu", 
-      unread: false 
-    },
-    { 
-      type: "system",      
-      title: "Prospect Reminder", 
-      body: "Follow Up Budi Hartono dijadwalkan hari ini. Jangan lupa!", 
-      time: "3 hari lalu", 
-      unread: false, 
-      pinned: true 
-    },
-  ];
 
   const TYPE_CFG: Record<string, { icon: React.ReactNode; bg: string; color: string; label: string }> = {
     achievement: { icon: <Award size={16} />,        bg: isDark ? "rgba(200,146,42,0.12)" : "#FDF6E3", color: "#C8922A", label: "Achievement" },

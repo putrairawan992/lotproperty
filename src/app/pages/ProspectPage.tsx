@@ -8,9 +8,10 @@ import Card from "../components/Card";
 import { DateInput, TimeInput } from "../components/DateTimeInput";
 import { ProspectPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
-import { T } from "../types";
+import { T, useTheme } from "../types";
 import { useTabQuery, useLocation } from "../routes";
 import EllipsisTooltip from "../components/EllipsisTooltip";
+import { api } from "../services/api";
 
 const STATUS_CFG: Record<string, { color: string; bg: string }> = {
   "New Lead":  { color: "#1A6FC4", bg: "#EEF5FC" },
@@ -126,7 +127,12 @@ function SectionLabel({ children }: { children: ReactNode }) {
 }
 
 export default function ProspectPage() {
-  const loading = useLoading(1100);
+  const loadingTime = useLoading(1100);
+  const { isGuest } = useTheme();
+  const [apiLoading, setApiLoading] = useState(true);
+
+  const loading = loadingTime || (isGuest ? false : apiLoading);
+
   const [filter, setFilter] = useTabQuery("filter", "All");
   const { getQueryParam, navigate, search } = useLocation();
   const detailId = getQueryParam("detail");
@@ -137,7 +143,7 @@ export default function ProspectPage() {
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const [prospects, setProspects] = useState<Prospect[]>(INITIAL_PROSPECTS);
+  const [prospects, setProspects] = useState<Prospect[]>([]);
   const [editForm, setEditForm] = useState<Prospect | null>(null);
 
   const [newForm, setNewForm] = useState({
@@ -169,6 +175,63 @@ export default function ProspectPage() {
       navigate("/prospect");
     }
   }, [search]);
+
+  const mapProspect = (item: any): Prospect => {
+    const created = new Date(item.created_at || Date.now());
+    const date = Number.isNaN(created.getTime())
+      ? "-"
+      : created.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+    const name = item.name || "-";
+    const initials = name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+    const nextAction = item.next_action || "Follow Up";
+    const nextDate = item.next_action_date ? new Date(item.next_action_date) : null;
+    const reminderDate = nextDate && !Number.isNaN(nextDate.getTime())
+      ? `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, "0")}-${String(nextDate.getDate()).padStart(2, "0")}`
+      : "";
+    const reminderTime = nextDate && !Number.isNaN(nextDate.getTime())
+      ? `${String(nextDate.getHours()).padStart(2, "0")}:${String(nextDate.getMinutes()).padStart(2, "0")}`
+      : "09:00";
+
+    return {
+      id: Number(item.id),
+      name,
+      phone: item.phone || "-",
+      status: nextAction,
+      date,
+      note: item.notes || "—",
+      initials,
+      nextAction,
+      reminderDate,
+      reminderTime,
+      followUpDate: nextAction === "Follow Up" ? reminderDate : "",
+      showingDate: nextAction === "Showing" ? reminderDate : "",
+      akadDate: nextAction === "Akad" ? reminderDate : "",
+      activityLog: [{ text: `Status ${nextAction}`, datetime: nowLogTime() }],
+    };
+  };
+
+  const loadProspects = async () => {
+    if (isGuest) {
+      setProspects(INITIAL_PROSPECTS);
+      setApiLoading(false);
+      return;
+    }
+    try {
+      setApiLoading(true);
+      const next_action = filter === "All" ? undefined : filter;
+      const rows = await api.prospects.getList({ next_action });
+      setProspects(Array.isArray(rows) ? rows.map(mapProspect) : []);
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal memuat prospects");
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProspects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter]);
 
   if (loading) return <ProspectPageSkeleton />;
 
@@ -204,7 +267,7 @@ export default function ProspectPage() {
     triggerToast("Prospect berhasil dihapus");
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!newForm.name.trim() || !newForm.phone.trim()) return;
     if (newNeedsReminder && (!newForm.reminderDate || !newForm.reminderTime)) {
       triggerToast("Tanggal dan jam reminder wajib diisi!");
@@ -219,32 +282,28 @@ export default function ProspectPage() {
       : "";
     const logTime = nowLogTime();
 
-    setProspects(prev => [...prev, {
-      id: prev.length,
-      name: newForm.name.trim(),
-      phone: newForm.phone.trim(),
-      status: newForm.nextAction,
-      date: dateStr,
-      note: newForm.note.trim() || "—",
-      initials,
-      nextAction: newForm.nextAction,
-      reminderDate: newForm.reminderDate,
-      reminderTime: newForm.reminderTime,
-      followUpDate: newForm.nextAction === "Follow Up" ? newForm.reminderDate : "",
-      showingDate: newForm.nextAction === "Showing" ? newForm.reminderDate : "",
-      akadDate: newForm.nextAction === "Akad" ? newForm.reminderDate : "",
-      activityLog: [
-        { text: "New Lead dibuat", datetime: logTime },
-        { text: `Status diubah ke ${newForm.nextAction}.${reminderStr}`, datetime: logTime },
-      ],
-    }]);
+    try {
+      const when = newNeedsReminder
+        ? new Date(`${newForm.reminderDate}T${newForm.reminderTime}:00`)
+        : new Date();
+      await api.prospects.create({
+        name: newForm.name.trim(),
+        phone: newForm.phone.trim(),
+        notes: newForm.note.trim(),
+        next_action: newForm.nextAction,
+        next_action_date: when.toISOString(),
+      });
 
-    setNewForm({ name: "", phone: "", note: "", nextAction: "Follow Up", reminderDate: "", reminderTime: "" });
-    setShowAdd(false);
-    triggerToast("Prospect baru berhasil ditambahkan!");
+      setNewForm({ name: "", phone: "", note: "", nextAction: "Follow Up", reminderDate: "", reminderTime: "" });
+      setShowAdd(false);
+      triggerToast("Prospect baru berhasil ditambahkan!");
+      await loadProspects();
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal menambahkan prospect");
+    }
   };
 
-  const handleSaveDetail = () => {
+  const handleSaveDetail = async () => {
     if (!editForm) return;
     if (needsReminder && (!editForm.reminderDate || !editForm.reminderTime)) {
       triggerToast("Tanggal dan jam reminder wajib diisi!");
@@ -267,9 +326,24 @@ export default function ProspectPage() {
       ],
     };
 
-    setProspects(prev => prev.map(p => p.id === updated.id ? updated : p));
-    triggerToast("Perubahan berhasil disimpan!");
-    navigate(`/prospect?detail=${updated.id}`);
+    try {
+      const nextDate = needsReminder
+        ? new Date(`${editForm.reminderDate}T${editForm.reminderTime}:00`)
+        : new Date();
+      await api.prospects.update(updated.id, {
+        name: updated.name,
+        phone: updated.phone,
+        notes: updated.note,
+        next_action: updated.nextAction,
+        next_action_date: nextDate.toISOString(),
+      });
+
+      setProspects(prev => prev.map(p => p.id === updated.id ? updated : p));
+      triggerToast("Perubahan berhasil disimpan!");
+      navigate(`/prospect?detail=${updated.id}`);
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal menyimpan perubahan");
+    }
   };
 
   const filters = ["All", "New Lead", "Follow Up", "Showing", "Akad", "Deal", "Lost"];

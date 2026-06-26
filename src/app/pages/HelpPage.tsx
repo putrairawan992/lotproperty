@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, ChevronDown, BookOpen, ChevronRight, MessageSquare, ArrowLeftRight, Check, AlertCircle, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
@@ -10,6 +10,7 @@ import EllipsisTooltip from "../components/EllipsisTooltip";
 import { FAQ_DATA, TERMS_SECTIONS } from "../appData";
 import { LEVEL_TIERS, RARITY_CFG } from "../badgeAssets";
 import { ALL_BADGES } from "./ProfilePage";
+import { api } from "../services/api";
 
 export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
   const [tab, setTab]         = useTabQuery("tab", "guide");
@@ -27,9 +28,7 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
   const [fbSubject, setFbSubject] = useState("");
   const [fbMessage, setFbMessage] = useState("");
   const [fbError, setFbError] = useState("");
-  const [fbHistory, setFbHistory] = useState<any[]>([
-    { type: "Saran", subject: "Aplikasi Terlalu Bagus", message: "Animasi Hall of Fame keren banget, kalau bisa dikasih sound effect seru.", date: "Kemarin", status: "Diterima" }
-  ]);
+  const [fbHistory, setFbHistory] = useState<any[]>([]);
 
   // Form Pindah DP Input States
   const [dpClient, setDpClient] = useState("");
@@ -38,39 +37,90 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
   const [dpAmount, setDpAmount] = useState("");
   const [dpReason, setDpReason] = useState("");
   const [dpError, setDpError] = useState("");
-  const [dpHistory, setDpHistory] = useState<any[]>([
-    { client: "Budi Santoso", unitAwal: "Rumah Bintaro Block A", unitBaru: "Apartemen Serpong Tower B", amount: "Rp 50.000.000", reason: "Client ingin ganti ke tipe unit yang lebih tinggi.", date: "19 Jun 2026", status: "Sedang Diproses" }
-  ]);
+  const [dpHistory, setDpHistory] = useState<any[]>([]);
+
+  const formatDate = (v: string) => {
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return "Hari Ini";
+    return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const data = await api.help.getSubmissions();
+        if (cancelled) return;
+
+        setFbHistory((data.feedback || []).map((item: any) => ({
+          type: item.feedback_type || "Saran",
+          subject: item.subject || "",
+          message: item.message || "",
+          date: formatDate(item.created_at),
+          status: item.status || "Terkirim",
+        })));
+
+        setDpHistory((data.pindah_dp || []).map((item: any) => ({
+          client: item.client_name || "",
+          unitAwal: item.unit_awal || "",
+          unitBaru: item.unit_baru || "",
+          amount: item.amount || "",
+          reason: item.reason || "",
+          date: formatDate(item.created_at),
+          status: item.status || "Menunggu Verifikasi",
+        })));
+      } catch {
+        // Keep empty state if API is unavailable.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(""), 3500);
   };
 
-  const handleFbSubmit = (e: React.FormEvent) => {
+  const handleFbSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fbSubject.trim() || !fbMessage.trim()) {
-      setFbError("Subjek dan isi pesan kritik/saran wajib diisi!");
+      showToast("Subjek dan isi pesan kritik/saran wajib diisi!");
       return;
     }
     setFbError("");
-    const newFb = {
-      type: fbType,
-      subject: fbSubject,
-      message: fbMessage,
-      date: "Hari Ini",
-      status: "Terkirim"
-    };
-    setFbHistory(prev => [newFb, ...prev]);
-    setFbSubject("");
-    setFbMessage("");
-    showToast("Feedback kritik & saran berhasil dikirim ke Management!");
+
+    try {
+      const res = await api.help.submitFeedback({
+        type: fbType,
+        subject: fbSubject,
+        message: fbMessage,
+      });
+
+      const item = res?.data || {};
+      const newFb = {
+        type: item.feedback_type || fbType,
+        subject: item.subject || fbSubject,
+        message: item.message || fbMessage,
+        date: formatDate(item.created_at || new Date().toISOString()),
+        status: item.status || "Terkirim",
+      };
+      setFbHistory(prev => [newFb, ...prev]);
+      setFbSubject("");
+      setFbMessage("");
+      showToast("Feedback kritik & saran berhasil dikirim ke Management!");
+    } catch (err: any) {
+      showToast(err?.message || "Gagal mengirim feedback.");
+    }
   };
 
-  const handleDpSubmit = (e: React.FormEvent) => {
+  const handleDpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dpClient.trim() || !dpUnitAwal.trim() || !dpUnitBaru.trim() || !dpAmount.trim() || !dpReason.trim()) {
-      setDpError("Semua field pada formulir Pindah DP wajib diisi!");
+      showToast("Semua field pada formulir Pindah DP wajib diisi!");
       return;
     }
     setDpError("");
@@ -78,22 +128,35 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
     // Format currency mock if needed
     const formattedAmount = dpAmount.startsWith("Rp") ? dpAmount : `Rp ${parseInt(dpAmount).toLocaleString("id-ID")}`;
     
-    const newDp = {
-      client: dpClient,
-      unitAwal: dpUnitAwal,
-      unitBaru: dpUnitBaru,
-      amount: formattedAmount,
-      reason: dpReason,
-      date: "Hari Ini",
-      status: "Menunggu Verifikasi"
-    };
-    setDpHistory(prev => [newDp, ...prev]);
-    setDpClient("");
-    setDpUnitAwal("");
-    setDpUnitBaru("");
-    setDpAmount("");
-    setDpReason("");
-    showToast("Formulir Pindah DP berhasil diajukan ke Office Manager!");
+    try {
+      const res = await api.help.submitPindahDP({
+        client_name: dpClient,
+        unit_awal: dpUnitAwal,
+        unit_baru: dpUnitBaru,
+        amount: formattedAmount,
+        reason: dpReason,
+      });
+
+      const item = res?.data || {};
+      const newDp = {
+        client: item.client_name || dpClient,
+        unitAwal: item.unit_awal || dpUnitAwal,
+        unitBaru: item.unit_baru || dpUnitBaru,
+        amount: item.amount || formattedAmount,
+        reason: item.reason || dpReason,
+        date: formatDate(item.created_at || new Date().toISOString()),
+        status: item.status || "Menunggu Verifikasi",
+      };
+      setDpHistory(prev => [newDp, ...prev]);
+      setDpClient("");
+      setDpUnitAwal("");
+      setDpUnitBaru("");
+      setDpAmount("");
+      setDpReason("");
+      showToast("Formulir Pindah DP berhasil diajukan ke Office Manager!");
+    } catch (err: any) {
+      showToast(err?.message || "Gagal mengirim form pindah DP.");
+    }
   };
 
   const filteredFaq = FAQ_DATA.filter(f =>
@@ -507,11 +570,6 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                   </div>
 
                   <form onSubmit={handleFbSubmit} className="space-y-4 text-left">
-                    {fbError && (
-                      <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl flex items-center gap-2">
-                        <AlertCircle size={14} /> {fbError}
-                      </div>
-                    )}
                     
                     <div>
                       <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Nama Pengirim</label>
@@ -592,11 +650,6 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                   </div>
 
                   <form onSubmit={handleDpSubmit} className="space-y-4 text-left">
-                    {dpError && (
-                      <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl flex items-center gap-2">
-                        <AlertCircle size={14} /> {dpError}
-                      </div>
-                    )}
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>

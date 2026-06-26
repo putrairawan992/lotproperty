@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Home, Users, DollarSign, Trophy, GraduationCap, Zap, TrendingUp, BookOpen, X, Menu } from "lucide-react";
 import Logo from "../../components/Logo";
 import { T, useTheme, AdminRole, AdminPage, ROLE_COLOR } from "../../types";
 import { useLocation } from "../../routes";
+import { api } from "../../services/api";
 
 import AdminDashboard from "./AdminDashboard";
 import AdminAgentsPage from "./AdminAgentsPage";
@@ -32,7 +33,36 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
     : "dashboard";
 
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [agentPendingCount, setAgentPendingCount] = useState(0);
+  const [commissionPendingCount, setCommissionPendingCount] = useState(0);
   const rc = ROLE_COLOR[role];
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const [agents, commissions] = await Promise.all([
+          api.admin.getAgents(),
+          api.admin.getCommissions(),
+        ]);
+        if (!cancelled) {
+          if (Array.isArray(agents)) {
+            setAgentPendingCount(agents.filter((a: any) => String(a.status || "") === "Pending").length);
+          }
+          if (Array.isArray(commissions)) {
+            setCommissionPendingCount(commissions.filter((c: any) => String(c.status || "") === "Pending").length);
+          }
+        }
+      } catch {
+        // Keep default badges when API fails.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const renderPage = () => {
     switch (page) {
@@ -62,6 +92,7 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
       </div>
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {ADMIN_NAV.map(({ id, label, icon: Icon, badge }) => {
+          const resolvedBadge = id === "agents" ? agentPendingCount : id === "commission" ? commissionPendingCount : badge;
           const canSee = role === "Super Admin" ? true
             : role === "Office Manager" ? ["dashboard","agents","hof","events","academy","log"].includes(id)
             : role === "Finance" ? ["dashboard","commission","log"].includes(id)
@@ -82,10 +113,10 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
               }}>
               <Icon size={18} />
               <span className="flex-1">{label}</span>
-              {badge && (
+              {resolvedBadge ? (
                 <span className="text-xs rounded-full px-1.5 py-0.5 font-bold"
-                  style={{ backgroundColor: "#E8A500", color: "white", fontSize: 10 }}>{badge}</span>
-              )}
+                  style={{ backgroundColor: "#E8A500", color: "white", fontSize: 10 }}>{resolvedBadge}</span>
+              ) : null}
             </button>
           );
         })}

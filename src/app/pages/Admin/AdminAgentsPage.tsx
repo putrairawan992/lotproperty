@@ -1,11 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import LevelBadge from "../../components/LevelBadge";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T, useTheme } from "../../types";
-import { AGENT_DATA_LIST, AGENT_PHOTOS } from "../../appData";
+import { AGENT_PHOTOS } from "../../appData";
+import { api } from "../../services/api";
+
+interface AgentItem {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  office: string;
+  level: string;
+  status: string;
+  joined: string;
+}
 
 interface TreeNodeData {
   name: string;
@@ -313,18 +325,62 @@ export default function AdminAgentsPage() {
   const [activeTab, setActiveTab] = useState<"list" | "tree">("list");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
-  const [agents, setAgents] = useState(AGENT_DATA_LIST);
+  const [agents, setAgents] = useState<AgentItem[]>([]);
+  const [loadingAgents, setLoadingAgents] = useState(true);
   const [recruitsModal, setRecruitsModal] = useState<TreeNodeData | null>(null);
   const { isDark } = useTheme();
   const stats = getTreeStats(TREE_ROOT);
 
+  const formatJoined = (createdAt?: string) => {
+    if (!createdAt) return "-";
+    const d = new Date(createdAt);
+    if (Number.isNaN(d.getTime())) return "-";
+    return d.toLocaleDateString("id-ID", { month: "short", year: "numeric" });
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const rows = await api.admin.getAgents();
+        if (cancelled || !Array.isArray(rows)) return;
+        setAgents(rows.map((r: any) => ({
+          id: Number(r.id),
+          name: String(r.name || ""),
+          email: String(r.email || ""),
+          phone: String(r.phone || ""),
+          office: String(r.office || "-"),
+          level: String(r.title || "Rookie Agent"),
+          status: String(r.status || "Pending"),
+          joined: formatJoined(r.created_at),
+        })));
+      } catch {
+        // Keep empty list when API fails.
+      } finally {
+        if (!cancelled) setLoadingAgents(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filtered = agents.filter(a =>
     (statusFilter === "All" || a.status === statusFilter) &&
-    (a.name.toLowerCase().includes(search.toLowerCase()) || a.email.toLowerCase().includes(search.toLowerCase()))
+    (a.name.toLowerCase().includes(search.toLowerCase()) || (a.email || "").toLowerCase().includes(search.toLowerCase()))
   );
 
-  const updateStatus = (id: string, status: string) =>
-    setAgents(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  const updateStatus = async (id: number, status: string) => {
+    const action = status === "Active" ? "reactivate" : status === "Suspended" ? "suspend" : "approve";
+    try {
+      await api.admin.updateAgentStatus(id, action as "approve" | "suspend" | "reactivate");
+      setAgents(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+    } catch {
+      // Ignore optimistic update when API fails.
+    }
+  };
 
   const StatusChip = ({ s }: { s: string }) => {
     const cfg = s === "Active" ? { bg: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7", c: isDark ? "#34D399" : "#16A34A" }
@@ -403,6 +459,13 @@ export default function AdminAgentsPage() {
                     ))}
                   </tr></thead>
                   <tbody>
+                    {loadingAgents && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: T.text3 }}>
+                          Memuat data agent...
+                        </td>
+                      </tr>
+                    )}
                     {filtered.map(a => (
                       <tr key={a.id} className="border-b transition-colors" style={{ borderColor: "var(--border)" }}
                         onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.muted)}
@@ -427,11 +490,11 @@ export default function AdminAgentsPage() {
                                 className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-[#DCFCE7] text-[#16A34A] hover:bg-[#DCFCE7]/80">Approve</button>
                             )}
                             {a.status === "Active" && (
-                              <button onClick={() => updateStatus(a.id, "Suspended")}
+                                <button onClick={() => updateStatus(a.id, "Suspended")}
                                 className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2]/80">Suspend</button>
                             )}
                             {a.status === "Suspended" && (
-                              <button onClick={() => updateStatus(a.id, "Active")}
+                                <button onClick={() => updateStatus(a.id, "Active")}
                                 className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#EEF5FC] text-[#1A6FC4] hover:bg-[#EEF5FC]/80">Aktifkan</button>
                             )}
                           </div>

@@ -1,7 +1,6 @@
 import { useState, useContext, useEffect, useMemo } from "react";
-import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, MoreVertical, X, Check, Download, AlertCircle, Globe, Link2, ChevronRight } from "lucide-react";
+import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, X, Check, Download, AlertCircle, Globe, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import html2canvas from "html2canvas-pro";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
 import LevelBadge from "../components/LevelBadge";
@@ -17,66 +16,12 @@ import HofAwardLaurel from "../components/HofAwardLaurel";
 import HofFallingStars from "../components/HofFallingStars";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 
-const getRankMedal = (rank: string) => {
-  const norm = rank.replace("#", "").trim();
-  if (norm === "1") return { icon: "🥇", label: "Gold", color: "#F59E0B" };
-  if (norm === "2") return { icon: "🥈", label: "Silver", color: "#9CA3AF" };
-  if (norm === "3") return { icon: "🥉", label: "Bronze", color: "#B87333" };
-  return { icon: "🏅", label: rank, color: "#A78BFA" };
-};
-
 export const ALL_BADGES: { name: string; rarity: Rarity; locked: boolean; req: string }[] = [
-  // MYTHIC (2 total, 2 unlocked)
-  { name: "Billionaire Club", rarity: "mythic", locked: false, req: "Komisi ≥ Rp 1 Miliar" },
-  { name: "Perfectionist Agent", rarity: "mythic", locked: false, req: "Daily Quest 100 hari berturut" },
-  // LEGENDARY (9 total, 6 unlocked)
-  { name: "Listing Factory", rarity: "legendary", locked: false, req: "100 Listing" },
-  { name: "The Consultant", rarity: "legendary", locked: true, req: "100 Prospect" },
-  { name: "The Leader", rarity: "legendary", locked: false, req: "10 Recruit" },
-  { name: "The Professor", rarity: "legendary", locked: false, req: "50 Module Selesai" },
-  { name: "Deal Maker", rarity: "legendary", locked: false, req: "100 Transaksi" },
-  { name: "500 Million Club", rarity: "legendary", locked: true, req: "Komisi ≥ Rp 500 Juta" },
-  { name: "100 Million Club", rarity: "legendary", locked: false, req: "Komisi ≥ Rp 100 Juta" },
-  { name: "The Influencer", rarity: "legendary", locked: true, req: "100 Konten" },
-  { name: "Exceptional Agent", rarity: "legendary", locked: false, req: "Daily Quest 30 hari berturut" },
-  // EPIC (6 total, 5 unlocked)
-  { name: "Listing Distributor", rarity: "epic", locked: false, req: "50 Listing" },
-  { name: "Prospect Tycoon", rarity: "epic", locked: true, req: "50 Prospect" },
-  { name: "Team Builder", rarity: "epic", locked: false, req: "5 Recruit" },
-  { name: "Content Creator", rarity: "epic", locked: false, req: "25 Konten" },
-  { name: "Dedicated Agent", rarity: "epic", locked: false, req: "Daily Quest 7 hari berturut" },
-  { name: "Certified Agent", rarity: "epic", locked: false, req: "10 Module Selesai" },
-  // RARE (4 total, 3 unlocked)
-  { name: "Listing Supplier", rarity: "rare", locked: false, req: "25 Listing" },
-  { name: "Prospect Hunter", rarity: "rare", locked: false, req: "25 Prospect" },
-  { name: "Talent Scout", rarity: "rare", locked: true, req: "3 Recruit" },
-  { name: "The Loyalist", rarity: "rare", locked: false, req: "Login 30 hari berturut" },
-  // COMMON (4 total, 2 unlocked)
-  { name: "First Listing", rarity: "common", locked: false, req: "1 Listing" },
-  { name: "First Prospect", rarity: "common", locked: true, req: "1 Prospect" },
-  { name: "First Recruit", rarity: "common", locked: true, req: "1 Recruit" },
-  { name: "First Deal", rarity: "common", locked: false, req: "1 Transaksi" },
+  // API-first: only used as empty fallback if profile API is unavailable
 ];
 
 const HOF_ACHIEVEMENTS = [
-  { cat: "Top Commission", rank: "#1", period: "Jul 2026" },
-  { cat: "Top Recruit", rank: "#1", period: "Aug 2026" },
-  { cat: "Rising Star", rank: "#1", period: "Oct 2026" },
-  { cat: "Listing Hunter", rank: "#2", period: "Sep 2026" },
-  { cat: "Content Creator", rank: "#3", period: "Nov 2026" },
-  { cat: "Top Unit", rank: "#2", period: "Dec 2026" },
-  { cat: "Prospecting Master", rank: "#3", period: "Jan 2027" },
-  { cat: "Top 5 By Unit", rank: "#4", period: "Feb 2027" },
-  { cat: "Top Primary", rank: "#5", period: "Mar 2027" },
-  { cat: "Top Secondary", rank: "#3", period: "Apr 2027" },
-  { cat: "Rising Star", rank: "#2", period: "May 2027" },
-  { cat: "Top Commission", rank: "#2", period: "Jun 2027" },
-  { cat: "Content Creator", rank: "#2", period: "Jul 2027" },
-  { cat: "Top Recruit", rank: "#3", period: "Aug 2027" },
-  { cat: "Listing Hunter", rank: "#4", period: "Sep 2027" },
-  { cat: "Top Unit", rank: "#3", period: "Oct 2027" },
-  { cat: "Top 5 By Unit", rank: "#5", period: "Nov 2027" },
-  { cat: "Top Primary", rank: "#4", period: "Dec 2027" },
+  // API-first: only used as empty fallback if profile API is unavailable
 ];
 
 // Profile Share Language Data
@@ -154,36 +99,42 @@ const SHARE_LANG: Record<"ID" | "EN" | "CN", {
   }
 };
 
-const AGENT_PROFILE = {
-  name: "RONALD RICHY",
-  slug: "ronald-richy",
-  title: "Top Producer · LotProperty",
-  level: 23,
-  tier: "Elite Agent",
-  careerRank: "#7",
-  totalListings: "892",
-  totalProspects: "532",
-  totalTransactions: "127",
-  commission: "Rp 4.250.000.000",
+const DEFAULT_AGENT_PROFILE = {
+  name: "AGENT",
+  slug: "agent",
+  title: "Agent",
+  level: 1,
+  tier: "Rookie Agent",
+  careerRank: "#-",
+  totalListings: "0",
+  totalProspects: "0",
+  totalTransactions: "0",
+  commission: "Rp 0",
   photo: ronaldRichyBase64,
 };
 
-function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
+function buildShareText(
+  lang: "ID" | "EN" | "CN",
+  featured: string[],
+  agentProfile: typeof DEFAULT_AGENT_PROFILE,
+  hofItems: Array<{ cat: string; rank: string; period: string }>,
+  badgeProgress: { unlocked: number; total: number }
+) {
   const L = SHARE_LANG[lang];
-  const hofLines = HOF_ACHIEVEMENTS.slice(0, 4).map(h => `• ${h.cat}: ${h.rank}`).join("\n");
+  const hofLines = hofItems.slice(0, 4).map(h => `• ${h.cat}: ${h.rank}`).join("\n");
   const badgeLines = featured.slice(0, 3).map(b => `• ${b}`).join("\n");
 
   if (lang === "EN") {
     return [
-      `🏆 ${AGENT_PROFILE.name} — LOT Property Official Agent`,
+      `🏆 ${agentProfile.name} — LOT Property Official Agent`,
       `${L.title}`,
       ``,
-      `${L.levelLabel}: ${AGENT_PROFILE.level} · ${AGENT_PROFILE.tier}`,
-      `${L.rank}: ${AGENT_PROFILE.careerRank}`,
-      `${L.transactions}: ${AGENT_PROFILE.totalTransactions} Transactions`,
-      `${L.level}: ${AGENT_PROFILE.level}`,
-      `${L.hof}: 18`,
-      `${L.badges}: 18/25`,
+      `${L.levelLabel}: ${agentProfile.level} · ${agentProfile.tier}`,
+      `${L.rank}: ${agentProfile.careerRank}`,
+      `${L.transactions}: ${agentProfile.totalTransactions} Transactions`,
+      `${L.level}: ${agentProfile.level}`,
+      `${L.hof}: ${hofItems.length}`,
+      `${L.badges}: ${badgeProgress.unlocked}/${badgeProgress.total}`,
       ``,
       `${L.hofTitle}:`,
       hofLines,
@@ -197,15 +148,15 @@ function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
 
   if (lang === "CN") {
     return [
-      `🏆 ${AGENT_PROFILE.name} — LOT Property 官方认证经纪人`,
+      `🏆 ${agentProfile.name} — LOT Property 官方认证经纪人`,
       `${L.title}`,
       ``,
-      `${L.levelLabel}: ${AGENT_PROFILE.level} · ${AGENT_PROFILE.tier}`,
-      `${L.rank}: ${AGENT_PROFILE.careerRank}`,
-      `${L.transactions}: ${AGENT_PROFILE.totalTransactions} 笔交易`,
-      `${L.level}: ${AGENT_PROFILE.level}`,
-      `${L.hof}: 18`,
-      `${L.badges}: 18/25`,
+      `${L.levelLabel}: ${agentProfile.level} · ${agentProfile.tier}`,
+      `${L.rank}: ${agentProfile.careerRank}`,
+      `${L.transactions}: ${agentProfile.totalTransactions} 笔交易`,
+      `${L.level}: ${agentProfile.level}`,
+      `${L.hof}: ${hofItems.length}`,
+      `${L.badges}: ${badgeProgress.unlocked}/${badgeProgress.total}`,
       ``,
       `${L.hofTitle}:`,
       hofLines,
@@ -216,15 +167,15 @@ function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
   }
 
   return [
-    `🏆 ${AGENT_PROFILE.name} — Agen Resmi LOT Property`,
+    `🏆 ${agentProfile.name} — Agen Resmi LOT Property`,
     `${L.title}`,
     ``,
-    `${L.levelLabel}: ${AGENT_PROFILE.level} · ${AGENT_PROFILE.tier}`,
-    `${L.rank}: ${AGENT_PROFILE.careerRank}`,
-    `${L.transactions}: ${AGENT_PROFILE.totalTransactions} Transaksi`,
-    `${L.level}: ${AGENT_PROFILE.level}`,
-    `${L.hof}: 18`,
-    `${L.badges}: 18/25`,
+    `${L.levelLabel}: ${agentProfile.level} · ${agentProfile.tier}`,
+    `${L.rank}: ${agentProfile.careerRank}`,
+    `${L.transactions}: ${agentProfile.totalTransactions} Transaksi`,
+    `${L.level}: ${agentProfile.level}`,
+    `${L.hof}: ${hofItems.length}`,
+    `${L.badges}: ${badgeProgress.unlocked}/${badgeProgress.total}`,
     ``,
     `${L.hofTitle}:`,
     hofLines,
@@ -236,20 +187,111 @@ function buildShareText(lang: "ID" | "EN" | "CN", featured: string[]) {
   ].join("\n");
 }
 
+import { api } from "../services/api";
+
 export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
-  const loading = useLoading(1200);
-  const { isDark } = useTheme();
+  const loadingTime = useLoading(1200);
+  const { isDark, isGuest } = useContext(ThemeCtx);
+  const [profileLoading, setProfileLoading] = useState(true);
+
+  const loading = loadingTime || (isGuest ? false : profileLoading);
   const { getQueryParam, navigate, search } = useLocation();
+
+  const [profile, setProfile] = useState<any>(null);
+  const [hofHistory, setHofHistory] = useState<any[]>(HOF_ACHIEVEMENTS);
+  const [badgeCollection, setBadgeCollection] = useState<any[] | null>(null);
+  const [careerRank, setCareerRank] = useState("#-");
 
   const [showAllHof, setShowAllHof] = useState(false);
   const [showAllBadges, setShowAllBadges] = useState(false);
 
   // Featured badges states (limited to 3)
-  const [featured, setFeatured] = useState<string[]>([
-    "Billionaire Club",
-    "Perfectionist Agent",
-    "The Leader",
-  ]);
+  const [featured, setFeatured] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (isGuest) {
+        setProfile({
+          name: "Ronald Richy",
+          email: "ronald@lot.id",
+          level: 23,
+          title: "Senior Agent",
+          total_xp: 24680,
+          weekly_xp: 1620,
+          total_commission: 350000000,
+          total_transactions: 12,
+          total_listings: 5,
+          total_prospects: 6,
+          photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
+          hof_history: [
+            { category: "Top Commission", rank: 1, period: "Mei 2026" },
+            { category: "Top Producer", rank: 2, period: "April 2026" },
+          ],
+          badge_collection: [
+            { name: "Billionaire Club", rarity: "mythic", locked: true, req: "Komisi 1 Miliar", is_featured: false, code: "billionaire" },
+            { name: "Perfectionist Agent", rarity: "mythic", locked: true, req: "100% CSI", is_featured: false, code: "perfectionist" },
+            { name: "Listing Factory", rarity: "legendary", locked: false, req: "50 Listings", is_featured: true, code: "listing_factory" },
+            { name: "The Consultant", rarity: "legendary", locked: false, req: "10 deals", is_featured: true, code: "consultant" },
+            { name: "First Listing", rarity: "common", locked: false, req: "First Listing", is_featured: false, code: "first_listing" },
+          ]
+        });
+        setCareerRank("#3");
+        setHofHistory([
+          { cat: "Top Commission", rank: "#1", period: "Mei 2026" },
+          { cat: "Top Producer", rank: "#2", period: "April 2026" },
+        ]);
+        setBadgeCollection([
+          { name: "Billionaire Club", rarity: "mythic", locked: true, req: "Komisi 1 Miliar", is_featured: false, code: "billionaire" },
+          { name: "Perfectionist Agent", rarity: "mythic", locked: true, req: "100% CSI", is_featured: false, code: "perfectionist" },
+          { name: "Listing Factory", rarity: "legendary", locked: false, req: "50 Listings", is_featured: true, code: "listing_factory" },
+          { name: "The Consultant", rarity: "legendary", locked: false, req: "10 deals", is_featured: true, code: "consultant" },
+          { name: "First Listing", rarity: "common", locked: false, req: "First Listing", is_featured: false, code: "first_listing" },
+        ]);
+        setFeatured(["Listing Factory", "The Consultant"]);
+        setProfileLoading(false);
+        return;
+      }
+      try {
+        setProfileLoading(true);
+        const slugParam = getQueryParam("id");
+        let data: any;
+        if (slugParam) {
+          data = await api.profile.getProfile(slugParam);
+        } else {
+          const me = await api.auth.getMe();
+          data = await api.profile.getProfile(String(me?.id));
+        }
+        setProfile(data);
+        if (Array.isArray(data?.hof_history)) {
+          setHofHistory(data.hof_history.map((h: any) => ({ cat: h.category, rank: `#${h.rank}`, period: h.period })));
+        }
+        if (Array.isArray(data?.badge_collection)) {
+          setBadgeCollection(data.badge_collection);
+          const feat = data.badge_collection.filter((b: any) => b.is_featured).map((b: any) => b.name);
+          setFeatured(feat.slice(0, 3));
+        }
+
+        try {
+          const leaderboard = await api.dashboard.getWeeklyLeaderboard();
+          if (Array.isArray(leaderboard)) {
+            const found = leaderboard.find((row: any) => Number(row?.id) === Number(data?.id));
+            if (found && Number(found.rank) > 0) {
+              setCareerRank(`#${found.rank}`);
+            } else {
+              setCareerRank("#-");
+            }
+          }
+        } catch {
+          setCareerRank("#-");
+        }
+      } catch (err) {
+        console.error("Failed to load profile", err);
+      } finally {
+        setProfileLoading(false);
+      }
+    };
+    loadProfile();
+  }, [search, isGuest]);
 
   const [showManageBadges, setShowManageBadges] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -258,6 +300,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const [successToast, setSuccessToast] = useState("");
   const [errorAlert, setErrorAlert] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
+  const [savingFeatured, setSavingFeatured] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(search);
@@ -274,6 +317,83 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     [activeLang]
   );
 
+  const allBadgesData = useMemo(() => {
+    if (!Array.isArray(badgeCollection) || badgeCollection.length === 0) return [];
+    return badgeCollection.map((b: any) => ({
+      name: String(b.name || "Unknown Badge"),
+      rarity: (String(b.rarity || "common").toLowerCase() as Rarity),
+      locked: Boolean(b.locked),
+      req: String(b.req || ""),
+      code: String(b.code || ""),
+    }));
+  }, [badgeCollection]);
+
+  const profileCard = useMemo(() => {
+    const name = String(profile?.name || DEFAULT_AGENT_PROFILE.name).toUpperCase();
+    const slug = String(profile?.email || DEFAULT_AGENT_PROFILE.slug).split("@")[0];
+    const level = Number(profile?.level || DEFAULT_AGENT_PROFILE.level);
+    const tier = String(profile?.title || DEFAULT_AGENT_PROFILE.tier);
+    const tx = Number(profile?.total_transactions || DEFAULT_AGENT_PROFILE.totalTransactions);
+    const list = Number(profile?.total_listings || DEFAULT_AGENT_PROFILE.totalListings);
+    const prospect = Number(profile?.total_prospects || DEFAULT_AGENT_PROFILE.totalProspects);
+    const commission = Number(profile?.total_commission || 0);
+
+    return {
+      name,
+      slug,
+      title: String(profile?.title || DEFAULT_AGENT_PROFILE.title),
+      level,
+      tier,
+      careerRank,
+      totalListings: String(list),
+      totalProspects: String(prospect),
+      totalTransactions: String(tx),
+      commission: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(commission || 0),
+      photo: String(profile?.photo_url || DEFAULT_AGENT_PROFILE.photo),
+    };
+  }, [profile, careerRank]);
+
+  const xpProgress = useMemo(() => {
+    const totalXP = Number(profile?.total_xp || 0);
+
+    if (totalXP >= 5000000) {
+      return {
+        currentXP: totalXP,
+        nextXP: 5000000,
+        percent: 100,
+      };
+    }
+
+    let currentStart = 0;
+    let step = 2500;
+
+    if (totalXP < 50000) {
+      currentStart = Math.floor(totalXP / 2500) * 2500;
+      step = 2500;
+    } else if (totalXP < 200000) {
+      currentStart = 50000 + Math.floor((totalXP - 50000) / 7500) * 7500;
+      step = 7500;
+    } else if (totalXP < 800000) {
+      currentStart = 200000 + Math.floor((totalXP - 200000) / 30000) * 30000;
+      step = 30000;
+    } else if (totalXP < 2000000) {
+      currentStart = 800000 + Math.floor((totalXP - 800000) / 60000) * 60000;
+      step = 60000;
+    } else {
+      currentStart = 2000000 + Math.floor((totalXP - 2000000) / 158000) * 158000;
+      step = 158000;
+    }
+
+    const nextXP = currentStart + step;
+    const percent = Math.max(0, Math.min(100, Math.round(((totalXP - currentStart) / step) * 100)));
+
+    return {
+      currentXP: totalXP,
+      nextXP,
+      percent,
+    };
+  }, [profile]);
+
   if (loading) return <ProfilePageSkeleton />;
 
   const triggerToast = (msg: string) => {
@@ -286,22 +406,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     setTimeout(() => setErrorAlert(""), 4000);
   };
 
-  const visibleHof = showAllHof ? HOF_ACHIEVEMENTS : HOF_ACHIEVEMENTS.slice(0, 6);
+  const visibleHof = showAllHof ? hofHistory : hofHistory.slice(0, 6);
 
-  const totalBadges = ALL_BADGES.length;
-  const unlockedBadges = ALL_BADGES.filter(b => !b.locked).length;
-  const progressPercent = Math.round((unlockedBadges / totalBadges) * 100);
+  const totalBadges = allBadgesData.length;
+  const unlockedBadges = allBadgesData.filter((b: any) => !b.locked).length;
+  const progressPercent = totalBadges > 0 ? Math.round((unlockedBadges / totalBadges) * 100) : 0;
 
   const getRarityCount = (r: Rarity) => {
-    return ALL_BADGES.filter(b => b.rarity === r && !b.locked).length;
-  };
-
-  const repBadges: Record<Rarity, string> = {
-    mythic: "Billionaire Club",
-    legendary: "The Leader",
-    epic: "Listing Distributor",
-    rare: "Listing Supplier",
-    common: "First Listing",
+    return allBadgesData.filter((b: any) => b.rarity === r && !b.locked).length;
   };
 
   const handleToggleBadge = (badgeName: string) => {
@@ -313,6 +425,33 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         return;
       }
       setFeatured(prev => [...prev, badgeName]);
+    }
+  };
+
+  const handleSaveFeaturedBadges = async () => {
+    if (!Array.isArray(badgeCollection) || badgeCollection.length === 0) {
+      triggerError("Data badge dari server belum siap. Coba refresh halaman.");
+      return;
+    }
+
+    const codeByName = new Map<string, string>();
+    badgeCollection.forEach((b: any) => {
+      codeByName.set(String(b.name || ""), String(b.code || ""));
+    });
+
+    const selectedCodes = featured
+      .map((name) => codeByName.get(name) || "")
+      .filter((code) => code.length > 0);
+
+    setSavingFeatured(true);
+    try {
+      await api.profile.updateFeaturedBadges(selectedCodes);
+      triggerToast("Featured badges berhasil disimpan.");
+      setShowManageBadges(false);
+    } catch (error) {
+      triggerError(error instanceof Error ? error.message : "Gagal menyimpan featured badges.");
+    } finally {
+      setSavingFeatured(false);
     }
   };
 
@@ -355,9 +494,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) throw new Error("Canvas 2D context unavailable");
-
     const Lx = SHARE_LANG[activeLang];
-
     ctx.save();
     drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
     ctx.clip();
@@ -412,11 +549,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     const leftX = 72;
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "900 64px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(AGENT_PROFILE.name, leftX, 310);
+    ctx.fillText(profileCard.name, leftX, 310);
 
     ctx.fillStyle = "#C8922A";
     ctx.font = "900 32px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(AGENT_PROFILE.tier.toUpperCase(), leftX, 370);
+    ctx.fillText(profileCard.tier.toUpperCase(), leftX, 370);
 
     ctx.fillStyle = "#9ca3af";
     ctx.font = "700 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
@@ -424,7 +561,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
     ctx.fillStyle = "#E8A500";
     ctx.font = "900 76px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(`${AGENT_PROFILE.totalTransactions} ${activeLang === "ID" ? "Transaksi" : activeLang === "CN" ? "笔交易" : "Transactions"}`, leftX, 585);
+    ctx.fillText(`${profileCard.totalTransactions} ${activeLang === "ID" ? "Transaksi" : activeLang === "CN" ? "笔交易" : "Transactions"}`, leftX, 585);
 
     const statYTop = 665;
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
@@ -436,9 +573,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
     const statBlockW = 296;
     const stats = [
-      { label: Lx.level.toUpperCase(), value: String(AGENT_PROFILE.level) },
-      { label: Lx.hof.toUpperCase(), value: "18" },
-      { label: Lx.badges.toUpperCase(), value: "18/25" },
+      { label: Lx.level.toUpperCase(), value: String(profileCard.level) },
+      { label: Lx.hof.toUpperCase(), value: String(hofHistory.length) },
+      { label: Lx.badges.toUpperCase(), value: `${unlockedBadges}/${totalBadges}` },
     ];
 
     stats.forEach((s, i) => {
@@ -460,7 +597,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     });
 
     try {
-      const photo = await loadDataImage(AGENT_PROFILE.photo);
+      const photo = await loadDataImage(profileCard.photo);
       const px = 1070;
       const py = 245;
       const pw = 420;
@@ -529,7 +666,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = objectUrl;
-      a.download = `LOT-Scorecard-${AGENT_PROFILE.slug}-${activeLang}.png`;
+      a.download = `LOT-Scorecard-${profileCard.slug}-${activeLang}.png`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -545,13 +682,13 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   };
 
   const handleShareLink = async () => {
-    const text = buildShareText(activeLang, featured);
+    const text = buildShareText(activeLang, featured, profileCard, hofHistory, { unlocked: unlockedBadges, total: totalBadges });
     const payload = `${text}\n\n🔗 ${shareUrl}`;
 
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `${AGENT_PROFILE.name} — LOT Property`,
+          title: `${profileCard.name} — LOT Property`,
           text: payload,
           url: shareUrl,
         });
@@ -571,7 +708,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   };
 
   const handleSocialShare = async (platform: string) => {
-    const text = buildShareText(activeLang, featured);
+    const text = buildShareText(activeLang, featured, profileCard, hofHistory, { unlocked: unlockedBadges, total: totalBadges });
     const payload = `${text}\n\n🔗 ${shareUrl}`;
 
     try {
@@ -649,7 +786,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   }}
                 />
                 <img
-                  src={AGENT_PROFILE.photo}
+                  src={profileCard.photo}
                   alt="Ronald Richy"
                   className="w-full h-full object-cover object-top"
                   draggable={false}
@@ -683,7 +820,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
               {/* Name & Tier */}
               <h2 className="font-extrabold text-2xl tracking-wide text-gradient-gold" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                {AGENT_PROFILE.name}
+                {profileCard.name}
               </h2>
               <div className="flex justify-center mt-1.5 mb-4">
                 <span
@@ -697,7 +834,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                       : "0 2px 8px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.6)"
                   }}
                 >
-                  <LevelBadge title={AGENT_PROFILE.tier} size={34} showPlate={false} />
+                  <LevelBadge title={profileCard.tier} size={34} showPlate={false} />
                   <span
                     className="font-black"
                     style={{
@@ -707,7 +844,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         : "0 1px 1px rgba(255,255,255,0.85)"
                     }}
                   >
-                    {AGENT_PROFILE.tier}
+                    {profileCard.tier}
                   </span>
                 </span>
               </div>
@@ -718,19 +855,19 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border glossy-glare"
                     style={{ borderColor: "#E8A50040", backgroundColor: isDark ? "rgba(232,165,0,0.08)" : "#FFFAED" }}>
                     <TrendingUp size={18} className="text-[#E8A500]" />
-                    <p className="font-bold text-base mt-1 text-[#E8A500] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>{AGENT_PROFILE.level}</p>
+                    <p className="font-bold text-base mt-1 text-[#E8A500] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>{profileCard.level}</p>
                     <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">LEVEL</p>
                   </div>
                   <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border glossy-glare"
                     style={{ borderColor: "#C8922A40", backgroundColor: isDark ? "rgba(200,146,42,0.08)" : "#FDF6E3" }}>
                     <Trophy size={18} className="text-[#C8922A]" />
-                    <p className="font-bold text-base mt-1 text-[#C8922A] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18</p>
+                    <p className="font-bold text-base mt-1 text-[#C8922A] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>{hofHistory.length}</p>
                     <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">HOF HITS</p>
                   </div>
                   <div className="flex flex-col items-center justify-center p-2.5 rounded-2xl border glossy-glare"
                     style={{ borderColor: "#7040D040", backgroundColor: isDark ? "rgba(112,64,208,0.08)" : "#F5F0FD" }}>
                     <Award size={18} className="text-[#7040D0]" />
-                    <p className="font-bold text-base mt-1 text-[#7040D0] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>18/25</p>
+                    <p className="font-bold text-base mt-1 text-[#7040D0] text-shine-3d" style={{ fontFamily: "'Rajdhani', sans-serif", lineHeight: 1 }}>{unlockedBadges}/{totalBadges}</p>
                     <p className="text-[8px] font-semibold text-muted-foreground uppercase tracking-wider">BADGES</p>
                   </div>
                 </div>
@@ -738,10 +875,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 <div className="text-left space-y-1">
                   <div className="flex justify-between items-center text-xs">
                     <span className="font-bold text-muted-foreground tracking-wider uppercase text-[9px]">XP PROGRESS</span>
-                    <span className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-numeric)" }}>24.680 / 30.000 XP</span>
+                    <span className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-numeric)" }}>
+                      {xpProgress.currentXP.toLocaleString("id-ID")} / {xpProgress.nextXP.toLocaleString("id-ID")} XP
+                    </span>
                   </div>
-                  <XPBar value={24680} max={30000} height={8} />
-                  <p className="text-[9px] text-muted-foreground text-center pt-1">82.26% menuju Level 24 (Elite Agent)</p>
+                  <XPBar value={xpProgress.currentXP} max={Math.max(xpProgress.nextXP, 1)} height={8} />
+                  <p className="text-[9px] text-muted-foreground text-center pt-1">
+                    {xpProgress.percent}% menuju level berikutnya
+                  </p>
                 </div>
               </div>
 
@@ -788,7 +929,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 </div>
               ) : (
                 featured.map((name, i) => {
-                  const b = ALL_BADGES.find(item => item.name === name);
+                  const b = allBadgesData.find((item: any) => item.name === name);
                   if (!b) return null;
                   return (
                     <BadgeShield key={i} rarity={b.rarity} name={b.name} locked={b.locked} size="sm" />
@@ -844,7 +985,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 }}
               >
                 <Award size={14} className="flex-shrink-0" />
-                {HOF_ACHIEVEMENTS.length} Awards
+                {hofHistory.length} Awards
               </div>
             </div>
 
@@ -863,7 +1004,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               ))}
             </div>
 
-            {HOF_ACHIEVEMENTS.length > 6 && (
+            {hofHistory.length > 6 && (
               <>
                 <div
                   className="relative z-[1] h-px my-6 sm:my-8"
@@ -902,13 +1043,13 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {[
-                { l: "Total Commission", v: "Rp 4.250.000.000", icon: DollarSign, color: "#E8A500" },
-                { l: "Total Transactions", v: "127", icon: TrendingUp, color: "#16A34A" },
-                { l: "Total Listings", v: "892", icon: Building2, color: "#1A6FC4" },
-                { l: "Total Prospects", v: "532", icon: Users, color: "#7B2FBE" },
-                { l: "Total Recruits", v: "14", icon: Star, color: "#C8922A" },
-                { l: "Training Completed", v: "67", icon: BookOpen, color: "#308030" },
+                {[
+                { l: "Total Commission", v: profileCard.commission, icon: DollarSign, color: "#E8A500" },
+                { l: "Total Transactions", v: profileCard.totalTransactions, icon: TrendingUp, color: "#16A34A" },
+                { l: "Total Listings", v: profileCard.totalListings, icon: Building2, color: "#1A6FC4" },
+                { l: "Total Prospects", v: profileCard.totalProspects, icon: Users, color: "#7B2FBE" },
+                { l: "Total Recruits", v: String(profile?.total_recruits || 0), icon: Star, color: "#C8922A" },
+                { l: "Training Completed", v: String(profile?.training_completed || 0), icon: BookOpen, color: "#308030" },
               ].map((s, i) => (
                 <div
                   key={i}
@@ -1003,7 +1144,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 {(["mythic", "legendary", "epic", "rare", "common"] as const).map(r => {
                   const c = RARITY_CFG[r];
                   const count = getRarityCount(r);
-                  const total = ALL_BADGES.filter(b => b.rarity === r).length;
+                  const total = allBadgesData.filter((b: any) => b.rarity === r).length;
                   const percent = total > 0 ? Math.round((count / total) * 100) : 0;
                   const activeColor = isDark ? c.darkColor : c.color;
 
@@ -1034,7 +1175,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             {showAllBadges && (
               <div className="mt-5 pt-5 border-t border-border/30 animate-fade-in">
                 <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3.5 gap-y-5 sm:gap-4 justify-items-center">
-                  {ALL_BADGES.map((b, i) => (
+                  {allBadgesData.map((b: any, i: number) => (
                     <BadgeShield key={i} rarity={b.rarity} name={b.name} locked={b.locked} size="md" />
                   ))}
                 </div>
@@ -1061,7 +1202,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               </div>
               <div className="p-6 overflow-y-auto max-h-[380px] space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {ALL_BADGES.map((b, i) => {
+                  {allBadgesData.map((b: any, i: number) => {
                     const isFeatured = featured.includes(b.name);
                     const asset = BADGE_ASSETS[b.name];
                     const c = RARITY_CFG[b.rarity];
@@ -1090,8 +1231,8 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 </div>
               </div>
               <div className="px-6 py-4 border-t flex justify-end bg-muted/10" style={{ borderColor: T.border }}>
-                <button onClick={() => setShowManageBadges(false)} className="px-6 py-2.5 rounded-xl font-bold bg-[#E8A500] text-white font-display text-sm transition-all hover:bg-[#CC9200]">
-                  SIMPAN SHOWCASE
+                <button onClick={handleSaveFeaturedBadges} disabled={savingFeatured} className="px-6 py-2.5 rounded-xl font-bold bg-[#E8A500] text-white font-display text-sm transition-all hover:bg-[#CC9200] disabled:opacity-60 disabled:cursor-not-allowed">
+                  {savingFeatured ? "MENYIMPAN..." : "SIMPAN SHOWCASE"}
                 </button>
               </div>
             </motion.div>
@@ -1169,10 +1310,10 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     <div className="flex-1 space-y-3.5 text-left">
                       <div>
                         <h4 className="font-extrabold text-[17px] leading-tight text-white tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                          {AGENT_PROFILE.name}
+                          {profileCard.name}
                         </h4>
                         <p className="text-[9px] text-[#C8922A] uppercase font-black mt-0.5 tracking-wider">
-                          {AGENT_PROFILE.tier}
+                          {profileCard.tier}
                         </p>
                       </div>
 
@@ -1180,7 +1321,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                       <div>
                         <p className="text-[8px] text-zinc-400 font-bold tracking-wider uppercase">{L.transactions}</p>
                         <h2 className="font-black text-xl text-gradient-gold leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                          {AGENT_PROFILE.totalTransactions} {activeLang === "ID" ? "Transaksi" : activeLang === "CN" ? "笔交易" : "Transactions"}
+                          {profileCard.totalTransactions} {activeLang === "ID" ? "Transaksi" : activeLang === "CN" ? "笔交易" : "Transactions"}
                         </h2>
                       </div>
 
@@ -1189,21 +1330,21 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         <div className="flex-1 text-center">
                           <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.level}</p>
                           <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {AGENT_PROFILE.level}
+                            {profileCard.level}
                           </p>
                         </div>
                         <div className="w-[1px] h-5 bg-white/10" />
                         <div className="flex-1 text-center">
                           <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.hof}</p>
                           <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            18
+                            {hofHistory.length}
                           </p>
                         </div>
                         <div className="w-[1px] h-5 bg-white/10" />
                         <div className="flex-1 text-center">
                           <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.badges}</p>
                           <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            18/25
+                            {unlockedBadges}/{totalBadges}
                           </p>
                         </div>
                       </div>
@@ -1212,12 +1353,12 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     {/* Right: Picture Card */}
                     <div className="flex-shrink-0 relative">
                       <div className="w-[104px] h-[135px] rounded-xl overflow-hidden border border-[#C8922A] shadow-md bg-zinc-950">
-                        <img src={AGENT_PROFILE.photo} alt="Ronald Richy" className="w-full h-full object-cover object-top" />
+                        <img src={profileCard.photo} alt={profileCard.name} className="w-full h-full object-cover object-top" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                       </div>
                       {/* Floating level badge graphic */}
                       <div className="absolute -bottom-2 -right-2 z-20">
-                        <LevelBadge title={AGENT_PROFILE.tier} size={36} showPlate={false} customAsset={eliteAgentBase64} />
+                        <LevelBadge title={profileCard.tier} size={36} showPlate={false} customAsset={eliteAgentBase64} />
                       </div>
                     </div>
                   </div>

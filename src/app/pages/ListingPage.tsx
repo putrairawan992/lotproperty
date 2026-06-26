@@ -7,9 +7,10 @@ import {
 import Card from "../components/Card";
 import { ListingPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
-import { T } from "../types";
+import { T, useTheme } from "../types";
 import { useTabQuery, useLocation } from "../routes";
 import EllipsisTooltip from "../components/EllipsisTooltip";
+import { api } from "../services/api";
 
 interface Listing {
   id: string;
@@ -20,7 +21,7 @@ interface Listing {
   address: string;
   price: string;
   loc: string;
-  status: "Active" | "Inactive" | "Sold";
+  status: "Active" | "Inactive" | "Closed";
   days: number;
   remind: "safe" | "warn" | "danger";
   landArea: string;
@@ -54,8 +55,68 @@ const INITIAL_LISTINGS: Listing[] = [
   { id: "L-002", title: "Apartemen Studio The Spring BSD", type: "Apartemen", owner: "Bu Linda", phone: "0821-9876-5432", address: "The Spring Tower A, BSD City", price: "Rp 450Jt", loc: "BSD City", status: "Active", days: 14, remind: "warn", landArea: "—", buildingArea: "32 m²", floors: "1", certificate: "SHGB", commission: "2,5%", notes: "Fully furnished, view kolam renang.", createdAt: "7 Jun 2026" },
   { id: "L-003", title: "Ruko 2 Lantai Grand Serpong", type: "Ruko", owner: "Pak Rudi", phone: "0856-1234-5678", address: "Jl. Raya Serpong KM 7, Tangerang", price: "Rp 2,8M", loc: "Serpong", status: "Inactive", days: 92, remind: "danger", landArea: "80 m²", buildingArea: "160 m²", floors: "2", certificate: "SHM", commission: "3%", notes: "Lokasi ramai, cocok untuk usaha F&B.", createdAt: "20 Mar 2026" },
   { id: "L-004", title: "Kavling 300m² Sawangan Indah", type: "Tanah", owner: "Bu Maya", phone: "0878-2345-6789", address: "Perumahan Sawangan Indah Blok C12", price: "Rp 680Jt", loc: "Sawangan", status: "Active", days: 60, remind: "safe", landArea: "300 m²", buildingArea: "—", floors: "—", certificate: "SHM", commission: "2%", notes: "Tanah siap bangun, sertifikat bersih.", createdAt: "22 Apr 2026" },
-  { id: "L-005", title: "Rumah 4BR Alam Sutera Premium", type: "Rumah", owner: "Pak Doni", phone: "0819-8765-4321", address: "Cluster Premium Alam Sutera, Tangerang", price: "Rp 3,5M", loc: "Alam Sutera", status: "Sold", days: 0, remind: "safe", landArea: "240 m²", buildingArea: "200 m²", floors: "2", certificate: "SHM", commission: "2%", notes: "Deal selesai — KPR BCA.", createdAt: "10 Jan 2026" },
+  { id: "L-005", title: "Rumah 4BR Alam Sutera Premium", type: "Rumah", owner: "Pak Doni", phone: "0819-8765-4321", address: "Cluster Premium Alam Sutera, Tangerang", price: "Rp 3,5M", loc: "Alam Sutera", status: "Closed", days: 0, remind: "safe", landArea: "240 m²", buildingArea: "200 m²", floors: "2", certificate: "SHM", commission: "2%", notes: "Deal selesai — KPR BCA.", createdAt: "10 Jan 2026" },
 ];
+
+type ListingApiRow = {
+  id: number;
+  owner_name: string;
+  phone: string;
+  address: string;
+  price: number;
+  property_type: string;
+  status: "Active" | "Inactive" | "Closed";
+  luas_tanah?: number;
+  luas_bangunan?: number;
+  jumlah_lantai?: number;
+  certificate?: string;
+  commission_percent?: number;
+  notes?: string;
+  created_at: string;
+};
+
+function formatIDR(value: number) {
+  return `Rp ${value.toLocaleString("id-ID")}`;
+}
+
+function listingFromApi(item: ListingApiRow): Listing {
+  const created = new Date(item.created_at);
+  const createdAt = Number.isNaN(created.getTime())
+    ? "-"
+    : created.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+
+  const loc = item.address.split(" ").slice(0, 2).join(" ") || item.address;
+  return {
+    id: String(item.id),
+    title: `${item.property_type} — ${loc}`,
+    type: item.property_type,
+    owner: item.owner_name,
+    phone: item.phone,
+    address: item.address,
+    price: formatIDR(item.price || 0),
+    loc,
+    status: item.status,
+    days: 0,
+    remind: "safe",
+    landArea: item.luas_tanah ? `${item.luas_tanah} m²` : "—",
+    buildingArea: item.luas_bangunan ? `${item.luas_bangunan} m²` : "—",
+    floors: item.jumlah_lantai ? String(item.jumlah_lantai) : "—",
+    certificate: item.certificate || "—",
+    commission: item.commission_percent ? `${item.commission_percent}%` : "—",
+    notes: item.notes || "—",
+    createdAt,
+  };
+}
+
+function parseNumber(input: string) {
+  const digits = input.replace(/[^0-9]/g, "");
+  return Number(digits || "0");
+}
+
+function parseFloatLocalized(input: string) {
+  const normalized = input.replace(",", ".").replace(/[^0-9.]/g, "");
+  return Number(normalized || "0");
+}
 
 function FieldLabel({ children, required }: { children: ReactNode; required?: boolean }) {
   return (
@@ -75,7 +136,12 @@ function SectionTitle({ children }: { children: ReactNode }) {
 }
 
 export default function ListingPage() {
-  const loading = useLoading(1100);
+  const loadingTime = useLoading(1100);
+  const { isGuest } = useTheme();
+  const [apiLoading, setApiLoading] = useState(true);
+
+  const loading = loadingTime || (isGuest ? false : apiLoading);
+
   const [tab, setTab] = useTabQuery("tab", "All");
   const { getQueryParam, navigate, search: urlSearch } = useLocation();
   const detailId = getQueryParam("detail");
@@ -86,8 +152,28 @@ export default function ListingPage() {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  const [listings, setListings] = useState<Listing[]>(INITIAL_LISTINGS);
+  const [listings, setListings] = useState<Listing[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
+
+  const loadListings = async () => {
+    if (isGuest) {
+      setListings(INITIAL_LISTINGS);
+      setApiLoading(false);
+      return;
+    }
+    try {
+      setApiLoading(true);
+      const statusFilter = tab === "All" ? undefined : tab;
+      const payload = await api.listings.getList({ status: statusFilter, search });
+      const rows: ListingApiRow[] = Array.isArray(payload?.listings) ? payload.listings : [];
+      setListings(rows.map(listingFromApi));
+    } catch (error) {
+      setSuccessToast(error instanceof Error ? error.message : "Gagal memuat listing");
+      setTimeout(() => setSuccessToast(""), 3000);
+    } finally {
+      setApiLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = (e: PointerEvent) => {
@@ -105,6 +191,11 @@ export default function ListingPage() {
       navigate("/listing");
     }
   }, [urlSearch]);
+
+  useEffect(() => {
+    loadListings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab]);
 
   if (loading) return <ListingPageSkeleton />;
 
@@ -136,38 +227,32 @@ export default function ListingPage() {
     form.price.trim() &&
     form.type.trim();
 
-  const handleSaveListing = () => {
+  const handleSaveListing = async () => {
     if (!isFormValid) return;
 
-    const newId = `L-${String(listings.length + 1).padStart(3, "0")}`;
-    const loc = form.address.trim().split(" ").slice(0, 2).join(" ");
-    const today = new Date();
-    const createdAt = `${today.getDate()} ${["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"][today.getMonth()]} ${today.getFullYear()}`;
+    try {
+      await api.listings.create({
+        owner_name: form.owner.trim(),
+        phone: form.phone.trim(),
+        address: form.address.trim(),
+        price: parseNumber(form.price),
+        property_type: form.type,
+        luas_tanah: form.landArea.trim() ? parseNumber(form.landArea) : 0,
+        luas_bangunan: form.buildingArea.trim() ? parseNumber(form.buildingArea) : 0,
+        jumlah_lantai: form.floors.trim() ? parseNumber(form.floors) : 0,
+        certificate: form.certificate.trim(),
+        commission_percent: form.commission.trim() ? parseFloatLocalized(form.commission) : 0,
+        notes: form.notes.trim(),
+      });
 
-    setListings(prev => [{
-      id: newId,
-      title: `${form.type} — ${loc}`,
-      type: form.type,
-      owner: form.owner.trim(),
-      phone: form.phone.trim(),
-      address: form.address.trim(),
-      price: form.price.trim().startsWith("Rp") ? form.price.trim() : `Rp ${form.price.trim()}`,
-      loc,
-      status: "Active",
-      days: 90,
-      remind: "safe",
-      landArea: form.landArea.trim() ? `${form.landArea.trim()} m²` : "—",
-      buildingArea: form.buildingArea.trim() ? `${form.buildingArea.trim()} m²` : "—",
-      floors: form.floors.trim() ? form.floors.trim() : "—",
-      certificate: form.certificate.trim() || "—",
-      commission: form.commission.trim() ? `${form.commission.trim()}%` : "—",
-      notes: form.notes.trim() || "—",
-      createdAt,
-    }, ...prev]);
+      setShowPanel(false);
+      setForm(EMPTY_FORM);
+      setSuccessToast("Listing baru berhasil ditambahkan!");
+      await loadListings();
+    } catch (error) {
+      setSuccessToast(error instanceof Error ? error.message : "Gagal menambahkan listing");
+    }
 
-    setShowPanel(false);
-    setForm(EMPTY_FORM);
-    setSuccessToast("Listing baru berhasil ditambahkan!");
     setTimeout(() => setSuccessToast(""), 3000);
   };
 
@@ -183,10 +268,15 @@ export default function ListingPage() {
     navigate("/listing");
   };
 
-  const updateStatus = (id: string, status: Listing["status"]) => {
-    setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l));
-    setOpenMenuId(null);
-    setSuccessToast(`Status listing diubah menjadi ${status}`);
+  const updateStatus = async (id: string, status: Listing["status"]) => {
+    try {
+      await api.listings.update(id, status);
+      setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l));
+      setOpenMenuId(null);
+      setSuccessToast(`Status listing diubah menjadi ${status}`);
+    } catch (error) {
+      setSuccessToast(error instanceof Error ? error.message : "Gagal update status listing");
+    }
     setTimeout(() => setSuccessToast(""), 3000);
   };
 
@@ -194,7 +284,7 @@ export default function ListingPage() {
     setListings(prev => prev.filter(l => l.id !== id));
     setOpenMenuId(null);
     if (detailId === id) closeDetail();
-    setSuccessToast("Listing berhasil dihapus");
+    setSuccessToast("Listing dihapus hanya di UI (endpoint delete belum tersedia)");
     setTimeout(() => setSuccessToast(""), 3000);
   };
 
@@ -242,7 +332,7 @@ export default function ListingPage() {
             {[
               { label: "Lihat Detail", icon: Eye, action: () => openDetail(listing.id) },
               { label: listing.status === "Active" ? "Set Inactive" : "Set Active", icon: ToggleLeft, action: () => updateStatus(listing.id, listing.status === "Active" ? "Inactive" : "Active") },
-              { label: "Tandai Sold", icon: Archive, action: () => updateStatus(listing.id, "Sold"), hide: listing.status === "Sold" },
+              { label: "Tandai Closed", icon: Archive, action: () => updateStatus(listing.id, "Closed"), hide: listing.status === "Closed" },
               { label: "Hapus", icon: Trash2, action: () => deleteListing(listing.id), danger: true },
             ].filter(a => !a.hide).map(item => (
               <button
@@ -291,7 +381,7 @@ export default function ListingPage() {
             { l: "Total Listing", short: "Total", v: listings.length, c: T.text2 },
             { l: "Active", short: "Active", v: listings.filter(l => l.status === "Active").length, c: "#16A34A" },
             { l: "Inactive", short: "Inactive", v: listings.filter(l => l.status === "Inactive").length, c: "#D97706" },
-            { l: "Sold", short: "Sold", v: listings.filter(l => l.status === "Sold").length, c: "#DC2626" },
+            { l: "Closed", short: "Closed", v: listings.filter(l => l.status === "Closed").length, c: "#DC2626" },
           ].map(s => (
             <Card key={s.l} className="px-2 py-2 sm:p-3 lg:p-4 text-center min-w-0">
               <p
@@ -336,7 +426,7 @@ export default function ListingPage() {
           </div>
 
           <div className="flex border-b overflow-x-auto" style={{ borderColor: T.border }}>
-            {(["All", "Active", "Inactive", "Sold"] as const).map(t => (
+            {(["All", "Active", "Inactive", "Closed"] as const).map(t => (
               <button key={t} onClick={() => setTab(t)}
                 className="px-5 py-3 text-sm font-medium whitespace-nowrap transition-all"
                 style={{ color: tab === t ? "#E8A500" : T.text3, borderBottom: tab === t ? "2px solid #E8A500" : "2px solid transparent" }}>
@@ -693,7 +783,7 @@ export default function ListingPage() {
                     >
                       <MessageCircle size={14} /> WhatsApp Pemilik
                     </a>
-                    {detailListing.status !== "Sold" && (
+                    {detailListing.status !== "Closed" && (
                       <button
                         type="button"
                         onClick={() => updateStatus(detailListing.id, detailListing.status === "Active" ? "Inactive" : "Active")}
@@ -703,14 +793,14 @@ export default function ListingPage() {
                         {detailListing.status === "Active" ? "Set Inactive" : "Set Active"}
                       </button>
                     )}
-                    {detailListing.status !== "Sold" && (
+                    {detailListing.status !== "Closed" && (
                       <button
                         type="button"
-                        onClick={() => updateStatus(detailListing.id, "Sold")}
+                        onClick={() => updateStatus(detailListing.id, "Closed")}
                         className="px-4 py-2 rounded-xl text-xs font-bold"
                         style={{ backgroundColor: "#E8A500", color: "white", fontFamily: "'Rajdhani', sans-serif" }}
                       >
-                        Tandai Sold
+                        Tandai Closed
                       </button>
                     )}
                   </div>

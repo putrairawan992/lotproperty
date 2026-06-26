@@ -1,25 +1,108 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Card from "../../components/Card";
 import { T } from "../../types";
-import { AGENT_DATA_LIST } from "../../appData";
+import { api } from "../../services/api";
+
+interface AgentOption {
+  id: number;
+  name: string;
+  level: string;
+  status: string;
+}
+
+interface XPHistoryItem {
+  agent: string;
+  type: "add" | "deduct";
+  amount: number;
+  reason: string;
+  by: string;
+  time: string;
+}
 
 export default function AdminXPPage() {
+  const [agents, setAgents] = useState<AgentOption[]>([]);
   const [selectedAgent, setSelectedAgent] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"add"|"deduct">("add");
   const [reason, setReason] = useState("");
-  const [history, setHistory] = useState([
-    { agent:"Ahmad Fadhil", type:"add", amount:500, reason:"Bonus event kehadiran", by:"Super Admin", time:"18 Jun · 16:40" },
-    { agent:"Rizki Pratama", type:"add", amount:1000, reason:"Kompensasi event technical issue", by:"Super Admin", time:"15 Jun · 11:20" },
-    { agent:"Eko Purnomo", type:"deduct", amount:200, reason:"Data listing duplikasi", by:"Super Admin", time:"10 Jun · 09:15" },
-  ]);
+  const [history, setHistory] = useState<XPHistoryItem[]>([]);
+  const [saving, setSaving] = useState(false);
 
-  const AGENT_DATA = AGENT_DATA_LIST;
+  const loadAgents = async () => {
+    try {
+      const rows = await api.admin.getAgents();
+      if (Array.isArray(rows)) {
+        setAgents(rows.map((a: any) => ({
+          id: Number(a.id),
+          name: String(a.name || ""),
+          level: String(a.title || "Rookie Agent"),
+          status: String(a.status || "Pending"),
+        })));
+      }
+    } catch {
+      // Keep empty options on API failure.
+    }
+  };
 
-  const handleSubmit = () => {
+  const loadHistory = async () => {
+    try {
+      const rows = await api.admin.getLogs();
+      if (!Array.isArray(rows)) return;
+      setHistory(rows
+        .filter((l: any) => String(l.type || "") === "xp")
+        .slice(0, 20)
+        .map((l: any) => {
+          const action = String(l.action || "");
+          const match = action.match(/:\s*(-?\d+)\s*XP/i);
+          const rawAmount = match ? Number(match[1]) : 0;
+          return {
+            agent: action.includes(" for ") ? action.split(" for ")[1]?.split(":")[0] || "Agent" : "Agent",
+            type: rawAmount >= 0 ? "add" : "deduct",
+            amount: Math.abs(rawAmount),
+            reason: action.includes("Reason:") ? action.split("Reason:")[1].trim() : action,
+            by: String(l.actor_name || "Admin"),
+            time: l.created_at
+              ? new Date(l.created_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+              : "-",
+          };
+        }));
+    } catch {
+      // Keep empty history on API failure.
+    }
+  };
+
+  useEffect(() => {
+    loadAgents();
+    loadHistory();
+  }, []);
+
+  const handleSubmit = async () => {
     if (!selectedAgent || !amount || !reason) return;
-    setHistory(prev => [{ agent: selectedAgent, type, amount: Number(amount), reason, by: "Super Admin", time: "Baru saja" }, ...prev]);
-    setSelectedAgent(""); setAmount(""); setReason("");
+
+    setSaving(true);
+    try {
+      const selected = agents.find(a => String(a.id) === selectedAgent);
+      const parsed = Number(amount);
+      const signedAmount = type === "add" ? parsed : -Math.abs(parsed);
+      await api.admin.xpAdjust(selectedAgent, signedAmount, reason);
+
+      setHistory(prev => [{
+        agent: selected?.name || "Agent",
+        type,
+        amount: Math.abs(parsed),
+        reason,
+        by: "Admin",
+        time: "Baru saja",
+      }, ...prev]);
+
+      setSelectedAgent("");
+      setAmount("");
+      setReason("");
+    } catch {
+      // Keep form state when request fails.
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -35,8 +118,8 @@ export default function AdminXPPage() {
               className="w-full px-3.5 rounded-xl border outline-none bg-card"
               style={{ height: 48, borderColor: T.border, fontSize: 14 }}>
               <option value="">Pilih agent...</option>
-              {AGENT_DATA.filter(a => a.status === "Active").map(a => (
-                <option key={a.id} value={a.name}>{a.name} — {a.level}</option>
+              {agents.filter(a => a.status === "Active").map(a => (
+                <option key={a.id} value={String(a.id)}>{a.name} — {a.level}</option>
               ))}
             </select>
           </div>
@@ -76,14 +159,14 @@ export default function AdminXPPage() {
               style={{ height: 48, borderColor: T.border, fontSize: 14 }} />
           </div>
 
-          <button onClick={handleSubmit} disabled={!selectedAgent || !amount || !reason}
+          <button onClick={handleSubmit} disabled={!selectedAgent || !amount || !reason || saving}
             className="w-full py-3 rounded-xl font-bold text-sm transition-all"
             style={{
               backgroundColor: selectedAgent && amount && reason ? "#E8A500" : "var(--border)",
               color: selectedAgent && amount && reason ? "white" : "#9CA3AF",
               fontFamily: "'Rajdhani', sans-serif", fontSize: 16, letterSpacing: "0.05em",
             }}>
-            TERAPKAN XP ADJUSTMENT
+            {saving ? "MENYIMPAN..." : "TERAPKAN XP ADJUSTMENT"}
           </button>
         </div>
       </Card>

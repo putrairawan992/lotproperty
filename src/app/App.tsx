@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { X } from "lucide-react";
 
@@ -35,14 +35,54 @@ import BoardPage from "./pages/BoardPage";
 import AdminLoginPage from "./pages/Admin/AdminLoginPage";
 import AdminApp from "./pages/Admin/AdminApp";
 
+import { api } from "./services/api";
+import GuestLoginPrompt from "./components/GuestLoginPrompt";
+
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
   const [authView, setAuthView] = useState<"login" | "register" | "pending" | "forgot" | "admin">("login");
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
+  const [appLoading, setAppLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
   
   const mainRef = useRef<HTMLDivElement>(null);
+
+  const refreshUser = async () => {
+    if (localStorage.getItem("lotproperty-auth-token")) {
+      try {
+        const profile = await api.auth.getMe();
+        setUser(profile);
+      } catch (e) {
+        console.error("Failed to refresh user profile", e);
+      }
+    }
+  };
+
+  // Check stored auth token on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem("lotproperty-auth-token");
+      if (token) {
+        try {
+          const profile = await api.auth.getMe();
+          setUser(profile);
+          setLoggedIn(true);
+          
+          // Check role and redirect if not regular Agent
+          if (profile.role && profile.role !== "Agent") {
+            setAdminRole(profile.role);
+          }
+        } catch (e) {
+          api.auth.logout();
+        }
+      }
+      setAppLoading(false);
+    };
+    checkAuth();
+  }, []);
 
   // Trigger auto-attendance popup immediately on dashboard enter after login
   useEffect(() => {
@@ -98,9 +138,17 @@ export default function App() {
   }, [page, path]);
 
   const handleLogout = () => {
+    api.auth.logout();
+    setUser(null);
     setLoggedIn(false);
+    setIsGuest(false);
     setAdminRole(null);
     setAuthView("login");
+    navigate("/");
+  };
+
+  const handleLoginRequest = () => {
+    setIsGuest(false);
     navigate("/");
   };
 
@@ -112,16 +160,29 @@ export default function App() {
     }
   };
 
+  if (appLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center" style={{ backgroundColor: T.bg }}>
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#E8A500]/20 border-t-[#E8A500]" />
+          <p className="text-xs font-bold uppercase tracking-widest animate-pulse" style={{ color: "#E8A500", fontFamily: "'Rajdhani', sans-serif" }}>
+            LOT PROPERTY CRM
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Admin flow
   if (adminRole) {
     return (
-      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark }}>
+      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser }}>
         <AdminApp role={adminRole} onLogout={handleLogout} />
       </ThemeCtx.Provider>
     );
   }
 
-  if (!loggedIn) {
+  if (!loggedIn && !isGuest) {
     const renderAuth = () => {
       if (authView === "admin") return <AdminLoginPage onBack={() => { setAuthView("login"); navigate("/"); }} onLogin={r => setAdminRole(r)} />;
       if (authView === "register") return <RegisterPage onBack={() => setAuthView("login")} onSubmit={() => setAuthView("pending")} />;
@@ -134,35 +195,38 @@ export default function App() {
           localStorage.setItem("lotproperty-show-attendance-popup", "true");
         }
         setLoggedIn(true);
-      }} onRegister={() => setAuthView("register")} onForgotPassword={() => setAuthView("forgot")} onAdminLogin={() => { setAuthView("admin"); navigate("/admin"); }} />;
+      }} onRegister={() => setAuthView("register")} onForgotPassword={() => setAuthView("forgot")} onAdminLogin={() => { setAuthView("admin"); navigate("/admin"); }} onGuest={() => setIsGuest(true)} />;
     };
     return (
-      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark }}>
+      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser }}>
         {renderAuth()}
       </ThemeCtx.Provider>
     );
   }
 
+  const guestBlock = (el: React.ReactNode) =>
+    isGuest ? <GuestLoginPrompt onLogin={handleLoginRequest} /> : el;
+
   const renderPage = () => {
     switch (page) {
       case "home": return <HomePage onNav={handlePageChange} onShowLevelUp={() => setShowLevelUp(true)} />;
-      case "quest": return <QuestPage onNav={handlePageChange} />;
-      case "listing": return <ListingPage />;
-      case "prospect": return <ProspectPage />;
+      case "quest": return guestBlock(<QuestPage onNav={handlePageChange} />);
+      case "listing": return guestBlock(<ListingPage />);
+      case "prospect": return guestBlock(<ProspectPage />);
       case "academy": return <AcademyPage />;
       case "leaderboard": return <LeaderboardPage />;
-      case "profile": return <ProfilePage />;
-      case "notifications": return <NotificationsPage />;
+      case "profile": return guestBlock(<ProfilePage />);
+      case "notifications": return guestBlock(<NotificationsPage />);
       case "board": return <BoardPage />;
       case "event": return <EventDetailPage onBack={() => handlePageChange("home")} />;
-      case "attendance": return <AttendancePage />;
+      case "attendance": return guestBlock(<AttendancePage />);
       case "help": return <HelpPage onNav={handlePageChange} />;
       default: return <HomePage onNav={handlePageChange} onShowLevelUp={() => setShowLevelUp(true)} />;
     }
   };
 
   return (
-    <ThemeCtx.Provider value={{ isDark, toggle: toggleDark }}>
+    <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest, onLoginRequest: handleLoginRequest, user, refreshUser }}>
       <div className="flex flex-col h-screen overflow-hidden animate-fade-in" style={{ backgroundColor: T.bg, fontFamily: "'Inter', sans-serif" }}>
         {/* Top Header */}
         <TopHeader page={page} onNav={handlePageChange} onLogout={handleLogout} />

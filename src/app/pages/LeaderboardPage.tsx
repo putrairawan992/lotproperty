@@ -10,14 +10,41 @@ import useLoading from "../hooks/useLoading";
 import HofSection from "../components/HofSection";
 import { T, Rarity, useTheme } from "../types";
 import { useTabQuery } from "../routes";
-import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
+import { HOF_TABS } from "../appData";
+import { api } from "../services/api";
+
+function getBadgeRarity(name: string): Rarity {
+  const nameLower = name.toLowerCase();
+  if (nameLower.includes("billionaire") || nameLower.includes("perfectionist")) return "mythic";
+  if (nameLower.includes("factory") || nameLower.includes("consultant") || nameLower.includes("leader") || nameLower.includes("professor") || nameLower.includes("deal maker") || nameLower.includes("500m") || nameLower.includes("500 million") || nameLower.includes("100m") || nameLower.includes("100 million") || nameLower.includes("influencer") || nameLower.includes("exceptional")) return "legendary";
+  if (nameLower.includes("distributor") || nameLower.includes("tycoon") || nameLower.includes("team builder") || nameLower.includes("content creator") || nameLower.includes("dedicated") || nameLower.includes("certified")) return "epic";
+  if (nameLower.includes("supplier") || nameLower.includes("hunter") || nameLower.includes("talent scout") || nameLower.includes("loyalist")) return "rare";
+  return "common";
+}
+
+interface WeeklyAgent {
+  rank: number;
+  id?: any;
+  name: string;
+  initials: string;
+  photo?: string;
+  level: string;
+  subtitle: string;
+  value: string;
+  badges?: [Rarity, string][];
+  isMe?: boolean;
+  xpLabel?: string;
+}
 
 export default function LeaderboardPage() {
   const loading = useLoading(1300);
   const [mode, setMode] = useTabQuery("mode", "hof");
   const [hofCat, setHofCat] = useTabQuery("hofCat", "Top 5 Commission");
   const [slideDir, setSlideDir] = useState(0);
-  const { isDark } = useTheme();
+  const { isDark, isGuest, user } = useTheme();
+
+  const [weeklyData, setWeeklyData] = useState<WeeklyAgent[]>([]);
+  const [hofData, setHofData] = useState<Record<string, any[]>>({});
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -28,9 +55,47 @@ export default function LeaderboardPage() {
     return () => media.removeEventListener("change", listener);
   }, []);
 
+  const mapWeekly = (weeklyRes: any[], currentUser?: any) =>
+    weeklyRes.map((a: any) => {
+      const isMe = currentUser && Number(a.id) === Number(currentUser.id);
+      const initials = (a.initials || a.name || "A").split(" ").map((w: any) => w[0]).join("").slice(0, 2).toUpperCase();
+      return { rank: a.rank, id: a.id, name: a.name, initials, photo: a.photo, level: a.level || "Agent", subtitle: a.title ? `${a.level || "Agent"} · ${a.title}` : `${a.level || "Agent"}`, value: `${Number(a.xp || 0).toLocaleString("id-ID")} XP`, badges: Array.isArray(a.badges) ? a.badges.map((bName: string) => [getBadgeRarity(bName), bName] as [Rarity, string]) : [], isMe, xpLabel: isMe ? `+${Number(a.xp || 0).toLocaleString("id-ID")} XP pekan ini` : undefined };
+    });
+
+  const mapHof = (hofRes: any[]) => {
+    const grouped: Record<string, any[]> = {};
+    HOF_TABS.forEach(tab => { grouped[tab] = []; });
+    hofRes.forEach((rec: any) => {
+      const cat = rec.category;
+      if (!HOF_TABS.includes(cat as any)) return;
+      const initials = (rec.agent?.name || "A").split(" ").map((w: any) => w[0]).join("").slice(0, 2).toUpperCase();
+      grouped[cat].push({ rank: rec.rank, name: rec.agent?.name || "Unknown", initials, photo: rec.agent?.photo_url, level: rec.agent?.level || "Agent", subtitle: rec.agent?.title || "", value: rec.notes || "HOF" });
+    });
+    return grouped;
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        if (isGuest) {
+          const [weeklyRes, hofRes] = await Promise.all([api.public.getWeeklyLeaderboard(), api.public.getHof()]);
+          if (Array.isArray(weeklyRes) && weeklyRes.length > 0) setWeeklyData(mapWeekly(weeklyRes));
+          if (Array.isArray(hofRes) && hofRes.length > 0) setHofData(mapHof(hofRes));
+          return;
+        }
+        const [weeklyRes, hofRes] = await Promise.all([api.dashboard.getWeeklyLeaderboard(), api.dashboard.getHof()]);
+        if (Array.isArray(weeklyRes) && weeklyRes.length > 0) setWeeklyData(mapWeekly(weeklyRes, user));
+        if (Array.isArray(hofRes) && hofRes.length > 0) {
+          setHofData(mapHof(hofRes));
+        }
+      } catch {}
+    };
+    load();
+  }, [isGuest, user]);
+
   if (loading) return <LeaderboardPageSkeleton />;
 
-  const hofAgents = HOF_CAT_DATA[hofCat] || [];
+  const hofAgents = hofData[hofCat] || [];
   const rest = hofAgents.slice(5);
 
   const hofIdx = HOF_TABS.indexOf(hofCat as any);
@@ -211,7 +276,7 @@ export default function LeaderboardPage() {
             </div>
 
             <div className="space-y-2.5">
-              {WEEKLY_LB_DATA.map((agent, i) => {
+              {weeklyData.map((agent, i) => {
                 const isTop3 = agent.rank <= 3;
                 const medalBg = agent.rank === 1 ? "linear-gradient(135deg,#E8A500,#C8922A)"
                   : agent.rank === 2 ? "#9CA3AF"

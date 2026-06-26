@@ -1,11 +1,52 @@
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import Card from "../components/Card";
 import { ImageWithFallback } from "@/app/components/figma/ImageWithFallback";
 import { lotLogoImg, lotLogoWhiteImg } from "../badgeAssets";
 import { T, useTheme } from "../types";
+import { api } from "../services/api";
 
 export default function PendingPage({ onBack }: { onBack: () => void }) {
   const { isDark } = useTheme();
+  const [status, setStatus] = useState<"Pending" | "Active" | "Suspended" | "Unknown">("Pending");
+
+  useEffect(() => {
+    const pendingEmail = sessionStorage.getItem("lotproperty-pending-email");
+    if (!pendingEmail) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await api.auth.getRegistrationStatus(pendingEmail);
+        if (!cancelled) {
+          setStatus(data.status || "Unknown");
+        }
+      } catch {
+        if (!cancelled) {
+          setStatus("Pending");
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const statusMessage =
+    status === "Active"
+      ? "Akunmu sudah disetujui. Silakan login untuk mulai menggunakan aplikasi."
+      : status === "Suspended"
+        ? "Akunmu saat ini disuspend. Hubungi Office Manager untuk informasi lebih lanjut."
+        : "Akunmu sedang dalam proses verifikasi oleh Office Manager. Kamu akan mendapat notifikasi email setelah akun disetujui.";
+
+  const waitingLabel =
+    status === "Active"
+      ? "Disetujui Office Manager"
+      : status === "Suspended"
+        ? "Status akun: Suspended"
+        : "Menunggu persetujuan Office Manager";
+
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: T.bg }}>
       <div className="w-full" style={{ maxWidth: 440 }}>
@@ -28,15 +69,15 @@ export default function PendingPage({ onBack }: { onBack: () => void }) {
             Pendaftaran Terkirim!
           </h1>
           <p className="mb-6 leading-relaxed" style={{ color: T.text3, fontSize: 14 }}>
-            Akunmu sedang dalam proses verifikasi oleh Office Manager. Kamu akan mendapat notifikasi email setelah akun disetujui.
+            {statusMessage}
           </p>
 
           {/* Status steps */}
           <div className="text-left space-y-3 mb-7 p-4 rounded-xl" style={{ backgroundColor: T.muted }}>
             {[
               { label: "Pendaftaran dikirim", done: true },
-              { label: "Menunggu persetujuan Office Manager", done: false, active: true },
-              { label: "Akun aktif & siap digunakan", done: false },
+              { label: waitingLabel, done: status === "Active", active: status === "Pending" },
+              { label: "Akun aktif & siap digunakan", done: status === "Active", active: status === "Active" },
             ].map((step, i) => (
               <div key={i} className="flex items-center gap-3">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0"

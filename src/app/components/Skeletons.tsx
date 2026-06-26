@@ -280,3 +280,38 @@ export function NotificationsPageSkeleton() {
     </div>
   );
 }
+
+export function AcademyPageSkeleton() {
+  return (
+    <div className="p-4 lg:p-6 max-w-5xl mx-auto space-y-5">
+      <SkeletonStyles />
+      <div className="flex justify-between items-center mb-5 flex-wrap gap-3">
+        <div className="space-y-2">
+          <Sk h={28} w={120} />
+          <Sk h={12} w={240} />
+        </div>
+        <Sk h={34} w={200} r={20} />
+      </div>
+      <div className="flex gap-2 overflow-x-hidden mb-6">
+        {[1, 2, 3, 4, 5, 6].map(i => <Sk key={i} h={34} w={110} r={20} className="flex-shrink-0" />)}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3, 4, 5, 6].map(i => (
+          <div key={i} className="bg-card rounded-2xl border p-5 space-y-4" style={{ borderColor: T.border }}>
+            <div className="flex justify-between"><Sk h={18} w={80} /><Sk h={18} w={18} r={9} /></div>
+            <Sk h={24} w="85%" />
+            <div className="space-y-2">
+              <div className="flex justify-between"><Sk h={12} w={60} /><Sk h={12} w={40} /></div>
+              <Sk h={5} w="100%" r={2.5} />
+            </div>
+            <div className="flex justify-between items-center pt-3 border-t border-dashed" style={{ borderColor: T.border }}>
+              <Sk h={14} w={60} />
+              <Sk h={28} w={65} r={10} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+

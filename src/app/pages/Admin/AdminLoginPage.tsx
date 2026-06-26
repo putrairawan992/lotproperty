@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Mail, Lock, EyeOff, Eye } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mail, Lock, EyeOff, Eye, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import AuthInput from "../../components/AuthInput";
 import { ImageWithFallback } from "../../../app/components/figma/ImageWithFallback";
 import { lotLogoImg, lotLogoWhiteImg } from "../../badgeAssets";
-import { T, useTheme, AdminRole, ADMIN_ROLES, ROLE_COLOR } from "../../types";
+import { T, useTheme, AdminRole, ADMIN_ROLES } from "../../types";
+import { api } from "../../services/api";
 
 export default function AdminLoginPage({ onBack, onLogin }: { onBack: () => void; onLogin: (role: AdminRole) => void }) {
   const { isDark } = useTheme();
@@ -12,9 +14,60 @@ export default function AdminLoginPage({ onBack, onLogin }: { onBack: () => void
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [role, setRole]     = useState<AdminRole>("Super Admin");
+  const [toastMsg, setToastMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (toastMsg) {
+      const t = setTimeout(() => setToastMsg(""), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [toastMsg]);
+
+  const handleLogin = async () => {
+    if (!email || !password || loading) return;
+    setLoading(true);
+    setToastMsg("");
+
+    try {
+      const result = await api.auth.login(email, password);
+      const serverRole = result?.user?.role as AdminRole;
+      if (!ADMIN_ROLES.includes(serverRole)) {
+        setToastMsg("Akun ini bukan akun admin.");
+        return;
+      }
+      if (serverRole !== role) {
+        setToastMsg(`Role akun tidak sesuai. Role akun Anda: ${serverRole}.`);
+        return;
+      }
+      onLogin(serverRole);
+    } catch (e: any) {
+      setToastMsg(e?.message || "Login admin gagal.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: T.bg }}>
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -24, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -24, x: "-50%" }}
+            className="fixed top-20 left-1/2 z-[90] px-5 py-3.5 rounded-2xl bg-[#DC2626] text-white shadow-xl flex items-center gap-2.5 text-sm font-semibold border border-red-500/30 max-w-sm w-[90vw]"
+          >
+            <span className="text-base">⚠️</span>
+            <span className="flex-1 text-xs sm:text-sm">{toastMsg}</span>
+            <button onClick={() => setToastMsg("")} className="p-0.5 rounded hover:bg-white/10">
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="w-full" style={{ maxWidth: 440 }}>
         <Card className="p-8 shadow-sm">
           <div className="flex justify-center mb-6">
@@ -93,12 +146,13 @@ export default function AdminLoginPage({ onBack, onLogin }: { onBack: () => void
               } />
           </div>
 
-          <button onClick={() => onLogin(role)}
+          <button onClick={handleLogin}
             className="w-full rounded-xl font-bold transition-all mb-4"
+            disabled={loading}
             style={{ height: 48, backgroundColor: "#1A6FC4", color: "white", fontFamily: "'Rajdhani', sans-serif", fontSize: 16, letterSpacing: "0.06em" }}
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#1558A0")}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#1A6FC4")}>
-            MASUK KE ADMIN PANEL
+            {loading ? "MEMPROSES..." : "MASUK KE ADMIN PANEL"}
           </button>
 
           <button onClick={onBack} className="w-full text-sm text-center" style={{ color: T.text3 }}>

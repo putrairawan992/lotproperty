@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { Mail, ArrowLeft, Check, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mail, ArrowLeft, Check, X } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import AuthInput from "../components/AuthInput";
 import Logo from "../components/Logo";
 import { T } from "../types";
+import { api } from "../services/api";
 
 export default function ForgotPasswordPage({
   onBack,
@@ -12,20 +14,33 @@ export default function ForgotPasswordPage({
 }) {
   const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
+  const [toastMsg, setToastMsg] = useState("");
+  const [sending, setSending] = useState(false);
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    if (toastMsg) {
+      const t = setTimeout(() => setToastMsg(""), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [toastMsg]);
+
+  const handleSubmit = async () => {
     if (!email.trim()) {
-      setError("Email wajib diisi");
+      setToastMsg("Email wajib diisi");
       return;
     }
     if (!isValidEmail) {
-      setError("Format email tidak valid");
+      setToastMsg("Format email tidak valid");
       return;
     }
-    setError("");
+    setToastMsg("");
+    setSending(true);
+    try {
+      await api.auth.forgotPassword(email.trim());
+    } catch {}
+    setSending(false);
     setSubmitted(true);
   };
 
@@ -75,6 +90,24 @@ export default function ForgotPasswordPage({
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-8" style={{ backgroundColor: T.bg }}>
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -24, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -24, x: "-50%" }}
+            className="fixed top-20 left-1/2 z-[90] px-5 py-3.5 rounded-2xl bg-[#DC2626] text-white shadow-xl flex items-center gap-2.5 text-sm font-semibold border border-red-500/30 max-w-sm w-[90vw]"
+          >
+            <span className="text-base">⚠️</span>
+            <span className="flex-1 text-xs sm:text-sm">{toastMsg}</span>
+            <button onClick={() => setToastMsg("")} className="p-0.5 rounded hover:bg-white/10">
+              <X size={14} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="w-full" style={{ maxWidth: 440 }}>
         <Card className="p-8 shadow-sm">
           <button
@@ -106,32 +139,27 @@ export default function ForgotPasswordPage({
               placeholder="agent@lotproperty.id"
               icon={<Mail size={17} />}
               value={email}
-              onChange={v => { setEmail(v); setError(""); }}
+              onChange={v => { setEmail(v); setToastMsg(""); }}
             />
-            {error && (
-              <p className="text-xs flex items-center gap-1.5" style={{ color: "#DC2626" }}>
-                <AlertCircle size={13} /> {error}
-              </p>
-            )}
           </div>
 
           <button
             onClick={handleSubmit}
-            disabled={!email.trim()}
+            disabled={!email.trim() || sending}
             className="w-full rounded-xl font-bold transition-all"
             style={{
               height: 48,
               fontFamily: "'Rajdhani', sans-serif",
               fontSize: 16,
               letterSpacing: "0.06em",
-              backgroundColor: email.trim() ? "#E8A500" : "var(--border)",
-              color: email.trim() ? "white" : "#9CA3AF",
-              cursor: email.trim() ? "pointer" : "not-allowed",
+              backgroundColor: email.trim() && !sending ? "#E8A500" : "var(--border)",
+              color: email.trim() && !sending ? "white" : "#9CA3AF",
+              cursor: email.trim() && !sending ? "pointer" : "not-allowed",
             }}
-            onMouseEnter={e => { if (email.trim()) e.currentTarget.style.backgroundColor = "#CC9200"; }}
-            onMouseLeave={e => { if (email.trim()) e.currentTarget.style.backgroundColor = "#E8A500"; }}
+            onMouseEnter={e => { if (email.trim() && !sending) e.currentTarget.style.backgroundColor = "#CC9200"; }}
+            onMouseLeave={e => { if (email.trim() && !sending) e.currentTarget.style.backgroundColor = "#E8A500"; }}
           >
-            KIRIM LINK RESET
+            {sending ? "MENGIRIM..." : "KIRIM LINK RESET"}
           </button>
 
           <p className="text-center mt-5" style={{ fontSize: 14, color: T.text3 }}>

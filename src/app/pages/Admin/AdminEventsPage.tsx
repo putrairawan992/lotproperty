@@ -1,39 +1,44 @@
-import React, { useState } from "react";
-import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import { DateInput } from "../../components/DateTimeInput";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T } from "../../types";
+import { api } from "../../services/api";
 
 export default function AdminEventsPage() {
-  const [events, setEvents] = useState([
-    { 
-      id: "EV-001", 
-      title: "17 Agustusan — Lomba Konten", 
-      desc: "Tunjukkan kreativitasmu dalam membuat konten properti bertema Kemerdekaan Indonesia dan dapatkan total hadiah 100.000 XP Pool beserta Badge Eksklusif Merdeka Creator.", 
-      start: "2026-08-01", 
-      end: "2026-08-31", 
-      xpPool: 100000, 
-      badge: "Merdeka Creator", 
-      banner: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
-      status: "Active" 
-    },
-    { 
-      id: "EV-002", 
-      title: "Mid-Year Listing Rush", 
-      desc: "Kejar pencapaian 50 listing baru di bulan Juni dan Juli untuk memenangkan bonus instan XP.", 
-      start: "2026-06-01", 
-      end: "2026-07-31", 
-      xpPool: 50000, 
-      badge: "Listing Supplier", 
-      banner: "",
-      status: "Upcoming" 
-    }
-  ]);
+  const [events, setEvents] = useState<any[]>([]);
 
   const [toastMsg, setToastMsg] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    const loadEvents = async () => {
+      try {
+        const data = await api.events.getList();
+        if (Array.isArray(data)) {
+          setEvents(data.map((ev: any) => ({
+            id: `EV-${ev.id}`,
+            title: ev.title || "",
+            desc: ev.desc || "",
+            start: ev.start_date ? ev.start_date.slice(0, 10) : "",
+            end: ev.end_date ? ev.end_date.slice(0, 10) : "",
+            xpPool: Number(ev.xp_pool || 0),
+            badge: ev.badge?.name || "Event Badge",
+            banner: "",
+            status: ev.status || "Upcoming",
+          })));
+        } else {
+          setEvents([]);
+        }
+      } catch {
+        setEvents([]);
+      }
+    };
+    loadEvents();
+  }, []);
 
   // Form Inputs
   const [title, setTitle] = useState("");
@@ -48,6 +53,13 @@ export default function AdminEventsPage() {
   const [bannerPreview, setBannerPreview] = useState("");
   const [bannerError, setBannerError] = useState("");
   const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    if (toastMsg) {
+      const t = setTimeout(() => setToastMsg(""), 3500);
+      return () => clearTimeout(t);
+    }
+  }, [toastMsg]);
 
   const triggerToast = (msg: string) => {
     setToastMsg(msg);
@@ -70,7 +82,7 @@ export default function AdminEventsPage() {
         } else {
           setBannerFile(null);
           setBannerPreview("");
-          setBannerError(`Ukuran gambar tidak valid: ${img.width} x ${img.height} px. Gambar banner event WAJIB berukuran tepat 1200 x 500 pixel.`);
+          setToastMsg(`Ukuran gambar tidak valid: ${img.width} x ${img.height} px. Gambar banner event WAJIB berukuran tepat 1200 x 500 pixel.`);
         }
       };
       img.src = event.target?.result as string;
@@ -78,53 +90,71 @@ export default function AdminEventsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleCreateEvent = (e: React.FormEvent) => {
+  const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !desc.trim() || !start || !end || !xpPool) {
-      setFormError("Semua field formulir event wajib diisi!");
-      return;
-    }
-    if (bannerError) {
-      setFormError("Perbaiki kesalahan upload banner terlebih dahulu.");
-      return;
-    }
-    if (!bannerFile) {
-      setFormError("Harap upload banner event resmi berukuran 1200 x 500 px.");
+      setToastMsg("Semua field formulir event wajib diisi!");
       return;
     }
 
-    setFormError("");
-    const newEvent = {
-      id: `EV-${Math.floor(100 + Math.random() * 900)}`,
-      title,
-      desc,
-      start,
-      end,
-      xpPool: parseInt(xpPool),
-      badge,
-      banner: bannerPreview,
-      status: "Upcoming"
-    };
+    setToastMsg("");
+    setSaving(true);
+    try {
+      await api.admin.createEvent({
+        title: title.trim(),
+        desc: desc.trim(),
+        start_date: new Date(start).toISOString(),
+        end_date: new Date(end).toISOString(),
+        xp_pool: parseInt(xpPool) || 0,
+        subtitle: title.trim().toUpperCase(),
+        heading: title.trim().toUpperCase(),
+        tagline: "Ikuti event dan raih",
+        tagline_highlight: "hadiah eksklusif!",
+        accent_color: "#E53E3E",
+      });
 
-    setEvents(prev => [newEvent, ...prev]);
-    triggerToast("Event Baru Berhasil Dibuat dan Dipublikasikan!");
-    
-    // Reset Form
-    setTitle("");
-    setDesc("");
-    setStart("");
-    setEnd("");
-    setXpPool("");
-    setBadge("Merdeka Creator");
-    setBannerFile(null);
-    setBannerPreview("");
-    setBannerError("");
-    setShowAddForm(false);
+      setToastMsg("Event Baru Berhasil Dibuat dan Dipublikasikan!");
+      setTitle("");
+      setDesc("");
+      setStart("");
+      setEnd("");
+      setXpPool("");
+      setBadge("Merdeka Creator");
+      setBannerFile(null);
+      setBannerPreview("");
+      setBannerError("");
+      setShowAddForm(false);
+
+      const data = await api.events.getList();
+      if (Array.isArray(data)) {
+        setEvents(data.map((ev: any) => ({
+          id: `EV-${ev.id}`,
+          title: ev.title || "",
+          desc: ev.desc || "",
+          start: ev.start_date ? ev.start_date.slice(0, 10) : "",
+          end: ev.end_date ? ev.end_date.slice(0, 10) : "",
+          xpPool: Number(ev.xp_pool || 0),
+          badge: ev.badge?.name || "Event Badge",
+          banner: "",
+          status: ev.status || "Upcoming",
+        })));
+      }
+    } catch (err) {
+      setToastMsg(err instanceof Error ? err.message : "Gagal membuat event");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDeleteEvent = (id: string) => {
-    setEvents(prev => prev.filter(ev => ev.id !== id));
-    triggerToast("Event Berhasil Dihapus.");
+  const handleDeleteEvent = async (id: string) => {
+    try {
+      const rawId = id.replace("EV-", "");
+      await api.admin.deleteEvent(rawId);
+      setEvents(prev => prev.filter(ev => ev.id !== id));
+      setToastMsg("Event Berhasil Dihapus.");
+    } catch (err) {
+      setToastMsg(err instanceof Error ? err.message : "Gagal menghapus event");
+    }
   };
 
   return (
@@ -164,11 +194,6 @@ export default function AdminEventsPage() {
               </div>
 
               <form onSubmit={handleCreateEvent} className="space-y-4 text-left">
-                {formError && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl flex items-center gap-2">
-                    <AlertCircle size={14} /> {formError}
-                  </div>
-                )}
 
                 <div>
                   <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Judul Event</label>
@@ -235,13 +260,6 @@ export default function AdminEventsPage() {
                     </div>
                   </div>
                 </div>
-
-                {bannerError && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl flex items-center gap-2">
-                    <AlertCircle size={14} className="flex-shrink-0" /> 
-                    <span>{bannerError}</span>
-                  </div>
-                )}
 
                 {/* Banner preview */}
                 {bannerPreview && (

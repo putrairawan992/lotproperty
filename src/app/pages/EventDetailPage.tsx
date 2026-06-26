@@ -1,15 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronRight, Flame, Users, Calendar, Trophy, Check } from "lucide-react";
 import { motion } from "motion/react";
 import Card from "../components/Card";
 import XPBar from "../components/XPBar";
 import { T, useTheme } from "../types";
+import { useLocation } from "../routes";
+import { api } from "../services/api";
+import { EVENT_DATA } from "../appData";
 
 export default function EventDetailPage({ onBack }: { onBack: () => void }) {
   const [submitted, setSubmitted] = useState(false);
   const [url, setUrl] = useState("");
   const [urlFocused, setUrlFocused] = useState(false);
   const { isDark } = useTheme();
+  const { getQueryParam } = useLocation();
+  const [event, setEvent] = useState<any>(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await api.events.getList();
+        if (Array.isArray(data)) {
+          const eid = getQueryParam("id");
+          const found = eid ? data.find((ev: any) => String(ev.id) === eid) : data.find((ev: any) => ev.status === "Active");
+          if (found) { setEvent({ id: found.id, title: found.title, desc: found.desc || "", start: found.start_date, end: found.end_date, xpPool: found.xp_pool || 0, badge: found.badge?.name || "Event Badge", status: found.status }); return; }
+        }
+      } catch {}
+      setEvent(EVENT_DATA[0]);
+    };
+    load();
+  }, []);
+  const ev = event || EVENT_DATA[0];
 
   const hero = {
     bg: isDark

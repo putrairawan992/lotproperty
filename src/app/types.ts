@@ -1,7 +1,21 @@
 import React, { createContext, useContext } from "react";
 
 // ─── Theme Context ─────────────────────────────────────────────
-export const ThemeCtx = createContext({ isDark: true, toggle: () => {} });
+export const ThemeCtx = createContext<{
+  isDark: boolean;
+  toggle: () => void;
+  isGuest: boolean;
+  onLoginRequest: () => void;
+  user: any;
+  refreshUser: () => Promise<void>;
+}>({
+  isDark: true,
+  toggle: () => {},
+  isGuest: false,
+  onLoginRequest: () => {},
+  user: null,
+  refreshUser: async () => {},
+});
 export const useTheme = () => useContext(ThemeCtx);
 
 // CSS-variable token shortcuts — these respond to .dark class automatically

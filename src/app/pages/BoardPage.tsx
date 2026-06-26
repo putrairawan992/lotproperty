@@ -5,9 +5,10 @@ import Card from "../components/Card";
 import AgentAvatar from "../components/AgentAvatar";
 import { T, useTheme } from "../types";
 import EllipsisTooltip from "../components/EllipsisTooltip";
+import { api } from "../services/api";
 
 interface Post {
-  id: string;
+  id: string | number;
   name: string;
   photo?: string;
   initials: string;
@@ -18,107 +19,62 @@ interface Post {
   isMe?: boolean;
 }
 
-const MOCK_POSTS: Post[] = [
-  {
-    id: "mock-1",
-    name: "Rizki Pratama",
-    initials: "RP",
-    photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200",
-    tier: "Elite Agent",
-    category: "WTB",
-    content: "Cari cepat (WTB) rumah 2 lantai di Gading Serpong, cluster modern. Budget maksimal Rp 3.8 Miliar. Buyer sudah ready cash keras. Kirim unit via WhatsApp jika ada!",
-    createdAt: Date.now() - 2 * 60 * 60 * 1000 // 2 jam lalu
-  },
-  {
-    id: "mock-2",
-    name: "Siti Fatimah",
-    initials: "SF",
-    photo: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=200",
-    tier: "Elite Agent",
-    category: "WTR",
-    content: "Butuh sewa (WTR) Ruko 3 lantai di BSD untuk usaha kuliner. Lokasi harus ramai atau di pinggir jalan raya utama. Budget max Rp 120 Juta/tahun. Urgent!",
-    createdAt: Date.now() - 24 * 60 * 60 * 1000 // 1 hari lalu
-  },
-  {
-    id: "mock-3",
-    name: "Ronald Richy",
-    initials: "RR",
-    photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200",
-    tier: "Elite Agent",
-    category: "INFO",
-    content: "INFO: BSD Grand Open House Project Park Avenue Cluster akhir pekan ini Sabtu & Minggu (Jam 09.00 - 17.00 WIB). Ada tambahan komisi 1.5% + bonus closing fee Rp 5 Juta bagi agen LOT Property!",
-    createdAt: Date.now() - 3 * 24 * 60 * 60 * 1000 // 3 hari lalu
-  },
-  {
-    id: "mock-4",
-    name: "Budi Santoso",
-    initials: "BS",
-    tier: "Senior Agent",
-    category: "WTB",
-    content: "Cari kavling komersial (WTB) di BSD Boulevard Raya. Luas sekitar 1.200 - 2.000 m2. Buyer korporasi resmi untuk kantor cabang.",
-    createdAt: Date.now() - 5 * 24 * 60 * 60 * 1000 // 5 hari lalu
-  },
-  {
-    id: "mock-5",
-    name: "Dewi Lestari",
-    initials: "DL",
-    tier: "Junior Agent",
-    category: "WTR",
-    content: "Disewakan apartemen Saveria BSD tipe 1 BR fully furnished. Rp 45 Juta/tahun nego. Kunci ada di saya, bisa survei kapan saja.",
-    createdAt: Date.now() - 6 * 24 * 60 * 60 * 1000 // 6 hari lalu
-  },
-  {
-    id: "mock-expired",
-    name: "Jenny Kim",
-    initials: "JK",
-    tier: "Junior Agent",
-    category: "INFO",
-    content: "Postingan ini harusnya tersembunyi karena sudah lebih dari 7 hari.",
-    createdAt: Date.now() - 9 * 24 * 60 * 60 * 1000 // 9 hari lalu (Sudah Expired)
-  }
-];
+const mapApiPost = (item: any): Post => ({
+  id: item.id,
+  name: item.name || "Unknown Agent",
+  photo: item.photo || undefined,
+  initials: item.initials || "AG",
+  tier: item.tier || "Agent",
+  category: item.category,
+  content: item.content,
+  createdAt: new Date(item.created_at).getTime(),
+  isMe: !!item.is_me,
+});
+
 
 export default function BoardPage() {
-  const { isDark } = useTheme();
+  const { isDark, isGuest, onLoginRequest } = useTheme();
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<"WTB" | "WTR" | "INFO">("WTB");
   const [toast, setToast] = useState("");
   const [postsTodayCount, setPostsTodayCount] = useState(0);
   const [isActive, setIsActive] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Initialize or fetch posts
+  // Load board posts from API.
   useEffect(() => {
-    const saved = localStorage.getItem("lotproperty-board-posts");
-    let activePosts: Post[] = [];
-    if (saved) {
-      activePosts = JSON.parse(saved);
-    } else {
-      activePosts = MOCK_POSTS;
-      localStorage.setItem("lotproperty-board-posts", JSON.stringify(MOCK_POSTS));
-    }
+    let cancelled = false;
 
-    // Filter out posts older than 7 days
-    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    const filtered = activePosts.filter(p => now - p.createdAt <= sevenDaysInMs);
+    const loadPosts = async () => {
+      try {
+        const data = isGuest ? await api.public.getBoardPosts() : await api.board.getPosts();
+        if (cancelled) return;
 
-    // Check count posted by me today
-    const startOfToday = new Date().setHours(0, 0, 0, 0);
-    const myTodayPosts = filtered.filter(p => p.isMe && p.createdAt >= startOfToday);
-    setPostsTodayCount(myTodayPosts.length);
+        const loaded = data.map(mapApiPost).sort((a, b) => b.createdAt - a.createdAt);
+        setPosts(loaded);
 
-    // Sort: newest first
-    filtered.sort((a, b) => b.createdAt - a.createdAt);
-    setPosts(filtered);
-  }, []);
+        if (!isGuest) {
+          const startOfToday = new Date().setHours(0, 0, 0, 0);
+          setPostsTodayCount(loaded.filter(p => p.isMe && p.createdAt >= startOfToday).length);
+        }
+      } catch {
+        setPosts([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadPosts();
+    return () => { cancelled = true; };
+  }, [isGuest]);
 
   const triggerToast = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(""), 3000);
   };
 
-  const handleCreatePost = (e: React.FormEvent) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!content.trim()) return;
 
@@ -127,35 +83,35 @@ export default function BoardPage() {
       return;
     }
 
-    const newPost: Post = {
-      id: "user-" + Date.now(),
-      name: "Ahmad Fadhil",
-      initials: "AF",
-      tier: "Senior Agent",
-      category,
-      content: content.trim(),
-      createdAt: Date.now(),
-      isMe: true
-    };
+    try {
+      const res = await api.board.createPost({
+        category,
+        content: content.trim(),
+      });
 
-    const updated = [newPost, ...posts];
-    localStorage.setItem("lotproperty-board-posts", JSON.stringify(updated));
-    setPosts(updated);
-    setContent("");
-    setPostsTodayCount(prev => prev + 1);
-    triggerToast("Postingan berhasil dikirim!");
+      const created = mapApiPost(res.post);
+      setPosts(prev => [created, ...prev]);
+      setContent("");
+      setPostsTodayCount(prev => prev + 1);
+      triggerToast("Postingan berhasil dikirim!");
+    } catch (err: any) {
+      triggerToast(err?.message || "Gagal mengirim postingan");
+    }
   };
 
-  const handleDeletePost = (id: string) => {
-    const updated = posts.filter(p => p.id !== id);
-    localStorage.setItem("lotproperty-board-posts", JSON.stringify(updated));
-    setPosts(updated);
-    
-    // Recalculate daily count
-    const startOfToday = new Date().setHours(0, 0, 0, 0);
-    const myTodayPosts = updated.filter(p => p.isMe && p.createdAt >= startOfToday);
-    setPostsTodayCount(myTodayPosts.length);
-    triggerToast("Postingan dihapus!");
+  const handleDeletePost = async (id: string | number) => {
+    try {
+      await api.board.deletePost(id);
+      const updated = posts.filter(p => p.id !== id);
+      setPosts(updated);
+
+      const startOfToday = new Date().setHours(0, 0, 0, 0);
+      const myTodayPosts = updated.filter(p => p.isMe && p.createdAt >= startOfToday);
+      setPostsTodayCount(myTodayPosts.length);
+      triggerToast("Postingan dihapus!");
+    } catch (err: any) {
+      triggerToast(err?.message || "Gagal menghapus postingan");
+    }
   };
 
   const getCategoryStyles = (cat: "WTB" | "WTR" | "INFO") => {
@@ -227,7 +183,19 @@ export default function BoardPage() {
       </div>
 
       {/* Write Post Box - Threads style (Compact & Borderless border-b) */}
-      <div 
+      {isGuest ? (
+        <button
+          onClick={onLoginRequest}
+          className="w-full mb-5 p-4 border-b text-left transition-colors duration-300 flex items-center gap-3"
+          style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }}
+        >
+          <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "var(--muted)" }}>
+            <Plus size={16} style={{ color: T.text3 }} />
+          </div>
+          <span style={{ color: T.text3, fontSize: 14 }}>Login untuk posting di LOT FJB...</span>
+        </button>
+      ) : (
+      <div
         className="p-4 mb-5 border-b transition-colors duration-300 relative"
         style={{ borderColor: isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)" }}
       >
@@ -334,10 +302,15 @@ export default function BoardPage() {
           </AnimatePresence>
         </form>
       </div>
+      )}
 
       {/* Posts Feed Stream */}
       <div className="space-y-4 relative">
-        {posts.length === 0 ? (
+        {loading ? (
+          <div className="p-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-2xl">
+            <p className="text-sm font-semibold">Memuat postingan board...</p>
+          </div>
+        ) : posts.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-2xl">
             <MessageSquare size={32} className="mx-auto mb-2 opacity-35" />
             <p className="text-sm font-semibold">Belum ada postingan aktif</p>

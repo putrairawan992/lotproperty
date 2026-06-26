@@ -1,22 +1,93 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import Card from "../../components/Card";
 import { T } from "../../types";
 import { useTabQuery } from "../../routes";
-import { COMMISSION_DATA_LIST, AGENT_PHOTOS } from "../../appData";
+import { AGENT_PHOTOS } from "../../appData";
+import { api } from "../../services/api";
+
+interface CommissionItem {
+  id: string;
+  agent: string;
+  type: string;
+  property: string;
+  amount: string;
+  xp: string;
+  submitted: string;
+  status: "Pending" | "Approved" | "Rejected";
+}
+
+const formatIDR = (amount: number) =>
+  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount || 0);
+
+const formatDate = (value: string) => {
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "-";
+  return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+};
 
 export default function AdminCommissionPage() {
-  const [claims, setClaims] = useState(COMMISSION_DATA_LIST);
+  const [claims, setClaims] = useState<CommissionItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [tab, setTab] = useTabQuery("tab", "Pending");
   const [rejectId, setRejectId] = useState<string|null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
+  const loadClaims = async () => {
+    setLoading(true);
+    try {
+      const rows = await api.admin.getCommissions();
+      if (Array.isArray(rows)) {
+        setClaims(rows.map((c: any) => ({
+          id: String(c.id),
+          agent: String(c.agent?.name || "Unknown Agent"),
+          type: String(c.type || "SALE"),
+          property: String(c.property || "-"),
+          amount: formatIDR(Number(c.amount || 0)),
+          xp: `+${Number(c.xp_earned || 0)} XP`,
+          submitted: formatDate(String(c.submitted_at || c.created_at || "")),
+          status: String(c.status || "Pending") as "Pending" | "Approved" | "Rejected",
+        })));
+      }
+    } catch {
+      // Keep empty state when API fails.
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadClaims();
+  }, []);
+
   const shown = claims.filter(c => c.status === tab);
   const pendingCount = claims.filter(c => c.status === "Pending").length;
 
-  const approve = (id: string) => setClaims(p => p.map(c => c.id === id ? { ...c, status: "Approved" } : c));
-  const reject  = (id: string, reason: string) => { setClaims(p => p.map(c => c.id === id ? { ...c, status: "Rejected" } : c)); setRejectId(null); setRejectReason(""); };
-  const approveAll = () => setClaims(p => p.map(c => c.status === "Pending" ? { ...c, status: "Approved" } : c));
+  const approve = async (id: string) => {
+    try {
+      await api.admin.reviewCommission(id, "Approved");
+      setClaims(p => p.map(c => c.id === id ? { ...c, status: "Approved" } : c));
+    } catch {}
+  };
+
+  const reject  = async (id: string, reason: string) => {
+    try {
+      await api.admin.reviewCommission(id, "Rejected", reason);
+      setClaims(p => p.map(c => c.id === id ? { ...c, status: "Rejected" } : c));
+    } catch {}
+    setRejectId(null);
+    setRejectReason("");
+  };
+
+  const approveAll = async () => {
+    const pending = claims.filter(c => c.status === "Pending");
+    for (const row of pending) {
+      try {
+        await api.admin.reviewCommission(row.id, "Approved");
+      } catch {}
+    }
+    await loadClaims();
+  };
 
   const typeBg: Record<string, string> = { SALE: "#EEF5FC", RENT: "#DCFCE7", PRIMARY: "#F5F0FD" };
   const typeColor: Record<string, string> = { SALE: "#1A6FC4", RENT: "#16A34A", PRIMARY: "#7B2FBE" };
@@ -49,6 +120,11 @@ export default function AdminCommissionPage() {
 
         {/* Mobile Card Layout */}
         <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
+          {loading && (
+            <div className="py-10 text-center text-sm" style={{ color: T.text3 }}>
+              Memuat data komisi...
+            </div>
+          )}
           {shown.map(c => {
             const initials = c.agent.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
             const avatar = AGENT_PHOTOS[initials];
@@ -229,7 +305,7 @@ export default function AdminCommissionPage() {
               <button onClick={() => { setRejectId(null); setRejectReason(""); }}
                 className="flex-1 py-2.5 rounded-xl border text-sm font-medium"
                 style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
-              <button onClick={() => reject(rejectId, rejectReason)} disabled={!rejectReason}
+                      <button onClick={() => reject(rejectId, rejectReason)} disabled={!rejectReason}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-all"
                 style={{ backgroundColor: rejectReason ? "#DC2626" : "var(--border)", color: rejectReason ? "white" : "#9CA3AF" }}>
                 Tolak Klaim

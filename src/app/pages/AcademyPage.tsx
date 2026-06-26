@@ -7,9 +7,12 @@ import {
 import Card from "../components/Card";
 import XPBar from "../components/XPBar";
 import { T, ThemeCtx, useTheme } from "../types";
-import { useTabQuery } from "../routes";
+import { useTabQuery, useLocation } from "../routes";
+import { AcademyPageSkeleton } from "../components/Skeletons";
+import useLoading from "../hooks/useLoading";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { AnimatePresence, motion } from "motion/react";
+import { api } from "../services/api";
 
 // Rich Mock Dataset for Module Details (representing content loaded from Admin panel)
 const COURSE_DETAILS: Record<string, {
@@ -128,21 +131,53 @@ const formatTime = (secs: number) => {
   return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 };
 
+
+const CAT_COLORS: Record<string, string> = {
+  "SOP Internal": "#16A34A",
+  "Sales Training": "#DC2626",
+  "Negotiation": "#C8922A",
+  "Social Media": "#7B2FBE",
+  "Marketing": "#E8A500",
+  "Product Knowledge": "#1A6FC4",
+};
+
 export default function AcademyPage() {
-  const { isDark } = useTheme();
+  const { isDark, isGuest, onLoginRequest } = useTheme();
   const [cat, setCat] = useTabQuery("cat", "Semua");
+  const [remoteIdMap, setRemoteIdMap] = useState<Record<string, number>>({});
   
   // List of courses state
-  const [modules, setModules] = useState([
-    { title: "Teknik Negosiasi Tingkat Lanjut", cat: "Negotiation", prog: 60, dur: "2.5 jam", xp: 200, status: "in_progress", color: "#C8922A" },
-    { title: "KPR & Pembiayaan Properti", cat: "Product Knowledge", prog: 100, dur: "1.5 jam", xp: 200, status: "done", color: "#1A6FC4" },
-    { title: "Strategi Konten Instagram Properti", cat: "Social Media", prog: 30, dur: "3 jam", xp: 200, status: "in_progress", color: "#7B2FBE" },
-    { title: "SOP Listing & Update Database", cat: "SOP Internal", prog: 0, dur: "1 jam", xp: 200, status: "not_started", color: "#16A34A" },
-    { title: "Closing Techniques 101", cat: "Sales Training", prog: 0, dur: "2 jam", xp: 200, status: "not_started", color: "#DC2626" },
-    { title: "Market Update Q2 2025", cat: "Product Knowledge", prog: 100, dur: "45 min", xp: 200, status: "done", color: "#1A6FC4" },
-    { title: "Personal Branding untuk Agent", cat: "Marketing", prog: 15, dur: "2 jam", xp: 200, status: "in_progress", color: "#E8A500" },
-    { title: "Etika & Profesionalisme Agent", cat: "SOP Internal", prog: 0, dur: "1.5 jam", xp: 200, status: "not_started", color: "#16A34A" },
-  ]);
+  const [modules, setModules] = useState<any[]>([]);
+  const loading = useLoading(isGuest ? 0 : 1300);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = isGuest ? await api.public.getAcademyModules() : await api.academy.getModules();
+        if (Array.isArray(data) && data.length > 0) {
+          const idMap: Record<string, number> = {};
+          setModules(data.map((m: any) => {
+            const title = m.title || "Modul";
+            idMap[title] = Number(m.id);
+            return {
+              id: Number(m.id),
+              title,
+              cat: m.category || "Lainnya",
+              prog: m.status === "Completed" ? 100 : 0,
+              dur: "—",
+              xp: 200,
+              status: m.status === "Completed" ? "done" : "not_started",
+              color: CAT_COLORS[m.category] || "#E8A500",
+            };
+          }));
+          setRemoteIdMap(idMap);
+        }
+      } catch {}
+    };
+    load();
+  }, [isGuest]);
+
+  if (loading) return <AcademyPageSkeleton />;
 
   const categories = ["Semua", "SOP Internal", "Sales Training", "Negotiation", "Marketing", "Social Media", "Product Knowledge"];
 
@@ -169,6 +204,7 @@ export default function AcademyPage() {
 
   // Start course player
   const handleStartModule = (m: any) => {
+    if (isGuest) { onLoginRequest(); return; }
     const detail = getModuleDetail(m.title);
     setActiveModule(m);
     setActiveDetail(JSON.parse(JSON.stringify(detail))); // clone object to allow in-memory updates
@@ -246,24 +282,22 @@ export default function AcademyPage() {
   };
 
   // Finish whole module, add XP
-  const handleFinishModule = () => {
+  const handleFinishModule = async () => {
     if (!activeModule) return;
+    const moduleId = remoteIdMap[activeModule.title] || activeModule.id;
+    let xpEarned = 200;
+    try {
+      const res = await api.academy.completeModule(moduleId);
+      xpEarned = Number(res?.xp_earned || 200);
+    } catch {}
     
-    // Update main modules state
     setModules(prev => prev.map(m => {
-      if (m.title === activeModule.title) {
-        return { ...m, prog: 100, status: "done" };
-      }
+      if (m.title === activeModule.title) return { ...m, prog: 100, status: "done" };
       return m;
     }));
-
-    triggerToast(`Selamat! Modul diselesaikan: +200 XP ditambahkan!`);
+    triggerToast(`Selamat! Modul diselesaikan: +${xpEarned} XP ditambahkan!`);
     
-    // Return back to list view after a short delay
-    setTimeout(() => {
-      setActiveModule(null);
-      setActiveDetail(null);
-    }, 1500);
+    setTimeout(() => { setActiveModule(null); setActiveDetail(null); }, 1500);
   };
 
   const completedCount = modules.filter(m => m.status === "done").length;

@@ -12,14 +12,111 @@ import HofFallingStars from "../components/HofFallingStars";
 import EventBannerSlider from "../components/EventBannerSlider";
 import { T, Page, useTheme } from "../types";
 import { useTabQuery } from "../routes";
-import { HOF_CAT_DATA, WEEKLY_LB_DATA, HOF_TABS } from "../appData";
-import { getLevelTierColor } from "../badgeAssets";
+import { HOF_TABS, type EventItem } from "../appData";
+import { getLevelTierColor, LEVEL_TIERS } from "../badgeAssets";
 import EllipsisTooltip from "../components/EllipsisTooltip";
+import { api } from "../services/api";
+import { normalizeHofCategory } from "../utils/hofCategory";
+
+type SummaryResponse = {
+  agent?: {
+    id: number;
+    name: string;
+    level: string;
+    title: string;
+    total_xp: number;
+    weekly_xp: number;
+    photo_url?: string;
+    daily_streak?: number;
+  };
+  daily_quest?: {
+    login_completed?: boolean;
+    listings_count?: number;
+    contents_count?: number;
+    promotions_count?: number;
+  };
+};
+
+type WeeklyAgentResponse = {
+  rank: number;
+  id: number;
+  name: string;
+  xp: number;
+  initials?: string;
+  photo?: string;
+  level?: string;
+};
+
+type HofRecordResponse = {
+  category: string;
+  rank: number;
+  notes?: string;
+  agent?: {
+    name?: string;
+    photo_url?: string;
+    level?: string;
+    title?: string;
+  };
+};
+
+type EventResponse = {
+  id: number;
+  title: string;
+  desc?: string;
+  start_date: string;
+  end_date: string;
+  xp_pool: number;
+  status: "Active" | "Upcoming";
+  subtitle?: string;
+  heading?: string;
+  tagline?: string;
+  tagline_highlight?: string;
+  accent_color?: string;
+  badge?: { name?: string };
+};
+
+
+function mapWeeklyAgent(item: WeeklyAgentResponse) {
+  const initials = (item.initials || item.name || "A").slice(0, 2).toUpperCase();
+  return {
+    rank: item.rank,
+    name: item.name,
+    initials,
+    photo: item.photo,
+    level: item.level || "Agent",
+    value: `${Number(item.xp || 0).toLocaleString("id-ID")} XP`,
+  };
+}
+
+function mapEvent(item: EventResponse): EventItem {
+  return {
+    id: `EV-${item.id}`,
+    title: item.title,
+    desc: item.desc || "",
+    start: item.start_date,
+    end: item.end_date,
+    xpPool: Number(item.xp_pool || 0),
+    badge: item.badge?.name || "Event Badge",
+    status: item.status || "Upcoming",
+    subtitle: item.subtitle || "SPECIAL EVENT",
+    heading: item.heading || item.title.toUpperCase(),
+    tagline: item.tagline || "Ikuti event dan raih",
+    taglineHighlight: item.tagline_highlight || "hadiah eksklusif!",
+    accentColor: item.accent_color || "#E53E3E",
+  };
+}
 
 export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) => void; onShowLevelUp?: () => void }) {
-  const loading = useLoading(1400);
-  const { isDark } = useTheme();
+  const loadingTime = useLoading(1400);
+  const { isDark, isGuest, onLoginRequest, user } = useTheme();
+  const [dataLoading, setDataLoading] = useState(true);
   const [slideDir, setSlideDir] = useState(0);
+  const [summary, setSummary] = useState<SummaryResponse | null>(null);
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
+  const [hofData, setHofData] = useState<Record<string, any[]>>({});
+  const [eventData, setEventData] = useState<EventItem[]>([]);
+
+  const loading = loadingTime || (isGuest ? false : dataLoading);
 
   const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
@@ -36,7 +133,125 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const hofTabIdx = HOF_TABS.indexOf(hofTab as typeof HOF_TABS[number]);
   const hofIdx = hofTabIdx === -1 ? 0 : hofTabIdx;
   const hofCat = HOF_TABS[hofIdx];
-  const hofAgents = (HOF_CAT_DATA[hofCat] || []) as any[];
+  const hofAgents = (hofData[hofCat] || []) as any[];
+
+  const activeAgent = isGuest ? {
+    name: "Ronald Richy",
+    title: "Senior Agent",
+    level: 23,
+    total_xp: 24680,
+    weekly_xp: 1620,
+    photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
+  } : (user || summary?.agent || {
+    name: "Ronald Richy",
+    title: "Senior Agent",
+    level: 23,
+    total_xp: 24680,
+    weekly_xp: 1620,
+    photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
+  });
+
+  const currentTier = LEVEL_TIERS.find(t => t.title === activeAgent?.title) || LEVEL_TIERS[0];
+  const nextTierIdx = LEVEL_TIERS.findIndex(t => t.title === activeAgent?.title) + 1;
+  const nextTier = nextTierIdx < LEVEL_TIERS.length ? LEVEL_TIERS[nextTierIdx] : null;
+
+  const parseXp = (xpStr: string) => {
+    return Number(xpStr.replace(/\./g, "").replace("+", ""));
+  };
+
+  const currentTierXp = parseXp(currentTier.xp);
+  const nextTierXp = nextTier ? parseXp(nextTier.xp) : 5000000;
+  const totalXp = Number(activeAgent?.total_xp || 0);
+
+  useEffect(() => {
+    const loadHomeData = async () => {
+      try {
+        setDataLoading(true);
+
+        if (isGuest) {
+          const [weeklyRes, hofRes, eventsRes] = await Promise.all([
+            api.public.getWeeklyLeaderboard(),
+            api.public.getHof(),
+            api.public.getEvents(),
+          ]);
+          if (Array.isArray(weeklyRes) && weeklyRes.length > 0) setWeeklyData(weeklyRes.map(mapWeeklyAgent));
+          const hofPayload = Array.isArray(hofRes) ? hofRes : [];
+          if (hofPayload.length > 0) {
+            const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
+            for (const rec of hofPayload) {
+              const mappedCat = normalizeHofCategory(rec.category || "", HOF_TABS);
+              if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
+              grouped[mappedCat].push({ rank: rec.rank, name: rec.agent?.name || "Unknown Agent", initials: (rec.agent?.name || "A").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(), photo: rec.agent?.photo_url, level: rec.agent?.level || "Agent", subtitle: rec.agent?.title || "", value: rec.notes || "HOF" });
+            }
+            const merged: Record<string, any[]> = Object.fromEntries(HOF_TABS.map(tab => [tab, []])) as Record<string, any[]>;
+            HOF_TABS.forEach((tab) => { if (grouped[tab]?.length) merged[tab] = [...grouped[tab]].sort((a, b) => a.rank - b.rank).slice(0, 8); });
+            setHofData(merged);
+          }
+          if (Array.isArray(eventsRes) && eventsRes.length > 0) setEventData(eventsRes.map(mapEvent));
+          setDataLoading(false);
+          return;
+        }
+
+        const [summaryRes, weeklyRes, hofRes, eventsRes] = await Promise.all([
+          api.dashboard.getSummary(),
+          api.dashboard.getWeeklyLeaderboard(),
+          api.dashboard.getHof(),
+          api.events.getList(),
+        ]);
+
+        const summaryPayload = (summaryRes || {}) as SummaryResponse;
+        setSummary(summaryPayload);
+
+        const weeklyPayload = Array.isArray(weeklyRes) ? (weeklyRes as WeeklyAgentResponse[]) : [];
+        if (weeklyPayload.length > 0) {
+          setWeeklyData(weeklyPayload.map(mapWeeklyAgent));
+        }
+
+        const hofPayload = Array.isArray(hofRes) ? (hofRes as HofRecordResponse[]) : [];
+        if (hofPayload.length > 0) {
+          const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
+          for (const rec of hofPayload) {
+            const mappedCat = normalizeHofCategory(rec.category || "", HOF_TABS);
+            if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
+
+            grouped[mappedCat].push({
+              rank: rec.rank,
+              name: rec.agent?.name || "Unknown Agent",
+              initials: (rec.agent?.name || "A")
+                .split(" ")
+                .map((word) => word[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase(),
+              photo: rec.agent?.photo_url,
+              level: rec.agent?.level || "Agent",
+              subtitle: rec.agent?.title || "",
+              value: rec.notes || "HOF",
+            });
+          }
+
+          const merged: Record<string, any[]> = Object.fromEntries(HOF_TABS.map(tab => [tab, []])) as Record<string, any[]>;
+          HOF_TABS.forEach((tab) => {
+            if (grouped[tab]?.length) {
+              merged[tab] = [...grouped[tab]].sort((a, b) => a.rank - b.rank).slice(0, 8);
+            }
+          });
+          setHofData(merged);
+        }
+
+        const eventsPayload = Array.isArray(eventsRes) ? (eventsRes as EventResponse[]) : [];
+        if (eventsPayload.length > 0) {
+          setEventData(eventsPayload.map(mapEvent));
+        }
+      } catch (err) {
+        console.error("Failed to load homepage data", err);
+      } finally {
+        setDataLoading(false);
+      }
+    };
+
+    loadHomeData();
+  }, [isGuest]);
 
   const goHofTab = (cat: string) => {
     const nextIdx = HOF_TABS.indexOf(cat as typeof HOF_TABS[number]);
@@ -52,9 +267,35 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
 
   return (
     <div className="p-4 lg:p-6 space-y-4 max-w-7xl mx-auto">
-      {/* Full-width Profile Widget (Hidden on mobile) */}
+      {/* Guest welcome banner */}
+      {isGuest && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border"
+          style={{ backgroundColor: isDark ? "rgba(232,165,0,0.07)" : "#FFFAED", borderColor: "rgba(232,165,0,0.3)" }}
+        >
+          <div>
+            <p className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 16, color: "#E8A500" }}>
+              Anda sedang browsing sebagai Guest
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: T.text3 }}>
+              Daftar untuk unlock quest, listing, profil, dan lebih banyak fitur.
+            </p>
+          </div>
+          <button
+            onClick={onLoginRequest}
+            className="flex-shrink-0 px-5 py-2 rounded-xl font-bold text-white text-sm"
+            style={{ background: "linear-gradient(135deg, #E8A500, #C8922A)", fontFamily: "'Rajdhani', sans-serif" }}
+          >
+            Login / Daftar
+          </button>
+        </motion.div>
+      )}
+
+      {/* Full-width Profile Widget (Hidden on mobile, hidden for guest) */}
       <Card
-        className="hidden sm:block relative overflow-hidden shadow-sm transition-all duration-300"
+        className={`${isGuest ? "hidden" : "hidden sm:block"} relative overflow-hidden shadow-sm transition-all duration-300`}
         style={{
           background: isDark
             ? "linear-gradient(135deg, rgba(20,16,12,0.78), rgba(28,22,14,0.62))"
@@ -69,18 +310,18 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
           <div className="relative flex-shrink-0">
             <div className="w-12 h-12 rounded-full overflow-hidden border border-[#C8922A] p-0.5" style={{ boxShadow: "0 0 10px rgba(200,146,42,0.2)" }}>
               <img
-                src="https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"
-                alt="Ronald Richy"
+                src={activeAgent?.photo_url || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"}
+                alt={activeAgent?.name || "Agent"}
                 className="w-full h-full object-cover object-top rounded-full"
               />
             </div>
           </div>
           <div>
-            <h2 className="font-bold text-base" style={{ fontFamily: "var(--font-display)", color: T.text1 }}>Ronald Richy</h2>
-            <p className="text-[11px]" style={{ color: T.text3 }}>Top Producer</p>
+            <h2 className="font-bold text-base" style={{ fontFamily: "var(--font-display)", color: T.text1 }}>{activeAgent?.name || "Ronald Richy"}</h2>
+            <p className="text-[11px]" style={{ color: T.text3 }}>{activeAgent?.title || "Top Producer"}</p>
             <span className="inline-block text-[10px] px-2 py-0.5 rounded font-bold mt-0.5"
               style={{ backgroundColor: isDark ? "rgba(232,165,0,0.15)" : "#FEF3C7", color: "#D97706", fontFamily: "var(--font-display)" }}>
-              Lv. 23
+              Lv. {activeAgent?.level || 23}
             </span>
           </div>
         </div>
@@ -88,17 +329,17 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         {/* Middle: Medallion & XP Progress */}
         <div className="flex flex-1 items-center gap-3 min-w-0 w-full md:w-auto">
           <div className="flex items-center gap-2 flex-shrink-0">
-            <LevelBadge title="Senior Agent" size={40} />
+            <LevelBadge title={activeAgent?.title || "Rookie Agent"} size={40} />
             <div>
               <p className="text-[9px] uppercase tracking-wider" style={{ color: T.text3, letterSpacing: "0.06em" }}>Current Rank</p>
-              <p className="font-bold leading-tight" style={{ fontFamily: "var(--font-display)", fontSize: 13, color: getLevelTierColor("Senior Agent") }}>Senior Agent</p>
+              <p className="font-bold leading-tight" style={{ fontFamily: "var(--font-display)", fontSize: 13, color: getLevelTierColor(activeAgent?.title || "Rookie Agent") }}>{activeAgent?.title || "Rookie Agent"}</p>
             </div>
           </div>
           {/* XP progress */}
           <div className="flex-1 min-w-0">
-            <XPBar value={24680} max={30000} height={8} />
+            <XPBar value={totalXp - currentTierXp} max={nextTierXp - currentTierXp} height={8} />
             <p className="text-center text-[11px] mt-0.5 font-bold" style={{ fontFamily: "var(--font-numeric)", color: T.text2 }}>
-              24,680 <span style={{ color: T.text3, fontWeight: 400 }}>/ 30,000 XP</span>
+              {Number(totalXp).toLocaleString("id-ID")} <span style={{ color: T.text3, fontWeight: 400 }}>/ {Number(nextTierXp).toLocaleString("id-ID")} XP</span>
             </p>
           </div>
         </div>
@@ -113,10 +354,10 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         >
           <div>
             <p style={{ fontSize: 9, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Next Rank</p>
-            <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 13 }}>Senior Elite</p>
+            <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 13 }}>{nextTier ? nextTier.title : "LOT Legendary"}</p>
           </div>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <LevelBadge title="Elite Agent" size={38} />
+            <LevelBadge title={nextTier ? nextTier.title : "LOT Legendary"} size={38} />
             <ChevronRight size={14} style={{ color: "#E8A500" }} />
           </div>
         </button>
@@ -139,14 +380,14 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
 
       {/* Event Banner Slider placed below Hall of Fame and above Weekly Leaderboard */}
       <div className="my-2">
-        <EventBannerSlider isDark={isDark} onNav={onNav} />
+        <EventBannerSlider isDark={isDark} onNav={onNav} events={eventData} />
       </div>
 
 
       {/* Weekly LB + Progress + Quest */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
         {/* Weekly LB */}
-        <Card className="p-4 lg:col-span-2">
+        <Card className={`p-4 ${isGuest ? "lg:col-span-5" : "lg:col-span-2"}`}>
           <div className="flex items-start justify-between mb-3">
             <div className="min-w-0">
               <motion.div
@@ -193,7 +434,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             </div>
           </div>
           <div className="space-y-1">
-            {WEEKLY_LB_DATA.map((agent, i) => (
+            {weeklyData.map((agent, i) => (
               <motion.div key={agent.rank} className="flex items-center gap-3 px-2.5 py-2.5 rounded-xl"
                 style={{ backgroundColor: agent.isMe ? "rgba(232,165,0,0.1)" : "transparent" }}
                 initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
@@ -241,8 +482,8 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
           <p className="text-xs text-center mt-3 pt-3 border-t" style={{ color: T.text3, borderColor: T.border }}>Peringkat direset setiap hari Senin</p>
         </Card>
 
-        {/* Progress + Quest */}
-        <div className="lg:col-span-3 space-y-4">
+        {/* Progress + Quest — hidden for guest */}
+        <div className={`${isGuest ? "hidden" : ""} lg:col-span-3 space-y-4`}>
           <Card className="p-4">
             <h3 className="font-bold mb-3" style={{ fontFamily: "var(--font-display)", fontSize: 13, color: T.text3, letterSpacing: "0.08em" }}>YOUR PROGRESS</h3>
             <div className="flex items-start justify-between mb-3">
@@ -252,27 +493,27 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                 </div>
                 <div>
                   <p className="text-xs" style={{ color: T.text3 }}>Total XP</p>
-                  <p className="text-xp-hero">24,680</p>
+                  <p className="text-xp-hero">{Number(totalXp).toLocaleString("id-ID")}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="text-xs" style={{ color: T.text3 }}>This Week</p>
-                <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-numeric)", fontSize: 18 }}>1,620 XP</p>
+                <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-numeric)", fontSize: 18 }}>{Number(activeAgent?.weekly_xp || 0).toLocaleString("id-ID")} XP</p>
               </div>
             </div>
             <div className="flex items-center justify-between mb-3 pb-3 border-b" style={{ borderColor: T.border }}>
               <div>
                 <p className="text-xs" style={{ color: T.text3 }}>Current Rank</p>
-                <p className="font-bold" style={{ fontFamily: "var(--font-display)", fontSize: 16, color: getLevelTierColor("Senior Agent") }}>Senior Agent</p>
+                <p className="font-bold" style={{ fontFamily: "var(--font-display)", fontSize: 16, color: getLevelTierColor(activeAgent?.title || "Rookie Agent") }}>{activeAgent?.title || "Rookie Agent"}</p>
               </div>
-              <LevelBadge title="Senior Agent" size={56} />
+              <LevelBadge title={activeAgent?.title || "Rookie Agent"} size={56} />
             </div>
             <div className="flex items-center justify-between mb-1.5">
-              <div><p className="text-xs" style={{ color: T.text3 }}>Next Rank</p><p className="font-bold" style={{ fontFamily: "var(--font-display)", fontSize: 15, color: getLevelTierColor("Elite Agent") }}>Elite Agent</p></div>
-              <LevelBadge title="Elite Agent" size={56} />
+              <div><p className="text-xs" style={{ color: T.text3 }}>Next Rank</p><p className="font-bold" style={{ fontFamily: "var(--font-display)", fontSize: 15, color: getLevelTierColor(nextTier ? nextTier.title : "LOT Legendary") }}>{nextTier ? nextTier.title : "LOT Legendary"}</p></div>
+              <LevelBadge title={nextTier ? nextTier.title : "LOT Legendary"} size={56} />
             </div>
-            <XPBar value={648450} max={800000} height={10} />
-            <p className="text-xs mt-1 text-gradient-gold font-bold" style={{ fontFamily: "var(--font-numeric)" }}>648,450 / 800,000 XP</p>
+            <XPBar value={totalXp - currentTierXp} max={nextTierXp - currentTierXp} height={10} />
+            <p className="text-xs mt-1 text-gradient-gold font-bold" style={{ fontFamily: "var(--font-numeric)" }}>{Number(totalXp).toLocaleString("id-ID")} / {Number(nextTierXp).toLocaleString("id-ID")} XP</p>
           </Card>
 
           <Card className="p-4">

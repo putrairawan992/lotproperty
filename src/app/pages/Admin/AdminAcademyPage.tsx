@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { GraduationCap, BookOpen, Clock, Award, Plus, Trash2, CheckCircle, AlertCircle, Play, Users } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T } from "../../types";
+import { api } from "../../services/api";
 
 const CATEGORIES = ["SOP Internal", "Sales Training", "Negotiation", "Marketing", "Social Media", "Product Knowledge"];
 
@@ -17,55 +18,11 @@ const CAT_COLORS: Record<string, string> = {
 };
 
 export default function AdminAcademyPage() {
-  const [modules, setModules] = useState([
-    { 
-      id: "AC-001",
-      title: "Teknik Negosiasi Tingkat Lanjut", 
-      cat: "Negotiation", 
-      dur: "2.5 jam", 
-      xp: 200, 
-      color: "#C8922A", 
-      videoUrl: "https://youtube.com/watch?v=123",
-      completers: 18,
-      inProgress: 24
-    },
-    { 
-      id: "AC-002",
-      title: "KPR & Pembiayaan Properti", 
-      cat: "Product Knowledge", 
-      dur: "1.5 jam", 
-      xp: 200, 
-      color: "#1A6FC4", 
-      videoUrl: "https://youtube.com/watch?v=456",
-      completers: 42,
-      inProgress: 11
-    },
-    { 
-      id: "AC-003",
-      title: "Strategi Konten Instagram Properti", 
-      cat: "Social Media", 
-      dur: "3 jam", 
-      xp: 200, 
-      color: "#7B2FBE", 
-      videoUrl: "https://youtube.com/watch?v=789",
-      completers: 9,
-      inProgress: 35
-    },
-    { 
-      id: "AC-004",
-      title: "SOP Listing & Update Database", 
-      cat: "SOP Internal", 
-      dur: "1 jam", 
-      xp: 200, 
-      color: "#16A34A", 
-      videoUrl: "https://youtube.com/watch?v=aaa",
-      completers: 56,
-      inProgress: 2
-    },
-  ]);
+  const [modules, setModules] = useState<any[]>([]);
 
   const [toastMsg, setToastMsg] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Form inputs
   const [title, setTitle] = useState("");
@@ -75,46 +32,92 @@ export default function AdminAcademyPage() {
   const [videoUrl, setVideoUrl] = useState("");
   const [formError, setFormError] = useState("");
 
+  useEffect(() => {
+    const loadModules = async () => {
+      try {
+        const data = await api.academy.getModules();
+        if (Array.isArray(data)) {
+          setModules(data.map((m: any) => ({
+            id: String(m.id),
+            title: m.title || "",
+            cat: m.category || "",
+            dur: "—",
+            xp: 200,
+            color: CAT_COLORS[m.category] || "#E8A500",
+            videoUrl: m.video_url || "",
+            completers: 0,
+            inProgress: 0,
+          })));
+        } else {
+          setModules([]);
+        }
+      } catch {
+        setModules([]);
+      }
+    };
+    loadModules();
+  }, []);
+
   const triggerToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(""), 3500);
   };
 
-  const handleCreateModule = (e: React.FormEvent) => {
+  const handleCreateModule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !dur.trim() || !xp || !videoUrl.trim()) {
-      setFormError("Semua kolom formulir wajib diisi!");
+      setToastMsg("Semua kolom formulir wajib diisi!");
       return;
     }
 
-    setFormError("");
-    const newModule = {
-      id: `AC-${Math.floor(100 + Math.random() * 900)}`,
-      title,
-      cat,
-      dur,
-      xp: parseInt(xp),
-      color: CAT_COLORS[cat] || "#E8A500",
-      videoUrl,
-      completers: 0,
-      inProgress: 0,
-    };
+    setToastMsg("");
+    setSaving(true);
+    try {
+      await api.admin.createAcademyModule({
+        category: cat,
+        title: title.trim(),
+        description: title.trim(),
+        video_url: videoUrl.trim(),
+      });
 
-    setModules(prev => [newModule, ...prev]);
-    triggerToast("Modul Akademi Baru Berhasil Dibuat!");
+      setToastMsg("Modul Akademi Baru Berhasil Dibuat!");
+      setTitle("");
+      setCat("Sales Training");
+      setDur("");
+      setXp("200");
+      setVideoUrl("");
+      setShowAddForm(false);
 
-    // Reset Form
-    setTitle("");
-    setCat("Sales Training");
-    setDur("");
-    setXp("200");
-    setVideoUrl("");
-    setShowAddForm(false);
+      // Reload
+      const data = await api.academy.getModules();
+      if (Array.isArray(data)) {
+        setModules(data.map((m: any) => ({
+          id: String(m.id),
+          title: m.title || "",
+          cat: m.category || "",
+          dur: "—",
+          xp: 200,
+          color: CAT_COLORS[m.category] || "#E8A500",
+          videoUrl: m.video_url || "",
+          completers: 0,
+          inProgress: 0,
+        })));
+      }
+    } catch (err) {
+      setToastMsg(err instanceof Error ? err.message : "Gagal membuat modul");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleDeleteModule = (id: string) => {
-    setModules(prev => prev.filter(m => m.id !== id));
-    triggerToast("Modul Akademi Berhasil Dihapus.");
+  const handleDeleteModule = async (id: string) => {
+    try {
+      await api.admin.deleteAcademyModule(id);
+      setModules(prev => prev.filter(m => m.id !== id));
+      setToastMsg("Modul Akademi Berhasil Dihapus.");
+    } catch (err) {
+      setToastMsg(err instanceof Error ? err.message : "Gagal menghapus modul");
+    }
   };
 
   return (
@@ -133,7 +136,6 @@ export default function AdminAcademyPage() {
         )}
       </AnimatePresence>
 
-      {/* Responsive stack header layout */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b pb-4" style={{ borderColor: T.border }}>
         <div className="text-left">
           <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }} className="animate-fade-in">
@@ -158,11 +160,6 @@ export default function AdminAcademyPage() {
               </div>
 
               <form onSubmit={handleCreateModule} className="space-y-4 text-left">
-                {formError && (
-                  <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 text-xs rounded-xl flex items-center gap-2">
-                    <AlertCircle size={14} /> {formError}
-                  </div>
-                )}
 
                 <div>
                   <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Judul Modul</label>
@@ -205,8 +202,8 @@ export default function AdminAcademyPage() {
                     style={{ borderColor: T.border }} />
                 </div>
 
-                <button type="submit" className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer">
-                  Simpan & Rilis Modul
+                <button type="submit" disabled={saving} className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer disabled:opacity-50">
+                  {saving ? "Menyimpan..." : "Simpan & Rilis Modul"}
                 </button>
               </form>
             </Card>

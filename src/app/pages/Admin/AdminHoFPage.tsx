@@ -1,27 +1,96 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Award, ShieldAlert, Check, Save, ToggleLeft, ToggleRight } from "lucide-react";
 import Card from "../../components/Card";
 import { T, useTheme } from "../../types";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { AGENT_DATA_LIST } from "../../appData";
+import { api } from "../../services/api";
+import { normalizeHofCategory } from "../../utils/hofCategory";
 
 export default function AdminHoFPage() {
   const [period, setPeriod] = useState("Juni 2025");
   const [toastMsg, setToastMsg] = useState("");
+  const [savingCategory, setSavingCategory] = useState<string | null>(null);
+  const [serverAgents, setServerAgents] = useState<Array<{ id: number; name: string; status: string }>>([]);
+  const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { name?: string }; period: string }>>([]);
   
   const [entries, setEntries] = useState([
-    { cat: "Top Commission",       type: "auto",   overridden: false, autoList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"], overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"] },
-    { cat: "Top Unit",             type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"] },
-    { cat: "Top Listing",          type: "auto",   overridden: false, autoList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama"], overrideList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama"] },
-    { cat: "Top Prospecting",      type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo"] },
-    { cat: "Top Content Creator",  type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"] },
-    { cat: "Top Primary & KPR",    type: "manual", overridden: true,  autoList: [],                                             overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"] },
+    { cat: "Top 5 Commission",     type: "auto",   overridden: false, autoList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"], overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"] },
+    { cat: "Top 5 By Unit",        type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"] },
+    { cat: "Listing Hunter",       type: "auto",   overridden: false, autoList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama"], overrideList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama"] },
+    { cat: "Prospecting Master",   type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo"] },
+    { cat: "Content Creator",      type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"] },
+    { cat: "Top 5 Primary",        type: "manual", overridden: true,  autoList: [],                                             overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"] },
     { cat: "Rising Star",          type: "manual", overridden: true,  autoList: [],                                             overrideList: ["Linda Kusuma", "Rendi Setiawan", "Maya Putri"] },
-    { cat: "Top Recruit",          type: "manual", overridden: true,  autoList: [],                                             overrideList: ["Rizki Pratama", "Budi Santoso", "Siti Fatimah"] },
+    { cat: "Top Recruiter",        type: "manual", overridden: true,  autoList: [],                                             overrideList: ["Rizki Pratama", "Budi Santoso", "Siti Fatimah"] },
   ]);
 
   const AGENT_DATA = AGENT_DATA_LIST;
+
+  const activeAgents = (serverAgents.length > 0
+    ? serverAgents.filter(a => a.status === "Active")
+    : AGENT_DATA.filter(a => a.status === "Active").map(a => ({
+        id: Number(String(a.id).replace(/[^0-9]/g, "") || "0"),
+        name: a.name,
+        status: a.status,
+      })));
+
+  useEffect(() => {
+    const loadAgents = async () => {
+      try {
+        const rows = await api.admin.getAgents();
+        if (Array.isArray(rows)) {
+          setServerAgents(rows.map((r: any) => ({
+            id: Number(r.id),
+            name: String(r.name || ""),
+            status: String(r.status || ""),
+          })));
+        }
+      } catch {
+        // Keep fallback static agents when API is unavailable.
+      }
+    };
+
+    loadAgents();
+  }, []);
+
+  useEffect(() => {
+    const loadHof = async () => {
+      try {
+        const rows = await api.admin.getHof(period);
+        if (Array.isArray(rows)) {
+          setHofRecords(rows.map((r: any) => ({
+            category: String(r.category || ""),
+            rank: Number(r.rank || 0),
+            agent: r.agent ? { name: String(r.agent.name || "") } : undefined,
+            period: String(r.period || ""),
+          })));
+        }
+      } catch {
+        // Keep static entries as fallback.
+      }
+    };
+
+    loadHof();
+  }, [period]);
+
+  const entriesFromApi = (cat: string): string[] => {
+    return hofRecords
+      .filter((r) => normalizeHofCategory(r.category, [
+        "Top 5 Commission",
+        "Top 5 By Unit",
+        "Top 5 Primary",
+        "Rising Star",
+        "Content Creator",
+        "Listing Hunter",
+        "Prospecting Master",
+        "Top Recruiter",
+      ]) === cat)
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, 3)
+      .map((r) => r.agent?.name || "—");
+  };
 
   const triggerToast = (msg: string) => {
     setToastMsg(msg);
@@ -48,9 +117,78 @@ export default function AdminHoFPage() {
     }));
   };
 
-  const handleSaveCategory = (section: any) => {
-    const listUsed = section.overridden ? section.overrideList : section.autoList;
-    triggerToast(`Peringkat ${section.cat} untuk ${period} berhasil disimpan! (${section.overridden ? 'Bypassed' : 'Auto Calculate'})`);
+  const resolveAgentIdByName = (name: string) => {
+    const fromServer = serverAgents.find(a => a.name === name);
+    if (fromServer?.id) return fromServer.id;
+
+    const fromFallback = AGENT_DATA.find(a => a.name === name);
+    if (fromFallback) {
+      const parsed = Number(String(fromFallback.id).replace(/[^0-9]/g, "") || "0");
+      if (parsed > 0) return parsed;
+    }
+
+    return null;
+  };
+
+  const handleSaveCategory = async (section: any) => {
+    const listUsed = (section.overridden ? section.overrideList : section.autoList).slice(0, 3);
+    const canonicalCategory = normalizeHofCategory(section.cat, [
+      "Top 5 Commission",
+      "Top 5 By Unit",
+      "Top 5 Primary",
+      "Rising Star",
+      "Content Creator",
+      "Listing Hunter",
+      "Prospecting Master",
+      "Top Recruiter",
+    ]);
+
+    if (!canonicalCategory) {
+      triggerToast("Kategori HoF tidak valid.");
+      return;
+    }
+
+    if (!listUsed.length) {
+      triggerToast("Tidak ada agent untuk disimpan.");
+      return;
+    }
+
+    setSavingCategory(section.cat);
+    try {
+      for (let i = 0; i < listUsed.length; i++) {
+        const agentName = listUsed[i];
+        const agentID = resolveAgentIdByName(agentName);
+        if (!agentID) {
+          throw new Error(`Agent '${agentName}' belum terdaftar di database server`);
+        }
+
+        await api.admin.addHof({
+          agent_id: agentID,
+          category: canonicalCategory,
+          rank: i + 1,
+          period,
+          notes: section.overridden ? "Manual override from admin panel" : "Auto calculated from admin panel",
+        });
+      }
+
+      triggerToast(`Peringkat ${canonicalCategory} untuk ${period} berhasil disimpan ke server.`);
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal menyimpan data Hall of Fame");
+    } finally {
+      // Refresh records from server
+      try {
+        const rows = await api.admin.getHof(period);
+        if (Array.isArray(rows)) {
+          setHofRecords(rows.map((r: any) => ({
+            category: String(r.category || ""),
+            rank: Number(r.rank || 0),
+            agent: r.agent ? { name: String(r.agent.name || "") } : undefined,
+            period: String(r.period || ""),
+          })));
+        }
+      } catch {}
+      setSavingCategory(null);
+    }
   };
 
   return (
@@ -126,7 +264,6 @@ export default function AdminHoFPage() {
                 <div className="space-y-2 mb-4">
                   {[0, 1, 2].map((rankIdx) => {
                     const rankNum = rankIdx + 1;
-                    const defaultAgent = section.autoList[rankIdx] || "—";
                     const selectedAgent = section.overrideList[rankIdx] || "";
                     
                     return (
@@ -141,13 +278,13 @@ export default function AdminHoFPage() {
                             onChange={ev => handleAgentChange(si, rankIdx, ev.target.value)}
                             className="flex-1 px-2.5 py-1.5 rounded-lg border text-xs outline-none bg-card cursor-pointer font-medium"
                             style={{ borderColor: T.border }}>
-                            {AGENT_DATA.filter(a => a.status === "Active").map(a => (
-                              <option key={a.id} value={a.name}>{a.name}</option>
+                            {activeAgents.map(a => (
+                              <option key={`${a.id}-${a.name}`} value={a.name}>{a.name}</option>
                             ))}
                           </select>
                         ) : (
                           <div className="flex-1 text-left px-2 py-1 text-xs font-semibold text-muted-foreground bg-card/40 rounded-lg border border-dashed" style={{ borderColor: T.border }}>
-                            {defaultAgent} <span className="text-[10px] font-normal text-muted-foreground/60">(System)</span>
+                            {entriesFromApi(section.cat)[rankIdx] || "—"} <span className="text-[10px] font-normal text-muted-foreground/60">(System)</span>
                           </div>
                         )}
                       </div>
@@ -157,9 +294,10 @@ export default function AdminHoFPage() {
               </div>
 
               <button onClick={() => handleSaveCategory(section)}
+                disabled={savingCategory === section.cat}
                 className="w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#E8A500] hover:bg-[#CC9200] text-black transition-all shadow-sm"
                 style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                <Save size={13} /> Simpan {section.cat}
+                <Save size={13} /> {savingCategory === section.cat ? "Menyimpan..." : `Simpan ${section.cat}`}
               </button>
             </Card>
           );
