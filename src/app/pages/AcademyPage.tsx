@@ -13,6 +13,7 @@ import useLoading from "../hooks/useLoading";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { AnimatePresence, motion } from "motion/react";
 import { api } from "../services/api";
+import EmptyState from "../components/EmptyState";
 
 // Rich Mock Dataset for Module Details (representing content loaded from Admin panel)
 const COURSE_DETAILS: Record<string, {
@@ -363,60 +364,68 @@ export default function AcademyPage() {
             </div>
 
             {/* Modules Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {shown.map((m, i) => {
-                const isCompleted = m.status === "done";
-                return (
-                  <Card key={i} className="p-5 flex flex-col transition-all hover:scale-[1.01] hover:shadow-md" style={{ borderTop: `3px solid ${m.color}` }}>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider" style={{ backgroundColor: `${m.color}15`, color: m.color }}>{m.cat}</span>
-                      {isCompleted && <CheckCircle size={16} style={{ color: "#16A34A" }} />}
-                    </div>
-                    
-                    <h3 className="font-bold mb-3 flex-1 text-base text-foreground leading-snug" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                      {m.title}
-                    </h3>
-                    
-                    <div className="mb-4">
-                      <div className="flex justify-between text-xs mb-1.5 font-semibold" style={{ color: T.text3 }}>
-                        <span>{m.prog}% Selesai</span>
-                        <span>{m.dur}</span>
+            {shown.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {shown.map((m, i) => {
+                  const isCompleted = m.status === "done";
+                  return (
+                    <Card key={i} className="p-5 flex flex-col transition-all hover:scale-[1.01] hover:shadow-md" style={{ borderTop: `3px solid ${m.color}` }}>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider" style={{ backgroundColor: `${m.color}15`, color: m.color }}>{m.cat}</span>
+                        {isCompleted && <CheckCircle size={16} style={{ color: "#16A34A" }} />}
                       </div>
-                      <XPBar value={m.prog} max={100} height={5} />
-                    </div>
-
-                    <div className="flex items-center justify-between mt-auto pt-3.5 border-t border-dashed" style={{ borderColor: T.border }}>
-                      <span className="text-xs font-bold" style={{ color: "#C8922A" }}>+{m.xp} XP</span>
                       
-                      <button 
-                        onClick={() => handleStartModule(m)}
-                        className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border"
-                        style={{
-                          backgroundColor: isCompleted 
-                            ? (isDark ? "rgba(34,197,94,0.12)" : "#DCFCE7") 
-                            : (isDark ? "rgba(232, 165, 0, 0.12)" : "rgba(232, 165, 0, 0.08)"),
-                          borderColor: isCompleted 
-                            ? "rgba(34,197,94,0.3)" 
-                            : "rgba(232, 165, 0, 0.35)",
-                          color: isCompleted 
-                            ? "#16A34A" 
-                            : (isDark ? "#FFD666" : "#A66D00"),
-                          fontFamily: "'Rajdhani', sans-serif",
-                        }}
-                        onMouseEnter={e => {
-                          if (!isCompleted) e.currentTarget.style.backgroundColor = "rgba(232, 165, 0, 0.22)";
-                        }}
-                        onMouseLeave={e => {
-                          if (!isCompleted) e.currentTarget.style.backgroundColor = isDark ? "rgba(232, 165, 0, 0.12)" : "rgba(232, 165, 0, 0.08)";
-                        }}
-                      >
-                        {isCompleted ? "✓ Selesai" : m.prog > 0 ? <><Play size={11} /> Lanjutkan</> : <><Play size={11} /> Mulai</>}
-                      </button>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
+                      <h3 className="font-bold mb-3 flex-1 text-base text-foreground leading-snug" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                        {m.title}
+                      </h3>
+                      
+                      <div className="mb-4">
+                        <div className="flex justify-between text-xs mb-1.5 font-semibold" style={{ color: T.text3 }}>
+                          <span>{m.prog}% Selesai</span>
+                          <span>{m.dur}</span>
+                        </div>
+                        <XPBar value={m.prog} max={100} height={5} />
+                      </div>
+
+                      <div className="flex items-center justify-between mt-auto pt-3.5 border-t border-dashed" style={{ borderColor: T.border }}>
+                        <span className="text-xs font-bold" style={{ color: "#C8922A" }}>+{m.xp} XP</span>
+                        
+                        <button 
+                          onClick={() => handleStartModule(m)}
+                          className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border"
+                          style={{
+                            backgroundColor: isCompleted 
+                              ? (isDark ? "rgba(34,197,94,0.12)" : "#DCFCE7") 
+                              : (isDark ? "rgba(232, 165, 0, 0.12)" : "rgba(232, 165, 0, 0.08)"),
+                            borderColor: isCompleted 
+                              ? "rgba(34,197,94,0.3)" 
+                              : "rgba(232, 165, 0, 0.35)",
+                            color: isCompleted 
+                              ? "#16A34A" 
+                              : (isDark ? "#FFD666" : "#A66D00"),
+                            fontFamily: "'Rajdhani', sans-serif",
+                          }}
+                          onMouseEnter={e => {
+                            if (!isCompleted) e.currentTarget.style.backgroundColor = "rgba(232, 165, 0, 0.22)";
+                          }}
+                          onMouseLeave={e => {
+                            if (!isCompleted) e.currentTarget.style.backgroundColor = isDark ? "rgba(232, 165, 0, 0.12)" : "rgba(232, 165, 0, 0.08)";
+                          }}
+                        >
+                          {isCompleted ? "✓ Selesai" : m.prog > 0 ? <><Play size={11} /> Lanjutkan</> : <><Play size={11} /> Mulai</>}
+                        </button>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <EmptyState
+                icon={BookOpen}
+                title="Tidak Ada Modul Academy"
+                description={`Belum ada modul pelatihan yang tersedia untuk kategori "${cat}". Silakan pilih kategori lain atau hubungi Admin.`}
+              />
+            )}
           </div>
         ) : (
           

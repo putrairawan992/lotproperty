@@ -189,7 +189,106 @@ export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }
     resetAutoplay();
   }, [next, resetAutoplay]);
 
-  if (!events || events.length === 0) return null;
+  if (!events || events.length === 0) {
+    return (
+      <Card
+        className="p-3.5 sm:p-5 overflow-hidden relative min-h-[170px] sm:min-h-[220px] md:min-h-[260px] flex flex-col justify-between shadow-md event-banner"
+        style={{
+          borderColor: isDark ? "rgba(232, 165, 0, 0.2)" : "rgba(232, 165, 0, 0.3)",
+          background: isDark
+            ? "linear-gradient(135deg, #1A1208 0%, #0F0914 100%)"
+            : "linear-gradient(135deg, #FFFDF9 0%, #F5F7FA 100%)",
+        }}
+      >
+        {/* Banner badge */}
+        <div className="absolute top-2 left-2 bg-[#E8A500] text-black px-2.5 py-0.5 text-[9px] font-extrabold uppercase rounded-lg -rotate-6 transform shadow-md z-20 tracking-wider">
+          STAY TUNED
+        </div>
+
+        {/* Decorative background grid/glows */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute -right-10 -bottom-10 w-40 h-40 rounded-full blur-3xl opacity-20 bg-[#E8A500] animate-pulse" />
+          <div className="absolute left-1/4 top-1/4 w-32 h-32 rounded-full blur-3xl opacity-10 bg-[#7B2FBE]" />
+        </div>
+
+        {/* Desktop floating visual elements */}
+        <div className="absolute right-6 bottom-0 top-4 w-1/2 hidden sm:flex items-center justify-end gap-6 z-10 pointer-events-none">
+          <div className="relative w-24 h-24 md:w-32 md:h-32 flex items-center justify-center">
+            {/* Spinning/pulsating glowing container */}
+            <div className="absolute inset-0 rounded-3xl border border-dashed border-[#E8A500]/30 animate-[spin_60s_linear_infinite]" />
+            <div className="absolute inset-3 rounded-2xl border border-dashed border-[#E8A500]/15 animate-[spin_40s_linear_infinite_reverse]" />
+            <div className="absolute w-16 h-16 rounded-full blur-2xl opacity-25 bg-[#E8A500]" />
+            
+            <div className="relative z-10 text-[#E8A500] flex flex-col items-center justify-center">
+              {/* Cup / Trophy / Calendar Icon */}
+              <div className="p-3.5 rounded-2xl bg-[#E8A500]/10 border border-[#E8A500]/25 shadow-inner">
+                <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
+                  <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
+                  <path d="M4 22h16" />
+                  <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34" />
+                  <path d="M12 2a4 4 0 0 1 4 4v5a4 4 0 0 1-4 4 4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10 flex-1 flex flex-col justify-between mt-4 sm:mt-6">
+          <div>
+            <p className="font-extrabold tracking-wider text-[9px] sm:text-[11px] md:text-xs mb-0.5 sm:mb-1" style={{ color: T.text3, letterSpacing: "0.08em" }}>
+              COMPETITION & CHALLENGE
+            </p>
+            <h3
+              className="font-black text-lg sm:text-2xl md:text-3xl italic uppercase tracking-wide leading-none mb-1.5 sm:mb-2.5 text-gradient-gold"
+              style={{
+                fontFamily: "var(--font-display)",
+              }}
+            >
+              TANTANGAN BARU AKAN SEGERA HADIR!
+            </h3>
+            <p className="text-[10px] sm:text-xs md:text-sm max-w-[90%] sm:max-w-[50%] mb-2 sm:mb-4" style={{ color: T.text2, lineHeight: 1.3 }}>
+              Kompetisi seru berhadiah ratusan ribu <strong className="text-[#E8A500]">XP</strong> dan <strong className="text-[#E8A500]">Emas</strong> sedang disiapkan. Tingkatkan terus aktivitas listing dan prospect Anda agar siap bersaing di puncak klasemen!
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mt-auto">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-card/60 backdrop-blur-sm" style={{ borderColor: T.border }}>
+                <svg className="w-4 h-4 flex-shrink-0 text-[#E8A500]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <div className="text-left">
+                  <p style={{ fontSize: 8, color: T.text3, textTransform: "uppercase" }}>Persiapan</p>
+                  <p className="font-bold text-[10px] md:text-xs" style={{ color: T.text1 }}>Kerjakan Quest Harian</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-card/60 backdrop-blur-sm" style={{ borderColor: T.border }}>
+                <div className="w-5 h-5 flex items-center justify-center rounded-lg bg-[#E8A500]/10 border border-[#E8A500]/20 flex-shrink-0">
+                  <span className="text-[9px] font-black text-[#E8A500]" style={{ fontFamily: "var(--font-display)" }}>XP</span>
+                </div>
+                <div className="text-left">
+                  <p style={{ fontSize: 8, color: T.text3, textTransform: "uppercase" }}>Hadiah</p>
+                  <p className="font-bold text-[10px] md:text-xs text-[#E8A500]">Ratusan Ribu XP</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onNav("quest")}
+              className="w-full sm:w-auto mt-2 sm:mt-0 px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#E8A500] hover:bg-[#CC9200] text-black transition-all shadow-md active:scale-95 cursor-pointer"
+              style={{ fontFamily: "var(--font-display)" }}
+            >
+              Kerjakan Quest Sekarang <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   const activeEvent = events[current];
 

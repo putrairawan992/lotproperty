@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, type ReactNode } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search, Plus, MapPin, MoreHorizontal, X, Download, Check,
-  ChevronRight, Eye, ToggleLeft, Archive, Trash2, MessageCircle,
+  ChevronRight, Eye, ToggleLeft, Archive, Trash2, MessageCircle, Home
 } from "lucide-react";
 import Card from "../components/Card";
 import { ListingPageSkeleton } from "../components/Skeletons";
@@ -11,6 +11,7 @@ import { T, useTheme } from "../types";
 import { useTabQuery, useLocation } from "../routes";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { api } from "../services/api";
+import EmptyState from "../components/EmptyState";
 
 interface Listing {
   id: string;
@@ -137,7 +138,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
 
 export default function ListingPage() {
   const loadingTime = useLoading(1100);
-  const { isGuest } = useTheme();
+  const { isGuest, refreshUser } = useTheme();
   const [apiLoading, setApiLoading] = useState(true);
 
   const loading = loadingTime || (isGuest ? false : apiLoading);
@@ -249,6 +250,7 @@ export default function ListingPage() {
       setForm(EMPTY_FORM);
       setSuccessToast("Listing baru berhasil ditambahkan!");
       await loadListings();
+      await refreshUser();
     } catch (error) {
       setSuccessToast(error instanceof Error ? error.message : "Gagal menambahkan listing");
     }
@@ -435,111 +437,119 @@ export default function ListingPage() {
             ))}
           </div>
 
-          {/* Mobile: card layout */}
-          <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
-            {filtered.map((l, index) => (
-              <div
-                key={l.id}
-                className="p-4 transition-colors cursor-pointer active:bg-muted/60 relative"
-                onClick={() => openDetail(l.id)}
-              >
-                <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                  <StatusChip s={l.status} />
-                  <ActionMenu listing={l} alignUp={index === filtered.length - 1} />
-                </div>
+          {filtered.length > 0 ? (
+            <>
+              {/* Mobile: card layout */}
+              <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
+                {filtered.map((l, index) => (
+                  <div
+                    key={l.id}
+                    className="p-4 transition-colors cursor-pointer active:bg-muted/60 relative"
+                    onClick={() => openDetail(l.id)}
+                  >
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                      <StatusChip s={l.status} />
+                      <ActionMenu listing={l} alignUp={index === filtered.length - 1} />
+                    </div>
 
-                <div className="flex items-start justify-between gap-3 mb-2 pr-24">
-                  <div className="flex-1 min-w-0">
-                    <EllipsisTooltip 
-                      text={l.title} 
-                      className="text-sm font-semibold leading-snug line-clamp-2 text-left block w-full" 
-                      style={{ color: T.text1 }} 
-                    />
-                    <div className="text-xs flex items-center gap-1 mt-1 min-w-0" style={{ color: T.text3 }}>
-                      <MapPin size={11} className="flex-shrink-0" />
-                      <EllipsisTooltip 
-                        text={`${l.loc} · ${l.owner}`} 
-                        className="truncate text-left block w-full" 
-                      />
+                    <div className="flex items-start justify-between gap-3 mb-2 pr-24">
+                      <div className="flex-1 min-w-0">
+                        <EllipsisTooltip 
+                          text={l.title} 
+                          className="text-sm font-semibold leading-snug line-clamp-2 text-left block w-full" 
+                          style={{ color: T.text1 }} 
+                        />
+                        <div className="text-xs flex items-center gap-1 mt-1 min-w-0" style={{ color: T.text3 }}>
+                          <MapPin size={11} className="flex-shrink-0" />
+                          <EllipsisTooltip 
+                            text={`${l.loc} · ${l.owner}`} 
+                            className="truncate text-left block w-full" 
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                      <span className="text-xs px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: "var(--muted)", color: T.text2 }}>
+                        {l.type}
+                      </span>
+                      <p className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#E8A500" }}>
+                        {l.price}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-[11px] leading-snug flex-1 min-w-0" style={{ color: T.text3 }}>
+                        {formatArea(l)}
+                      </p>
+                      <div className="flex-shrink-0">
+                        <RemindBadge r={l.remind} d={l.days} />
+                      </div>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <span className="text-xs px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: "var(--muted)", color: T.text2 }}>
-                    {l.type}
-                  </span>
-                  <p className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#E8A500" }}>
-                    {l.price}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[11px] leading-snug flex-1 min-w-0" style={{ color: T.text3 }}>
-                    {formatArea(l)}
-                  </p>
-                  <div className="flex-shrink-0">
-                    <RemindBadge r={l.remind} d={l.days} />
-                  </div>
-                </div>
-              </div>
-            ))}
-            {filtered.length === 0 && (
-              <p className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
-                Tidak ada listing ditemukan.
-              </p>
-            )}
-          </div>
-
-          {/* Desktop: table layout */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b" style={{ borderColor: T.border }}>
-                  {["LISTING", "TIPE", "LUAS (T / B)", "HARGA", "STATUS", "REMINDER", ""].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: T.text3 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((l, index) => (
-                  <tr
-                    key={l.id}
-                    className="border-b transition-colors cursor-pointer"
-                    style={{ borderColor: T.border }}
-                    onClick={() => openDetail(l.id)}
-                    onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
-                    onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
-                  >
-                    <td className="px-4 py-3 min-w-[220px]">
-                      <p className="text-sm font-medium" style={{ color: T.text1 }}>{l.title}</p>
-                      <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
-                        <MapPin size={10} />{l.loc} · {l.owner}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: T.text2 }}>{l.type}</td>
-                    <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text2 }}>
-                      {l.landArea !== "—" ? `T: ${l.landArea}` : "—"} / {l.buildingArea !== "—" ? `B: ${l.buildingArea}` : "—"}
-                      {l.floors !== "—" && <span className="block text-[10px] text-muted-foreground">{l.floors} Lantai</span>}
-                    </td>
-                    <td className="px-4 py-3 text-sm font-semibold whitespace-nowrap" style={{ color: T.text1 }}>{l.price}</td>
-                    <td className="px-4 py-3"><StatusChip s={l.status} /></td>
-                    <td className="px-4 py-3 whitespace-nowrap"><RemindBadge r={l.remind} d={l.days} /></td>
-                    <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <ActionMenu listing={l} alignUp={index === filtered.length - 1} />
-                    </td>
-                  </tr>
                 ))}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={7} className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
-                      Tidak ada listing ditemukan.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              </div>
+
+              {/* Desktop: table layout */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b" style={{ borderColor: T.border }}>
+                      {["LISTING", "TIPE", "LUAS (T / B)", "HARGA", "STATUS", "REMINDER", ""].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: T.text3 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((l, index) => (
+                      <tr
+                        key={l.id}
+                        className="border-b transition-colors cursor-pointer"
+                        style={{ borderColor: T.border }}
+                        onClick={() => openDetail(l.id)}
+                        onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+                        onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                      >
+                        <td className="px-4 py-3 min-w-[220px]">
+                          <p className="text-sm font-medium" style={{ color: T.text1 }}>{l.title}</p>
+                          <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
+                            <MapPin size={10} />{l.loc} · {l.owner}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: T.text2 }}>{l.type}</td>
+                        <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text2 }}>
+                          {l.landArea !== "—" ? `T: ${l.landArea}` : "—"} / {l.buildingArea !== "—" ? `B: ${l.buildingArea}` : "—"}
+                          {l.floors !== "—" && <span className="block text-[10px] text-muted-foreground">{l.floors} Lantai</span>}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold whitespace-nowrap" style={{ color: T.text1 }}>{l.price}</td>
+                        <td className="px-4 py-3"><StatusChip s={l.status} /></td>
+                        <td className="px-4 py-3 whitespace-nowrap"><RemindBadge r={l.remind} d={l.days} /></td>
+                        <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                          <ActionMenu listing={l} alignUp={index === filtered.length - 1} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <div className="py-8">
+              <EmptyState
+                icon={Home}
+                title="Tidak Ada Listing"
+                description={
+                  search.trim()
+                    ? `Tidak ada listing yang cocok dengan pencarian "${search}".`
+                    : tab === "All"
+                      ? "Belum ada data listing properti. Tambahkan listing properti Anda untuk mulai memasarkannya."
+                      : `Tidak ada listing dengan status "${tab}".`
+                }
+                actionLabel="Tambah Listing"
+                onAction={() => setShowPanel(true)}
+              />
+            </div>
+          )}
         </Card>
 
         {/* Tambah Listing Side Panel */}

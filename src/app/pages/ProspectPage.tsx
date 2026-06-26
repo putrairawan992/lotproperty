@@ -12,6 +12,7 @@ import { T, useTheme } from "../types";
 import { useTabQuery, useLocation } from "../routes";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { api } from "../services/api";
+import EmptyState from "../components/EmptyState";
 
 const STATUS_CFG: Record<string, { color: string; bg: string }> = {
   "New Lead":  { color: "#1A6FC4", bg: "#EEF5FC" },
@@ -128,7 +129,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 
 export default function ProspectPage() {
   const loadingTime = useLoading(1100);
-  const { isGuest } = useTheme();
+  const { isGuest, refreshUser } = useTheme();
   const [apiLoading, setApiLoading] = useState(true);
 
   const loading = loadingTime || (isGuest ? false : apiLoading);
@@ -298,6 +299,7 @@ export default function ProspectPage() {
       setShowAdd(false);
       triggerToast("Prospect baru berhasil ditambahkan!");
       await loadProspects();
+      await refreshUser();
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal menambahkan prospect");
     }
@@ -560,125 +562,131 @@ export default function ProspectPage() {
             ))}
           </div>
 
-          {/* Mobile: card layout */}
-          <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
-            {filtered.map((p, index) => {
-              const sc = STATUS_CFG[p.status];
-              return (
-                <div key={p.id} className="p-4 cursor-pointer transition-all hover:bg-muted/10 relative" onClick={() => openDetail(p.id)}>
-                  <div className="absolute top-3 right-3" onClick={e => e.stopPropagation()}>
-                    <ActionMenu prospect={p} alignUp={index === filtered.length - 1} />
-                  </div>
-                  <div className="flex items-start gap-3 mb-3 pr-8">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
-                      style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
-                    <div className="flex-1 min-w-0">
-                      <EllipsisTooltip 
-                        text={p.name} 
-                        className="font-semibold text-sm truncate block" 
-                        style={{ color: T.text1 }} 
-                      />
-                      <div className="mt-1">
-                        <span className="inline-block text-[10px] px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap uppercase tracking-wider"
-                          style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
-                      </div>
-                      <p className="text-xs flex items-center gap-1 mt-1.5" style={{ color: T.text3 }}>
-                        <Phone size={10} />{p.phone}
-                      </p>
-                    </div>
-                  </div>
-                  <p className="text-xs mb-3 line-clamp-2" style={{ color: T.text3 }}>{p.note}</p>
-                  {p.reminderDate && (
-                    <p className="text-[10px] flex items-center gap-1 font-semibold" style={{ color: "#D97706" }}>
-                      <Calendar size={10} /> Reminder: {formatDateDisplay(p.reminderDate)} {p.reminderTime}
-                    </p>
-                  )}
-                  <p className="text-[10px] mt-2 flex items-center gap-1" style={{ color: T.text3 }}>
-                    <Calendar size={10} /> Dibuat: {p.date}
-                  </p>
-                </div>
-              );
-            })}
-            {filtered.length === 0 && (
-              <p className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
-                Tidak ada prospect ditemukan.
-              </p>
-            )}
-          </div>
-
-          {/* Desktop: table layout */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b" style={{ borderColor: T.border }}>
-                  {["PROSPECT", "STATUS", "NEXT ACTION", "REMINDER", "DIBUAT", ""].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: T.text3 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
+          {filtered.length > 0 ? (
+            <>
+              {/* Mobile: card layout */}
+              <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
                 {filtered.map((p, index) => {
                   const sc = STATUS_CFG[p.status];
-                  const actionCfg = NEXT_ACTIONS.find(a => a.id === p.nextAction) || NEXT_ACTIONS[0];
-                  const ActionIcon = actionCfg.icon;
                   return (
-                    <tr
-                      key={p.id}
-                      className="border-b transition-colors cursor-pointer"
-                      style={{ borderColor: T.border }}
-                      onClick={() => openDetail(p.id)}
-                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
-                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
-                    >
-                      <td className="px-4 py-3 min-w-[220px]">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
-                            style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
-                          <div>
-                            <p className="text-sm font-semibold" style={{ color: T.text1 }}>{p.name}</p>
-                            <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
-                              <Phone size={10} />{p.phone}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
-                          style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: actionCfg.color }}>
-                          <ActionIcon size={14} />
-                          <span>{p.nextAction}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 whitespace-nowrap text-xs" style={{ color: T.text2 }}>
-                        {p.reminderDate ? (
-                          <div className="flex items-center gap-1 text-[#D97706] font-semibold">
-                             <Calendar size={12} />
-                             <span>{formatDateDisplay(p.reminderDate)} {p.reminderTime}</span>
-                          </div>
-                        ) : (
-                          <span style={{ color: T.text3 }}>—</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text3 }}>{p.date}</td>
-                      <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                    <div key={p.id} className="p-4 cursor-pointer transition-all hover:bg-muted/10 relative" onClick={() => openDetail(p.id)}>
+                      <div className="absolute top-3 right-3" onClick={e => e.stopPropagation()}>
                         <ActionMenu prospect={p} alignUp={index === filtered.length - 1} />
-                      </td>
-                    </tr>
+                      </div>
+                      <div className="flex items-start gap-3 mb-3 pr-8">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
+                          style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
+                        <div className="flex-1 min-w-0">
+                          <EllipsisTooltip 
+                            text={p.name} 
+                            className="font-semibold text-sm truncate block" 
+                            style={{ color: T.text1 }} 
+                          />
+                          <div className="mt-1">
+                            <span className="inline-block text-[10px] px-2.5 py-0.5 rounded-full font-bold whitespace-nowrap uppercase tracking-wider"
+                              style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
+                          </div>
+                          <p className="text-xs flex items-center gap-1 mt-1.5" style={{ color: T.text3 }}>
+                            <Phone size={10} />{p.phone}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-xs mb-3 line-clamp-2" style={{ color: T.text3 }}>{p.note}</p>
+                      {p.reminderDate && (
+                        <p className="text-[10px] flex items-center gap-1 font-semibold" style={{ color: "#D97706" }}>
+                          <Calendar size={10} /> Reminder: {formatDateDisplay(p.reminderDate)} {p.reminderTime}
+                        </p>
+                      )}
+                      <p className="text-[10px] mt-2 flex items-center gap-1" style={{ color: T.text3 }}>
+                        <Calendar size={10} /> Dibuat: {p.date}
+                      </p>
+                    </div>
                   );
                 })}
-                {filtered.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm" style={{ color: T.text3 }}>
-                      Tidak ada prospect ditemukan.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+              </div>
+
+              {/* Desktop: table layout */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b" style={{ borderColor: T.border }}>
+                      {["PROSPECT", "STATUS", "NEXT ACTION", "REMINDER", "DIBUAT", ""].map(h => (
+                        <th key={h} className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap" style={{ color: T.text3 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((p, index) => {
+                      const sc = STATUS_CFG[p.status];
+                      const actionCfg = NEXT_ACTIONS.find(a => a.id === p.nextAction) || NEXT_ACTIONS[0];
+                      const ActionIcon = actionCfg.icon;
+                      return (
+                        <tr
+                          key={p.id}
+                          className="border-b transition-colors cursor-pointer"
+                          style={{ borderColor: T.border }}
+                          onClick={() => openDetail(p.id)}
+                          onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+                          onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
+                        >
+                          <td className="px-4 py-3 min-w-[220px]">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                style={{ backgroundColor: sc.bg, color: sc.color }}>{p.initials}</div>
+                              <div>
+                                <p className="text-sm font-semibold" style={{ color: T.text1 }}>{p.name}</p>
+                                <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
+                                  <Phone size={10} />{p.phone}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <span className="text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider"
+                              style={{ backgroundColor: sc.bg, color: sc.color }}>{p.status}</span>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: actionCfg.color }}>
+                              <ActionIcon size={14} />
+                              <span>{p.nextAction}</span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-xs" style={{ color: T.text2 }}>
+                            {p.reminderDate ? (
+                              <div className="flex items-center gap-1 text-[#D97706] font-semibold">
+                                 <Calendar size={12} />
+                                 <span>{formatDateDisplay(p.reminderDate)} {p.reminderTime}</span>
+                              </div>
+                            ) : (
+                              <span style={{ color: T.text3 }}>—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text3 }}>{p.date}</td>
+                          <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
+                            <ActionMenu prospect={p} alignUp={index === filtered.length - 1} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <div className="py-8">
+              <EmptyState
+                icon={User}
+                title="Tidak Ada Prospect"
+                description={
+                  filter === "All"
+                    ? "Belum ada prospect yang terdaftar. Tambahkan prospect baru untuk mulai mengelola prospek properti Anda."
+                    : `Tidak ada prospect dengan status "${filter}".`
+                }
+                actionLabel="Tambah Prospect"
+                onAction={() => setShowAdd(true)}
+              />
+            </div>
+          )}
         </Card>
 
         {/* Pipeline */}

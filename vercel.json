@@ -5,6 +5,14 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "http://170.64.232.62:8080/api/$1"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "http://170.64.232.62:8080/uploads/$1"
+    },
+    {
       "source": "/((?!assets/).*)",
       "destination": "/index.html"
     }

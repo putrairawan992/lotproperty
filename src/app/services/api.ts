@@ -1,5 +1,21 @@
 const API_URL_FROM_ENV = (import.meta.env.VITE_API_BASE_URL || "").trim();
-const BASE_URL = API_URL_FROM_ENV || `${window.location.origin}/api`;
+
+// Force HTTPS to prevent Mixed Content blocking on HTTPS origins.
+// Falls back to relative /api so Vercel's reverse proxy can forward requests safely.
+function resolveBaseUrl(): string {
+  if (API_URL_FROM_ENV) {
+    const upgraded = API_URL_FROM_ENV.replace(/^http:\/\//i, "https://");
+    return upgraded;
+  }
+  if (typeof window !== "undefined" && window.location.protocol === "https:") {
+    // Use same-origin /api so the browser never sees a mismatched scheme.
+    // Requires a reverse-proxy rewrite in vercel.json (or nginx, etc.).
+    return `${window.location.origin}/api`;
+  }
+  return `${window.location.origin}/api`;
+}
+
+const BASE_URL = resolveBaseUrl();
 
 // Helper to get stored auth token
 export function getAuthToken(): string | null {
@@ -9,11 +25,13 @@ export function getAuthToken(): string | null {
 // Helper to save auth token
 export function setAuthToken(token: string) {
   localStorage.setItem("lotproperty-auth-token", token);
+  localStorage.setItem("lotproperty-auth-token-timestamp", Date.now().toString());
 }
 
 // Helper to clear auth token
 export function clearAuthToken() {
   localStorage.removeItem("lotproperty-auth-token");
+  localStorage.removeItem("lotproperty-auth-token-timestamp");
 }
 
 // Base fetch request wrapper

@@ -417,6 +417,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
           const xp = Number(res?.xp_earned || 0);
           triggerToast(xp > 0 ? `Attendance sukses! +${xp} XP` : "Attendance hari ini sudah tercatat.");
           loadQuestStatus();
+          refreshUser();
         })
         .catch((error: unknown) => {
           triggerToast(error instanceof Error ? error.message : "Gagal submit attendance");
@@ -466,6 +467,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       setContentUrl("");
       triggerToast(`Link konten berhasil disubmit! +${xp || 300} XP ditambahkan.`);
       await loadQuestStatus();
+      await refreshUser();
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal submit konten");
     }
@@ -480,6 +482,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       setPromoUrl("");
       triggerToast(`Link promosi listing berhasil disubmit! +${xp || 100} XP ditambahkan.`);
       await loadQuestStatus();
+      await refreshUser();
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal submit promosi listing");
     }

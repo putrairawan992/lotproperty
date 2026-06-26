@@ -76,15 +76,18 @@ type EventResponse = {
 };
 
 
-function mapWeeklyAgent(item: WeeklyAgentResponse) {
+function mapWeeklyAgent(item: WeeklyAgentResponse, currentUser?: any) {
   const initials = (item.initials || item.name || "A").slice(0, 2).toUpperCase();
+  const isMe = currentUser && Number(item.id) === Number(currentUser.id);
   return {
     rank: item.rank,
+    id: item.id,
     name: item.name,
     initials,
     photo: item.photo,
     level: item.level || "Agent",
     value: `${Number(item.xp || 0).toLocaleString("id-ID")} XP`,
+    isMe,
   };
 }
 
@@ -174,7 +177,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             api.public.getHof(),
             api.public.getEvents(),
           ]);
-          if (Array.isArray(weeklyRes) && weeklyRes.length > 0) setWeeklyData(weeklyRes.map(mapWeeklyAgent));
+          if (Array.isArray(weeklyRes) && weeklyRes.length > 0) setWeeklyData(weeklyRes.map(a => mapWeeklyAgent(a)));
           const hofPayload = Array.isArray(hofRes) ? hofRes : [];
           if (hofPayload.length > 0) {
             const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
@@ -204,7 +207,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
 
         const weeklyPayload = Array.isArray(weeklyRes) ? (weeklyRes as WeeklyAgentResponse[]) : [];
         if (weeklyPayload.length > 0) {
-          setWeeklyData(weeklyPayload.map(mapWeeklyAgent));
+          setWeeklyData(weeklyPayload.map(a => mapWeeklyAgent(a, user)));
         }
 
         const hofPayload = Array.isArray(hofRes) ? (hofRes as HofRecordResponse[]) : [];
@@ -379,11 +382,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
       />
 
       {/* Event Banner Slider placed below Hall of Fame and above Weekly Leaderboard */}
-      {eventData && eventData.length > 0 && (
-        <div className="my-2">
-          <EventBannerSlider isDark={isDark} onNav={onNav} events={eventData} />
-        </div>
-      )}
+      <div className="my-2">
+        <EventBannerSlider isDark={isDark} onNav={onNav} events={eventData} />
+      </div>
 
 
       {/* Weekly LB + Progress + Quest */}

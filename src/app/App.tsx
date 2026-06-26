@@ -43,7 +43,7 @@ export default function App() {
   const [isGuest, setIsGuest] = useState(false);
   const [authView, setAuthView] = useState<"login" | "register" | "pending" | "forgot" | "admin">("login");
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
-  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [levelUpData, setLevelUpData] = useState<{ level: number; tier: string; xp: string } | null>(null);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [appLoading, setAppLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
@@ -65,7 +65,24 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem("lotproperty-auth-token");
+      const timestamp = localStorage.getItem("lotproperty-auth-token-timestamp");
+      
       if (token) {
+        // Validate 24 hours expiration
+        if (timestamp) {
+          const elapsed = Date.now() - Number(timestamp);
+          if (elapsed > 24 * 60 * 60 * 1000) {
+            api.auth.logout();
+            setUser(null);
+            setLoggedIn(false);
+            setAppLoading(false);
+            return;
+          }
+        } else {
+          // If token exists but no timestamp, set it now to start the 24h window
+          localStorage.setItem("lotproperty-auth-token-timestamp", Date.now().toString());
+        }
+
         try {
           const profile = await api.auth.getMe();
           setUser(profile);
@@ -77,12 +94,33 @@ export default function App() {
           }
         } catch (e) {
           api.auth.logout();
+          setUser(null);
+          setLoggedIn(false);
         }
       }
       setAppLoading(false);
     };
     checkAuth();
   }, []);
+
+  const prevLevelRef = useRef<number | undefined>(undefined);
+
+  // Auto detect Level Up
+  useEffect(() => {
+    if (user && user.level !== undefined) {
+      const currentLevel = Number(user.level);
+      if (prevLevelRef.current !== undefined && currentLevel > prevLevelRef.current) {
+        setLevelUpData({
+          level: currentLevel,
+          tier: user.title || "Rookie Agent",
+          xp: `${Number(user.total_xp || 0).toLocaleString("id-ID")} XP`
+        });
+      }
+      prevLevelRef.current = currentLevel;
+    } else if (!user) {
+      prevLevelRef.current = undefined;
+    }
+  }, [user]);
 
   // Trigger auto-attendance popup immediately on dashboard enter after login
   useEffect(() => {
@@ -188,12 +226,24 @@ export default function App() {
       if (authView === "register") return <RegisterPage onBack={() => setAuthView("login")} onSubmit={() => setAuthView("pending")} />;
       if (authView === "forgot") return <ForgotPasswordPage onBack={() => setAuthView("login")} />;
       if (authView === "pending") return <PendingPage onBack={() => setAuthView("login")} />;
-      return <LoginPage onLogin={() => {
+      return <LoginPage onLogin={async () => {
         const todayStr = new Date().toDateString();
         if (localStorage.getItem("lotproperty-attendance-date") !== todayStr) {
           localStorage.setItem("lotproperty-attendance-date", todayStr);
           localStorage.setItem("lotproperty-show-attendance-popup", "true");
         }
+        
+        // Fetch user profile immediately
+        try {
+          const profile = await api.auth.getMe();
+          setUser(profile);
+          if (profile.role && profile.role !== "Agent") {
+            setAdminRole(profile.role);
+          }
+        } catch (e) {
+          console.error("Failed to load user profile on login:", e);
+        }
+
         setLoggedIn(true);
       }} onRegister={() => setAuthView("register")} onForgotPassword={() => setAuthView("forgot")} onAdminLogin={() => { setAuthView("admin"); navigate("/admin"); }} onGuest={() => setIsGuest(true)} />;
     };
@@ -207,9 +257,19 @@ export default function App() {
   const guestBlock = (el: React.ReactNode) =>
     isGuest ? <GuestLoginPrompt onLogin={handleLoginRequest} /> : el;
 
+  const triggerLevelUpPreview = () => {
+    if (user) {
+      setLevelUpData({
+        level: Number(user.level || 1),
+        tier: user.title || "Rookie Agent",
+        xp: `${Number(user.total_xp || 0).toLocaleString("id-ID")} XP`
+      });
+    }
+  };
+
   const renderPage = () => {
     switch (page) {
-      case "home": return <HomePage onNav={handlePageChange} onShowLevelUp={() => setShowLevelUp(true)} />;
+      case "home": return <HomePage onNav={handlePageChange} onShowLevelUp={triggerLevelUpPreview} />;
       case "quest": return guestBlock(<QuestPage onNav={handlePageChange} />);
       case "listing": return guestBlock(<ListingPage />);
       case "prospect": return guestBlock(<ProspectPage />);
@@ -221,7 +281,7 @@ export default function App() {
       case "event": return <EventDetailPage onBack={() => handlePageChange("home")} />;
       case "attendance": return guestBlock(<AttendancePage />);
       case "help": return <HelpPage onNav={handlePageChange} />;
-      default: return <HomePage onNav={handlePageChange} onShowLevelUp={() => setShowLevelUp(true)} />;
+      default: return <HomePage onNav={handlePageChange} onShowLevelUp={triggerLevelUpPreview} />;
     }
   };
 
@@ -244,32 +304,13 @@ export default function App() {
           <BottomTabs current={page} onNav={handlePageChange} />
         </div>
 
-        {/* Floating Level Up demo trigger */}
-        <motion.button
-          onClick={() => setShowLevelUp(true)}
-          className="fixed z-40 flex items-center gap-2 px-3.5 py-2.5 rounded-full shadow-lg text-xs font-bold border"
-          style={{
-            bottom: 80,
-            right: 16,
-            backgroundColor: isDark ? "rgba(232, 165, 0, 0.15)" : "rgba(232, 165, 0, 0.1)",
-            borderColor: "rgba(232, 165, 0, 0.45)",
-            color: isDark ? "#FFD666" : "#A66D00",
-            boxShadow: isDark ? "0 4px 12px rgba(0, 0, 0, 0.3)" : "0 4px 12px rgba(232, 165, 0, 0.08)",
-            backdropFilter: "blur(6px)",
-            fontFamily: "'Rajdhani', sans-serif"
-          }}
-          whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
-          animate={{ y: [0, -4, 0] }} transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}>
-          ⭐ Level Up!
-        </motion.button>
-
         {/* Level Up Modal */}
-        {showLevelUp && (
+        {levelUpData && (
           <LevelUpModal
-            newLevel={46}
-            newTier="Senior Agent"
-            xpTotal="200,000 XP"
-            onClose={() => setShowLevelUp(false)}
+            newLevel={levelUpData.level}
+            newTier={levelUpData.tier}
+            xpTotal={levelUpData.xp}
+            onClose={() => setLevelUpData(null)}
           />
         )}
 
