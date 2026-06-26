@@ -10,30 +10,11 @@ import useLoading from "../hooks/useLoading";
 import { T, Rarity, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
+import { ronaldRichyBase64 } from "@/imports/ronald-richy-base64";
 import { eliteAgentBase64 } from "@/imports/elite-agent-base64";
 import HofAwardLaurel from "../components/HofAwardLaurel";
 import HofFallingStars from "../components/HofFallingStars";
 import EllipsisTooltip from "../components/EllipsisTooltip";
-import EmptyState from "../components/EmptyState";
-
-type RarityKey = keyof typeof RARITY_CFG;
-
-interface BadgeItem {
-  name: string;
-  rarity: RarityKey;
-  locked: boolean;
-  req: string;
-  code: string;
-}
-
-export const ALL_BADGES: { name: string; rarity: Rarity; locked: boolean; req: string }[] = [
-  // API-first: only used as empty fallback if profile API is unavailable
-];
-
-const HOF_ACHIEVEMENTS = [
-  // API-first: only used as empty fallback if profile API is unavailable
-];
-
 // Profile Share Language Data
 const SHARE_LANG: Record<"ID" | "EN" | "CN", {
   title: string;
@@ -109,10 +90,24 @@ const SHARE_LANG: Record<"ID" | "EN" | "CN", {
   }
 };
 
+const DEFAULT_AGENT_PROFILE = {
+  name: "AGENT",
+  slug: "agent",
+  title: "Agent",
+  level: 1,
+  tier: "Rookie Agent",
+  careerRank: "#-",
+  totalListings: "0",
+  totalProspects: "0",
+  totalTransactions: "0",
+  commission: "Rp 0",
+  photo: ronaldRichyBase64,
+};
+
 function buildShareText(
   lang: "ID" | "EN" | "CN",
   featured: string[],
-  agentProfile: { name: string; level: number; tier: string; careerRank: string; totalTransactions: string },
+  agentProfile: typeof DEFAULT_AGENT_PROFILE,
   hofItems: Array<{ cat: string; rank: string; period: string }>,
   badgeProgress: { unlocked: number; total: number }
 ) {
@@ -325,20 +320,19 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   }, [badgeCollection]);
 
   const profileCard = useMemo(() => {
-    const name = String(profile?.name || "").toUpperCase();
-    const slug = String(profile?.email || "").split("@")[0];
-    const level = Number(profile?.level || 0);
-    const tier = String(profile?.title || "");
-    const tx = Number(profile?.total_transactions || 0);
-    const list = Number(profile?.total_listings || 0);
-    const prospect = Number(profile?.total_prospects || 0);
+    const name = String(profile?.name || DEFAULT_AGENT_PROFILE.name).toUpperCase();
+    const slug = String(profile?.email || DEFAULT_AGENT_PROFILE.slug).split("@")[0];
+    const level = Number(profile?.level || DEFAULT_AGENT_PROFILE.level);
+    const tier = String(profile?.title || DEFAULT_AGENT_PROFILE.tier);
+    const tx = Number(profile?.total_transactions || DEFAULT_AGENT_PROFILE.totalTransactions);
+    const list = Number(profile?.total_listings || DEFAULT_AGENT_PROFILE.totalListings);
+    const prospect = Number(profile?.total_prospects || DEFAULT_AGENT_PROFILE.totalProspects);
     const commission = Number(profile?.total_commission || 0);
-    const fallbackPhoto = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='250' viewBox='0 0 200 250'%3E%3Crect width='200' height='250' fill='%2317111a'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%23332b3d'/%3E%3Ccircle cx='100' cy='85' r='32' fill='%234a3f5c'/%3E%3Cellipse cx='100' cy='190' rx='60' ry='45' fill='%23332b3d'/%3E%3C/svg%3E";
 
     return {
       name,
       slug,
-      title: String(profile?.title || ""),
+      title: String(profile?.title || DEFAULT_AGENT_PROFILE.title),
       level,
       tier,
       careerRank,
@@ -346,19 +340,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       totalProspects: String(prospect),
       totalTransactions: String(tx),
       commission: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(commission || 0),
-      photo: (() => {
-        const raw = profile?.photo_url && String(profile.photo_url).trim();
-        if (!raw) return fallbackPhoto;
-        try {
-          const u = new URL(raw);
-          if (u.protocol === "http:" || u.protocol === "https:") {
-            // Rewrite to same-origin so Vercel reverse proxy (vercel.json) handles it.
-            // Eliminates Mixed Content blocking and canvas cross-origin tainting.
-            return `${window.location.origin}${u.pathname}`;
-          }
-        } catch { /* data URI or relative path – keep as-is */ }
-        return raw;
-      })(),
+      photo: String(profile?.photo_url || DEFAULT_AGENT_PROFILE.photo),
     };
   }, [profile, careerRank]);
 
@@ -490,9 +472,6 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
       img.decoding = "async";
-      // Required to avoid canvas tainting when the image is cross-origin.
-      // The backend allows all origins (AllowAllOrigins=true) so this works.
-      img.crossOrigin = "anonymous";
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error("Failed to load image"));
       img.src = src;
@@ -668,7 +647,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       await new Promise(resolve => setTimeout(resolve, 300));
 
       const compatibilityCanvas = await buildCompatibilityCardCanvas();
-      
+
       const blob = await new Promise<Blob | null>((resolve) =>
         compatibilityCanvas.toBlob(resolve, "image/png", 1)
       );
@@ -799,7 +778,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 />
                 <img
                   src={profileCard.photo}
-                  alt={profileCard.name}
+                  alt="Ronald Richy"
                   className="w-full h-full object-cover object-top"
                   draggable={false}
                 />
@@ -1002,31 +981,19 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             </div>
 
             {/* LAUREL GRID LAYOUT */}
-            {hofHistory.length === 0 ? (
-              <div className="relative z-[1]">
-                <EmptyState
-                  icon={Award}
-                  title="Belum Ada Prestasi Hall of Fame"
-                  description="Selesaikan quest, kumpulkan XP, dan raih pencapaian untuk masuk ke Hall of Fame LOT Property."
-                />
-              </div>
-            ) : (
-              <>
-                <div className="relative z-[1] grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-4 gap-y-6 lg:gap-x-8 justify-items-center">
-                  {visibleHof.map((h, i) => (
-                    <motion.div
-                      key={`${h.cat}-${h.period}-${i}`}
-                      className="flex justify-center w-full"
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.35 }}
-                    >
-                      <HofAwardLaurel category={h.cat} rank={h.rank} period={h.period} />
-                    </motion.div>
-                  ))}
-                </div>
-              </>
-            )}
+            <div className="relative z-[1] grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-4 gap-y-6 lg:gap-x-8 justify-items-center">
+              {visibleHof.map((h, i) => (
+                <motion.div
+                  key={`${h.cat}-${h.period}-${i}`}
+                  className="flex justify-center w-full"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.35 }}
+                >
+                  <HofAwardLaurel category={h.cat} rank={h.rank} period={h.period} />
+                </motion.div>
+              ))}
+            </div>
 
             {hofHistory.length > 6 && (
               <>
@@ -1067,7 +1034,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                {[
+              {[
                 { l: "Total Commission", v: profileCard.commission, icon: DollarSign, color: "#E8A500" },
                 { l: "Total Transactions", v: profileCard.totalTransactions, icon: TrendingUp, color: "#16A34A" },
                 { l: "Total Listings", v: profileCard.totalListings, icon: Building2, color: "#1A6FC4" },
@@ -1226,7 +1193,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               </div>
               <div className="p-6 overflow-y-auto max-h-[380px] space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {allBadgesData.map((b: BadgeItem, i: number) => {
+                  {allBadgesData.map((b: any, i: number) => {
                     const isFeatured = featured.includes(b.name);
                     const asset = BADGE_ASSETS[b.name];
                     const c = RARITY_CFG[b.rarity];

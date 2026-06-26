@@ -1,18 +1,18 @@
 const API_URL_FROM_ENV = (import.meta.env.VITE_API_BASE_URL || "").trim();
 
-// Force HTTPS to prevent Mixed Content blocking on HTTPS origins.
-// Falls back to relative /api so Vercel's reverse proxy can forward requests safely.
 function resolveBaseUrl(): string {
-  if (API_URL_FROM_ENV) {
-    const upgraded = API_URL_FROM_ENV.replace(/^http:\/\//i, "https://");
-    return upgraded;
-  }
-  if (typeof window !== "undefined" && window.location.protocol === "https:") {
-    // Use same-origin /api so the browser never sees a mismatched scheme.
-    // Requires a reverse-proxy rewrite in vercel.json (or nginx, etc.).
+  const isHttpsOrigin =
+    typeof window !== "undefined" && window.location.protocol === "https:";
+
+  if (isHttpsOrigin) {
+    // Production (Vercel): always use same-origin /api so the reverse-proxy
+    // rewrite in vercel.json forwards to the backend. Never connect directly
+    // to the backend IP because it only speaks plain HTTP, not HTTPS.
     return `${window.location.origin}/api`;
   }
-  return `${window.location.origin}/api`;
+
+  // Local dev: use explicit env var if set, otherwise fall back to /api.
+  return API_URL_FROM_ENV || `${window.location.origin}/api`;
 }
 
 const BASE_URL = resolveBaseUrl();
