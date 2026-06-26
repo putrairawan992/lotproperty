@@ -346,7 +346,19 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       totalProspects: String(prospect),
       totalTransactions: String(tx),
       commission: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(commission || 0),
-      photo: profile?.photo_url && String(profile.photo_url).trim() ? String(profile.photo_url) : fallbackPhoto,
+      photo: (() => {
+        const raw = profile?.photo_url && String(profile.photo_url).trim();
+        if (!raw) return fallbackPhoto;
+        try {
+          const u = new URL(raw);
+          if (u.protocol === "http:" || u.protocol === "https:") {
+            // Rewrite to same-origin so Vercel reverse proxy (vercel.json) handles it.
+            // Eliminates Mixed Content blocking and canvas cross-origin tainting.
+            return `${window.location.origin}${u.pathname}`;
+          }
+        } catch { /* data URI or relative path – keep as-is */ }
+        return raw;
+      })(),
     };
   }, [profile, careerRank]);
 
@@ -478,6 +490,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
       img.decoding = "async";
+      // Required to avoid canvas tainting when the image is cross-origin.
+      // The backend allows all origins (AllowAllOrigins=true) so this works.
+      img.crossOrigin = "anonymous";
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error("Failed to load image"));
       img.src = src;
