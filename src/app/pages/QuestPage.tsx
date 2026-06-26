@@ -8,7 +8,7 @@ import XPBar from "../components/XPBar";
 import { QuestPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { T, Page, ThemeCtx } from "../types";
-import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
+import { BADGE_ASSETS, RARITY_CFG, getLevelTierColor } from "../badgeAssets";
 import { useLocation } from "../routes";
 import { api } from "../services/api";
 import petiHartaKarun from "../../imports/peti-harta-karun.png";
