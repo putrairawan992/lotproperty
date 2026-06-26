@@ -10,11 +10,23 @@ import useLoading from "../hooks/useLoading";
 import { T, Rarity, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
-import { ronaldRichyBase64 } from "@/imports/ronald-richy-base64";
 import { eliteAgentBase64 } from "@/imports/elite-agent-base64";
 import HofAwardLaurel from "../components/HofAwardLaurel";
 import HofFallingStars from "../components/HofFallingStars";
 import EllipsisTooltip from "../components/EllipsisTooltip";
+import EmptyState from "../components/EmptyState";
+
+type RarityKey = keyof typeof RARITY_CFG;
+
+interface BadgeItem {
+  name: string;
+  rarity: RarityKey;
+  locked: boolean;
+  req: string;
+  code: string;
+  is_featured?: boolean;
+}
+
 // Profile Share Language Data
 const SHARE_LANG: Record<"ID" | "EN" | "CN", {
   title: string;
@@ -90,24 +102,10 @@ const SHARE_LANG: Record<"ID" | "EN" | "CN", {
   }
 };
 
-const DEFAULT_AGENT_PROFILE = {
-  name: "AGENT",
-  slug: "agent",
-  title: "Agent",
-  level: 1,
-  tier: "Rookie Agent",
-  careerRank: "#-",
-  totalListings: "0",
-  totalProspects: "0",
-  totalTransactions: "0",
-  commission: "Rp 0",
-  photo: ronaldRichyBase64,
-};
-
 function buildShareText(
   lang: "ID" | "EN" | "CN",
   featured: string[],
-  agentProfile: typeof DEFAULT_AGENT_PROFILE,
+  agentProfile: { name: string; level: number; tier: string; careerRank: string; totalTransactions: string },
   hofItems: Array<{ cat: string; rank: string; period: string }>,
   badgeProgress: { unlocked: number; total: number }
 ) {
@@ -190,7 +188,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
   const [profile, setProfile] = useState<any>(null);
   const [hofHistory, setHofHistory] = useState<any[]>([]);
-  const [badgeCollection, setBadgeCollection] = useState<any[] | null>(null);
+  const [badgeCollection, setBadgeCollection] = useState<BadgeItem[] | null>(null);
   const [careerRank, setCareerRank] = useState("#-");
 
   const [showAllHof, setShowAllHof] = useState(false);
@@ -310,9 +308,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
   const allBadgesData = useMemo(() => {
     if (!Array.isArray(badgeCollection) || badgeCollection.length === 0) return [];
-    return badgeCollection.map((b: any) => ({
+    return badgeCollection.map((b) => ({
       name: String(b.name || "Unknown Badge"),
-      rarity: (String(b.rarity || "common").toLowerCase() as Rarity),
+      rarity: (String(b.rarity || "common").toLowerCase() as RarityKey),
       locked: Boolean(b.locked),
       req: String(b.req || ""),
       code: String(b.code || ""),
@@ -320,19 +318,20 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   }, [badgeCollection]);
 
   const profileCard = useMemo(() => {
-    const name = String(profile?.name || DEFAULT_AGENT_PROFILE.name).toUpperCase();
-    const slug = String(profile?.email || DEFAULT_AGENT_PROFILE.slug).split("@")[0];
-    const level = Number(profile?.level || DEFAULT_AGENT_PROFILE.level);
-    const tier = String(profile?.title || DEFAULT_AGENT_PROFILE.tier);
-    const tx = Number(profile?.total_transactions || DEFAULT_AGENT_PROFILE.totalTransactions);
-    const list = Number(profile?.total_listings || DEFAULT_AGENT_PROFILE.totalListings);
-    const prospect = Number(profile?.total_prospects || DEFAULT_AGENT_PROFILE.totalProspects);
+    const name = String(profile?.name || "").toUpperCase();
+    const slug = String(profile?.email || "").split("@")[0];
+    const level = Number(profile?.level || 0);
+    const tier = String(profile?.title || "");
+    const tx = Number(profile?.total_transactions || 0);
+    const list = Number(profile?.total_listings || 0);
+    const prospect = Number(profile?.total_prospects || 0);
     const commission = Number(profile?.total_commission || 0);
+    const fallbackPhoto = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='250' viewBox='0 0 200 250'%3E%3Crect width='200' height='250' fill='%2317111a'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%23332b3d'/%3E%3Ccircle cx='100' cy='85' r='32' fill='%234a3f5c'/%3E%3Cellipse cx='100' cy='190' rx='60' ry='45' fill='%23332b3d'/%3E%3C/svg%3E";
 
     return {
       name,
       slug,
-      title: String(profile?.title || DEFAULT_AGENT_PROFILE.title),
+      title: String(profile?.title || ""),
       level,
       tier,
       careerRank,
@@ -340,7 +339,17 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       totalProspects: String(prospect),
       totalTransactions: String(tx),
       commission: new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(commission || 0),
-      photo: String(profile?.photo_url || DEFAULT_AGENT_PROFILE.photo),
+      photo: (() => {
+        const raw = profile?.photo_url && String(profile.photo_url).trim();
+        if (!raw) return fallbackPhoto;
+        try {
+          const u = new URL(raw);
+          if (u.protocol === "http:" || u.protocol === "https:") {
+            return `${window.location.origin}${u.pathname}`;
+          }
+        } catch { /* data URI or relative path */ }
+        return raw;
+      })(),
     };
   }, [profile, careerRank]);
 
@@ -400,11 +409,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const visibleHof = showAllHof ? hofHistory : hofHistory.slice(0, 6);
 
   const totalBadges = allBadgesData.length;
-  const unlockedBadges = allBadgesData.filter((b: any) => !b.locked).length;
+  const unlockedBadges = allBadgesData.filter((b) => !b.locked).length;
   const progressPercent = totalBadges > 0 ? Math.round((unlockedBadges / totalBadges) * 100) : 0;
 
-  const getRarityCount = (r: Rarity) => {
-    return allBadgesData.filter((b: any) => b.rarity === r && !b.locked).length;
+  const getRarityCount = (r: RarityKey) => {
+    return allBadgesData.filter((b) => b.rarity === r && !b.locked).length;
   };
 
   const handleToggleBadge = (badgeName: string) => {
@@ -472,6 +481,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     new Promise<HTMLImageElement>((resolve, reject) => {
       const img = new Image();
       img.decoding = "async";
+      img.crossOrigin = "anonymous";
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error("Failed to load image"));
       img.src = src;
@@ -778,7 +788,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 />
                 <img
                   src={profileCard.photo}
-                  alt="Ronald Richy"
+                  alt={profileCard.name}
                   className="w-full h-full object-cover object-top"
                   draggable={false}
                 />
@@ -981,19 +991,29 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             </div>
 
             {/* LAUREL GRID LAYOUT */}
-            <div className="relative z-[1] grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-4 gap-y-6 lg:gap-x-8 justify-items-center">
-              {visibleHof.map((h, i) => (
-                <motion.div
-                  key={`${h.cat}-${h.period}-${i}`}
-                  className="flex justify-center w-full"
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.35 }}
-                >
-                  <HofAwardLaurel category={h.cat} rank={h.rank} period={h.period} />
-                </motion.div>
-              ))}
-            </div>
+            {hofHistory.length === 0 ? (
+              <div className="relative z-[1]">
+                <EmptyState
+                  icon={Award}
+                  title="Belum Ada Prestasi Hall of Fame"
+                  description="Selesaikan quest, kumpulkan XP, dan raih pencapaian untuk masuk ke Hall of Fame LOT Property."
+                />
+              </div>
+            ) : (
+              <div className="relative z-[1] grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-4 gap-y-6 lg:gap-x-8 justify-items-center">
+                {visibleHof.map((h, i) => (
+                  <motion.div
+                    key={`${h.cat}-${h.period}-${i}`}
+                    className="flex justify-center w-full"
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: Math.min(i * 0.04, 0.4), duration: 0.35 }}
+                  >
+                    <HofAwardLaurel category={h.cat} rank={h.rank} period={h.period} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
 
             {hofHistory.length > 6 && (
               <>
@@ -1166,7 +1186,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
             {showAllBadges && (
               <div className="mt-5 pt-5 border-t border-border/30 animate-fade-in">
                 <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3.5 gap-y-5 sm:gap-4 justify-items-center">
-                  {allBadgesData.map((b: any, i: number) => (
+                  {allBadgesData.map((b, i) => (
                     <BadgeShield key={i} rarity={b.rarity} name={b.name} locked={b.locked} size="md" />
                   ))}
                 </div>
@@ -1193,7 +1213,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               </div>
               <div className="p-6 overflow-y-auto max-h-[380px] space-y-4">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {allBadgesData.map((b: any, i: number) => {
+                  {allBadgesData.map((b, i) => {
                     const isFeatured = featured.includes(b.name);
                     const asset = BADGE_ASSETS[b.name];
                     const c = RARITY_CFG[b.rarity];
