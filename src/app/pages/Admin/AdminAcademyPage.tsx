@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { GraduationCap, BookOpen, Clock, Award, Plus, Trash2, CheckCircle, AlertCircle, Play, Users } from "lucide-react";
+import { GraduationCap, BookOpen, Clock, Award, Plus, Trash2, CheckCircle, AlertCircle, Play, Users, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
@@ -23,6 +23,7 @@ export default function AdminAcademyPage() {
   const [toastMsg, setToastMsg] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   // Form inputs
   const [title, setTitle] = useState("");
@@ -63,7 +64,21 @@ export default function AdminAcademyPage() {
     setTimeout(() => setToastMsg(""), 3500);
   };
 
-  const handleCreateModule = async (e: React.FormEvent) => {
+  const handleToggleForm = () => {
+    if (showAddForm) {
+      setTitle("");
+      setCat("Sales Training");
+      setDur("");
+      setXp("200");
+      setVideoUrl("");
+      setEditId(null);
+      setShowAddForm(false);
+    } else {
+      setShowAddForm(true);
+    }
+  };
+
+  const handleCreateOrUpdateModule = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !dur.trim() || !xp || !videoUrl.trim()) {
       setToastMsg("Semua kolom formulir wajib diisi!");
@@ -73,19 +88,30 @@ export default function AdminAcademyPage() {
     setToastMsg("");
     setSaving(true);
     try {
-      await api.admin.createAcademyModule({
-        category: cat,
-        title: title.trim(),
-        description: title.trim(),
-        video_url: videoUrl.trim(),
-      });
+      if (editId) {
+        await api.admin.updateAcademyModule(editId, {
+          category: cat,
+          title: title.trim(),
+          description: title.trim(),
+          video_url: videoUrl.trim(),
+        });
+        setToastMsg("Modul Akademi Berhasil Diperbarui!");
+      } else {
+        await api.admin.createAcademyModule({
+          category: cat,
+          title: title.trim(),
+          description: title.trim(),
+          video_url: videoUrl.trim(),
+        });
+        setToastMsg("Modul Akademi Baru Berhasil Dibuat!");
+      }
 
-      setToastMsg("Modul Akademi Baru Berhasil Dibuat!");
       setTitle("");
       setCat("Sales Training");
       setDur("");
       setXp("200");
       setVideoUrl("");
+      setEditId(null);
       setShowAddForm(false);
 
       // Reload
@@ -104,10 +130,20 @@ export default function AdminAcademyPage() {
         })));
       }
     } catch (err) {
-      setToastMsg(err instanceof Error ? err.message : "Gagal membuat modul");
+      setToastMsg(err instanceof Error ? err.message : "Gagal menyimpan modul");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEditClick = (m: any) => {
+    setTitle(m.title);
+    setCat(m.cat);
+    setDur(m.dur);
+    setXp(String(m.xp));
+    setVideoUrl(m.videoUrl);
+    setEditId(m.id);
+    setShowAddForm(true);
   };
 
   const handleDeleteModule = async (id: string) => {
@@ -143,7 +179,7 @@ export default function AdminAcademyPage() {
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Kelola modul pembelajaran, unggah materi edukasi, dan atur reward XP agen</p>
         </div>
-        <button onClick={() => setShowAddForm(!showAddForm)}
+        <button onClick={handleToggleForm}
           className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md w-full sm:w-auto self-start sm:self-auto cursor-pointer">
           {showAddForm ? "Batal" : <><Plus size={14} /> Tambah Modul</>}
         </button>
@@ -156,10 +192,12 @@ export default function AdminAcademyPage() {
             <Card className="p-5">
               <div className="flex items-center gap-2.5 mb-4 pb-2 border-b" style={{ borderColor: T.border }}>
                 <GraduationCap className="text-[#E8A500]" size={18} />
-                <h3 className="font-bold text-sm uppercase tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>Form Pembuatan Modul Baru</h3>
+                <h3 className="font-bold text-sm uppercase tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                  {editId ? "Form Edit Modul Akademi" : "Form Pembuatan Modul Baru"}
+                </h3>
               </div>
 
-              <form onSubmit={handleCreateModule} className="space-y-4 text-left">
+              <form onSubmit={handleCreateOrUpdateModule} className="space-y-4 text-left">
 
                 <div>
                   <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Judul Modul</label>
@@ -203,7 +241,7 @@ export default function AdminAcademyPage() {
                 </div>
 
                 <button type="submit" disabled={saving} className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer disabled:opacity-50">
-                  {saving ? "Menyimpan..." : "Simpan & Rilis Modul"}
+                  {saving ? "Menyimpan..." : (editId ? "Perbarui & Simpan Modul" : "Simpan & Rilis Modul")}
                 </button>
               </form>
             </Card>
@@ -273,6 +311,11 @@ export default function AdminAcademyPage() {
               </div>
 
               <div className="flex justify-end gap-2 border-t mt-4 pt-3" style={{ borderColor: T.border }}>
+                <button onClick={() => handleEditClick(m)}
+                  className="p-2 text-[#1A6FC4] hover:bg-[#1A6FC4]/10 rounded-xl transition-all border border-transparent hover:border-[#1A6FC4]/20 cursor-pointer"
+                  title="Edit Modul">
+                  <Pencil size={15} />
+                </button>
                 <button onClick={() => handleDeleteModule(m.id)}
                   className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20 cursor-pointer"
                   title="Hapus Modul">

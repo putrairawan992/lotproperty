@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage, X } from "lucide-react";
+import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage, X, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import { DateInput } from "../../components/DateTimeInput";
@@ -13,6 +13,7 @@ export default function AdminEventsPage() {
   const [toastMsg, setToastMsg] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -66,6 +67,24 @@ export default function AdminEventsPage() {
     setTimeout(() => setToastMsg(""), 3500);
   };
 
+  const handleToggleForm = () => {
+    if (showAddForm) {
+      setTitle("");
+      setDesc("");
+      setStart("");
+      setEnd("");
+      setXpPool("");
+      setBadge("Merdeka Creator");
+      setBannerFile(null);
+      setBannerPreview("");
+      setBannerError("");
+      setEditId(null);
+      setShowAddForm(false);
+    } else {
+      setShowAddForm(true);
+    }
+  };
+
   const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -90,7 +109,7 @@ export default function AdminEventsPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleCreateEvent = async (e: React.FormEvent) => {
+  const handleCreateOrUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !desc.trim() || !start || !end || !xpPool) {
       setToastMsg("Semua field formulir event wajib diisi!");
@@ -100,20 +119,37 @@ export default function AdminEventsPage() {
     setToastMsg("");
     setSaving(true);
     try {
-      await api.admin.createEvent({
-        title: title.trim(),
-        desc: desc.trim(),
-        start_date: new Date(start).toISOString(),
-        end_date: new Date(end).toISOString(),
-        xp_pool: parseInt(xpPool) || 0,
-        subtitle: title.trim().toUpperCase(),
-        heading: title.trim().toUpperCase(),
-        tagline: "Ikuti event dan raih",
-        tagline_highlight: "hadiah eksklusif!",
-        accent_color: "#E53E3E",
-      });
+      if (editId) {
+        const rawId = editId.replace("EV-", "");
+        await api.admin.updateEvent(rawId, {
+          title: title.trim(),
+          desc: desc.trim(),
+          start_date: new Date(start).toISOString(),
+          end_date: new Date(end).toISOString(),
+          xp_pool: parseInt(xpPool) || 0,
+          subtitle: title.trim().toUpperCase(),
+          heading: title.trim().toUpperCase(),
+          tagline: "Ikuti event dan raih",
+          tagline_highlight: "hadiah eksklusif!",
+          accent_color: "#E53E3E",
+        });
+        setToastMsg("Event Berhasil Diperbarui!");
+      } else {
+        await api.admin.createEvent({
+          title: title.trim(),
+          desc: desc.trim(),
+          start_date: new Date(start).toISOString(),
+          end_date: new Date(end).toISOString(),
+          xp_pool: parseInt(xpPool) || 0,
+          subtitle: title.trim().toUpperCase(),
+          heading: title.trim().toUpperCase(),
+          tagline: "Ikuti event dan raih",
+          tagline_highlight: "hadiah eksklusif!",
+          accent_color: "#E53E3E",
+        });
+        setToastMsg("Event Baru Berhasil Dibuat dan Dipublikasikan!");
+      }
 
-      setToastMsg("Event Baru Berhasil Dibuat dan Dipublikasikan!");
       setTitle("");
       setDesc("");
       setStart("");
@@ -123,6 +159,7 @@ export default function AdminEventsPage() {
       setBannerFile(null);
       setBannerPreview("");
       setBannerError("");
+      setEditId(null);
       setShowAddForm(false);
 
       const data = await api.events.getList();
@@ -140,10 +177,21 @@ export default function AdminEventsPage() {
         })));
       }
     } catch (err) {
-      setToastMsg(err instanceof Error ? err.message : "Gagal membuat event");
+      setToastMsg(err instanceof Error ? err.message : "Gagal menyimpan event");
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleEditClick = (ev: any) => {
+    setTitle(ev.title);
+    setDesc(ev.desc);
+    setStart(ev.start);
+    setEnd(ev.end);
+    setXpPool(String(ev.xpPool));
+    setBadge(ev.badge);
+    setEditId(ev.id);
+    setShowAddForm(true);
   };
 
   const handleDeleteEvent = async (id: string) => {
@@ -177,7 +225,7 @@ export default function AdminEventsPage() {
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Kelola event khusus agen, tetapkan reward XP, dan atur banner promosi</p>
         </div>
-        <button onClick={() => setShowAddForm(!showAddForm)}
+        <button onClick={handleToggleForm}
           className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md w-full sm:w-auto self-start sm:self-auto cursor-pointer">
           {showAddForm ? "Batal" : <><Plus size={14} /> Buat Event</>}
         </button>
@@ -190,10 +238,12 @@ export default function AdminEventsPage() {
             <Card className="p-5">
               <div className="flex items-center gap-2.5 mb-4 pb-2 border-b" style={{ borderColor: T.border }}>
                 <Zap className="text-[#E8A500]" size={18} />
-                <h3 className="font-bold text-sm uppercase tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>Form Pembuatan Event Baru</h3>
+                <h3 className="font-bold text-sm uppercase tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                  {editId ? "Form Edit Event" : "Form Pembuatan Event Baru"}
+                </h3>
               </div>
 
-              <form onSubmit={handleCreateEvent} className="space-y-4 text-left">
+              <form onSubmit={handleCreateOrUpdateEvent} className="space-y-4 text-left">
 
                 <div>
                   <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Judul Event</label>
@@ -271,8 +321,8 @@ export default function AdminEventsPage() {
                   </div>
                 )}
 
-                <button type="submit" className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md">
-                  Publikasikan Event Baru
+                <button type="submit" disabled={saving} className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer disabled:opacity-50">
+                  {saving ? "Menyimpan..." : (editId ? "Simpan Perubahan Event" : "Publikasikan Event Baru")}
                 </button>
               </form>
             </Card>
@@ -339,6 +389,11 @@ export default function AdminEventsPage() {
                 </div>
 
                 <div className="flex justify-end gap-2 border-t mt-4 pt-3" style={{ borderColor: T.border }}>
+                  <button onClick={() => handleEditClick(ev)}
+                    className="p-2 text-[#1A6FC4] hover:bg-[#1A6FC4]/10 rounded-xl transition-all border border-transparent hover:border-[#1A6FC4]/20 cursor-pointer"
+                    title="Edit Event">
+                    <Pencil size={15} />
+                  </button>
                   <button onClick={() => handleDeleteEvent(ev.id)}
                     className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20 cursor-pointer"
                     title="Hapus Event">

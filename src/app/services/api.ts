@@ -306,6 +306,12 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
+    updateEvent: (id: number | string, payload: any) => {
+      return request<any>(`/admin/events/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+    },
     deleteEvent: (id: number | string) => {
       return request<any>(`/admin/events/${id}`, {
         method: "DELETE",
@@ -314,6 +320,12 @@ export const api = {
     createAcademyModule: (payload: any) => {
       return request<any>("/admin/academy", {
         method: "POST",
+        body: JSON.stringify(payload),
+      });
+    },
+    updateAcademyModule: (id: number | string, payload: any) => {
+      return request<any>(`/admin/academy/${id}`, {
+        method: "PUT",
         body: JSON.stringify(payload),
       });
     },
