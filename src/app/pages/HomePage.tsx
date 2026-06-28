@@ -12,7 +12,7 @@ import HofFallingStars from "../components/HofFallingStars";
 import EventBannerSlider from "../components/EventBannerSlider";
 import { T, Page, useTheme } from "../types";
 import { useTabQuery } from "../routes";
-import { HOF_TABS, type EventItem, HOF_CAT_DATA, WEEKLY_LB_DATA, EVENT_DATA } from "../appData";
+import { HOF_TABS, type EventItem } from "../appData";
 import { getLevelTierColor, LEVEL_TIERS } from "../badgeAssets";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { api } from "../services/api";
@@ -115,9 +115,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const [dataLoading, setDataLoading] = useState(true);
   const [slideDir, setSlideDir] = useState(0);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
-  const [weeklyData, setWeeklyData] = useState<any[]>(isGuest ? WEEKLY_LB_DATA : []);
-  const [hofData, setHofData] = useState<Record<string, any[]>>(isGuest ? HOF_CAT_DATA : {});
-  const [eventData, setEventData] = useState<EventItem[]>(isGuest ? EVENT_DATA : []);
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
+  const [hofData, setHofData] = useState<Record<string, any[]>>({});
+  const [eventData, setEventData] = useState<EventItem[]>([]);
 
   const loading = loadingTime || (isGuest ? false : dataLoading);
 
@@ -181,8 +181,6 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             
             if (Array.isArray(weeklyRes) && weeklyRes.length > 0) {
               setWeeklyData(weeklyRes.map(a => mapWeeklyAgent(a)));
-            } else {
-              setWeeklyData(WEEKLY_LB_DATA);
             }
             
             const hofPayload = Array.isArray(hofRes) ? hofRes : [];
@@ -196,19 +194,13 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
               const merged: Record<string, any[]> = Object.fromEntries(HOF_TABS.map(tab => [tab, []])) as Record<string, any[]>;
               HOF_TABS.forEach((tab) => { if (grouped[tab]?.length) merged[tab] = [...grouped[tab]].sort((a, b) => a.rank - b.rank).slice(0, 8); });
               setHofData(merged);
-            } else {
-              setHofData(HOF_CAT_DATA);
             }
             
             if (Array.isArray(eventsRes) && eventsRes.length > 0) {
               setEventData(eventsRes.map(mapEvent));
-            } else {
-              setEventData(EVENT_DATA);
             }
           } catch {
-            setWeeklyData(WEEKLY_LB_DATA);
-            setHofData(HOF_CAT_DATA);
-            setEventData(EVENT_DATA);
+            // Keep empty state on error — no dummy data
           }
           setDataLoading(false);
           return;
