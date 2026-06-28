@@ -447,9 +447,52 @@ function PortraitCard({
   );
 }
 
+function EmptyPodiumState({ category, color }: { category: string; color: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-10 px-4 text-center max-w-md mx-auto animate-fadeIn">
+      <div 
+        className="w-16 h-16 rounded-full flex items-center justify-center mb-4 border"
+        style={{ 
+          borderColor: `${color}40`, 
+          background: `radial-gradient(circle, ${color}15 0%, rgba(10,8,12,0.9) 100%)`,
+          boxShadow: `0 0 15px ${color}30, inset 0 1px 0 rgba(255,255,255,0.1)`,
+          color: color
+        }}
+      >
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-8 h-8">
+          <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path>
+          <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path>
+          <path d="M4 22h16"></path>
+          <path d="M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34"></path>
+          <path d="M12 2a6 6 0 0 1 6 6v5a6 6 0 0 1-6 6 6 6 0 0 1-6-6V8a6 6 0 0 1 6-6z"></path>
+        </svg>
+      </div>
+      <h3 
+        className="font-bold text-lg mb-2 uppercase tracking-wider"
+        style={{ 
+          fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif",
+          color: "#fff8e7",
+          textShadow: `0 0 10px ${color}60`
+        }}
+      >
+        Be The First Champion
+      </h3>
+      <p className="text-xs text-zinc-400 max-w-xs leading-relaxed">
+        Belum ada agen yang menempati peringkat **{category}** bulan ini. Jadilah yang pertama dengan melakukan aktivitas agen sekarang!
+      </p>
+    </div>
+  );
+}
+
 /** All 5 agents in a single podium row layout (Desktop: [Rank 5, Rank 3, Rank 1, Rank 2, Rank 4]) or auto-sliding slideshow (Mobile) */
 function PortraitPodium({ agents, isMobile, category }: { agents: any[]; isMobile: boolean; category: string }) {
   const lineup = agents.slice(0, 5); // Slice up to 5 slots
+  const categoryTheme = getCategoryTheme(category);
+
+  if (lineup.length === 0) {
+    return <EmptyPodiumState category={category} color={categoryTheme.color} />;
+  }
+
   const [activeIdx, setActiveIdx] = useState(0);
   const [slideDir, setSlideDir] = useState(1);
 
@@ -469,7 +512,6 @@ function PortraitPodium({ agents, isMobile, category }: { agents: any[]; isMobil
   }, [isMobile, lineup.length, activeIdx]);
 
   if (isMobile) {
-    if (lineup.length === 0) return null;
     const activeAgent = lineup[activeIdx];
 
     const handlePrev = () => {

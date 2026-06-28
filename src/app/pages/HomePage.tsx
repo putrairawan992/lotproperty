@@ -115,9 +115,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const [dataLoading, setDataLoading] = useState(true);
   const [slideDir, setSlideDir] = useState(0);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
-  const [weeklyData, setWeeklyData] = useState<any[]>([]);
-  const [hofData, setHofData] = useState<Record<string, any[]>>({});
-  const [eventData, setEventData] = useState<EventItem[]>([]);
+  const [weeklyData, setWeeklyData] = useState<any[]>(isGuest ? WEEKLY_LB_DATA : []);
+  const [hofData, setHofData] = useState<Record<string, any[]>>(isGuest ? HOF_CAT_DATA : {});
+  const [eventData, setEventData] = useState<EventItem[]>(isGuest ? EVENT_DATA : []);
 
   const loading = loadingTime || (isGuest ? false : dataLoading);
 
@@ -172,25 +172,44 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         setDataLoading(true);
 
         if (isGuest) {
-          const [weeklyRes, hofRes, eventsRes] = await Promise.all([
-            api.public.getWeeklyLeaderboard(),
-            api.public.getHof(),
-            api.public.getEvents(),
-          ]);
-          if (Array.isArray(weeklyRes) && weeklyRes.length > 0) setWeeklyData(weeklyRes.map(a => mapWeeklyAgent(a)));
-          const hofPayload = Array.isArray(hofRes) ? hofRes : [];
-          if (hofPayload.length > 0) {
-            const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
-            for (const rec of hofPayload) {
-              const mappedCat = normalizeHofCategory(rec.category || "", HOF_TABS);
-              if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
-              grouped[mappedCat].push({ rank: rec.rank, name: rec.agent?.name || "Unknown Agent", initials: (rec.agent?.name || "A").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(), photo: rec.agent?.photo_url, level: rec.agent?.level || "Agent", subtitle: rec.agent?.title || "", value: rec.notes || "HOF" });
+          try {
+            const [weeklyRes, hofRes, eventsRes] = await Promise.all([
+              api.public.getWeeklyLeaderboard().catch(() => []),
+              api.public.getHof().catch(() => []),
+              api.public.getEvents().catch(() => []),
+            ]);
+            
+            if (Array.isArray(weeklyRes) && weeklyRes.length > 0) {
+              setWeeklyData(weeklyRes.map(a => mapWeeklyAgent(a)));
+            } else {
+              setWeeklyData(WEEKLY_LB_DATA);
             }
-            const merged: Record<string, any[]> = Object.fromEntries(HOF_TABS.map(tab => [tab, []])) as Record<string, any[]>;
-            HOF_TABS.forEach((tab) => { if (grouped[tab]?.length) merged[tab] = [...grouped[tab]].sort((a, b) => a.rank - b.rank).slice(0, 8); });
-            setHofData(merged);
+            
+            const hofPayload = Array.isArray(hofRes) ? hofRes : [];
+            if (hofPayload.length > 0) {
+              const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
+              for (const rec of hofPayload) {
+                const mappedCat = normalizeHofCategory(rec.category || "", HOF_TABS);
+                if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
+                grouped[mappedCat].push({ rank: rec.rank, name: rec.agent?.name || "Unknown Agent", initials: (rec.agent?.name || "A").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(), photo: rec.agent?.photo_url, level: rec.agent?.level || "Agent", subtitle: rec.agent?.title || "", value: rec.notes || "HOF" });
+              }
+              const merged: Record<string, any[]> = Object.fromEntries(HOF_TABS.map(tab => [tab, []])) as Record<string, any[]>;
+              HOF_TABS.forEach((tab) => { if (grouped[tab]?.length) merged[tab] = [...grouped[tab]].sort((a, b) => a.rank - b.rank).slice(0, 8); });
+              setHofData(merged);
+            } else {
+              setHofData(HOF_CAT_DATA);
+            }
+            
+            if (Array.isArray(eventsRes) && eventsRes.length > 0) {
+              setEventData(eventsRes.map(mapEvent));
+            } else {
+              setEventData(EVENT_DATA);
+            }
+          } catch {
+            setWeeklyData(WEEKLY_LB_DATA);
+            setHofData(HOF_CAT_DATA);
+            setEventData(EVENT_DATA);
           }
-          if (Array.isArray(eventsRes) && eventsRes.length > 0) setEventData(eventsRes.map(mapEvent));
           setDataLoading(false);
           return;
         }
