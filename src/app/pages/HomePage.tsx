@@ -99,12 +99,12 @@ function mapEvent(item: EventResponse): EventItem {
     start: item.start_date,
     end: item.end_date,
     xpPool: Number(item.xp_pool || 0),
-    badge: item.badge?.name || "Event Badge",
+    badge: item.badge?.name || "No Event",
     status: item.status || "Upcoming",
-    subtitle: item.subtitle || "SPECIAL EVENT",
+    subtitle: item.subtitle || "",
     heading: item.heading || item.title.toUpperCase(),
-    tagline: item.tagline || "Ikuti event dan raih",
-    taglineHighlight: item.tagline_highlight || "hadiah eksklusif!",
+    tagline: item.tagline || "",
+    taglineHighlight: item.tagline_highlight || "",
     accentColor: item.accent_color || "#E53E3E",
   };
 }
@@ -138,21 +138,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const hofCat = HOF_TABS[hofIdx];
   const hofAgents = (hofData[hofCat] || []) as any[];
 
-  const activeAgent = isGuest ? {
-    name: "Ronald Richy",
-    title: "Senior Agent",
-    level: 23,
-    total_xp: 24680,
-    weekly_xp: 1620,
-    photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
-  } : (user || summary?.agent || {
-    name: "Ronald Richy",
-    title: "Senior Agent",
-    level: 23,
-    total_xp: 24680,
-    weekly_xp: 1620,
-    photo_url: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600",
-  });
+  const activeAgent = user || summary?.agent || null;
 
   const currentTier = LEVEL_TIERS.find(t => t.title === activeAgent?.title) || LEVEL_TIERS[0];
   const nextTierIdx = LEVEL_TIERS.findIndex(t => t.title === activeAgent?.title) + 1;
