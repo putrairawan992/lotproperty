@@ -12,7 +12,7 @@ import HofFallingStars from "../components/HofFallingStars";
 import EventBannerSlider from "../components/EventBannerSlider";
 import { T, Page, useTheme } from "../types";
 import { useTabQuery } from "../routes";
-import { HOF_TABS, type EventItem } from "../appData";
+import { HOF_TABS, type EventItem, HOF_CAT_DATA, WEEKLY_LB_DATA, EVENT_DATA } from "../appData";
 import { getLevelTierColor, LEVEL_TIERS } from "../badgeAssets";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { api } from "../services/api";
