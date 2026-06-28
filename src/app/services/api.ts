@@ -1,18 +1,11 @@
 const API_URL_FROM_ENV = (import.meta.env.VITE_API_BASE_URL || "").trim();
 
 function resolveBaseUrl(): string {
-  const isHttpsOrigin =
-    typeof window !== "undefined" && window.location.protocol === "https:";
+  // Explicit env var always takes priority (e.g. VITE_API_BASE_URL=https://api.lotproperty.id)
+  if (API_URL_FROM_ENV) return API_URL_FROM_ENV;
 
-  if (isHttpsOrigin) {
-    // Production (Vercel): always use same-origin /api so the reverse-proxy
-    // rewrite in vercel.json forwards to the backend. Never connect directly
-    // to the backend IP because it only speaks plain HTTP, not HTTPS.
-    return `${window.location.origin}/api`;
-  }
-
-  // Local dev: use explicit env var if set, otherwise fall back to /api.
-  return API_URL_FROM_ENV || `${window.location.origin}/api`;
+  // Fallback: same-origin /api (works with Vercel rewrites or nginx reverse proxy)
+  return `${typeof window !== "undefined" ? window.location.origin : ""}/api`;
 }
 
 const BASE_URL = resolveBaseUrl();

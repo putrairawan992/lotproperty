@@ -16,6 +16,8 @@ import HofFallingStars from "../components/HofFallingStars";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import EmptyState from "../components/EmptyState";
 
+export const ALL_BADGES: { name: string; rarity: RarityKey; locked: boolean; req: string }[] = [];
+
 type RarityKey = keyof typeof RARITY_CFG;
 
 interface BadgeItem {
