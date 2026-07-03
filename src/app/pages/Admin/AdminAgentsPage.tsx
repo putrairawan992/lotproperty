@@ -29,54 +29,6 @@ interface TreeNodeData {
 }
 
 // Recursive TreeNode data structure based on recruitment relationships
-const TREE_ROOT: TreeNodeData = {
-  name: "Rizki Pratama",
-  level: "Elite Agent",
-  initials: "RP",
-  photo: AGENT_PHOTOS["RP"],
-  recruitsCount: 4,
-  children: [
-    {
-      name: "Siti Fatimah",
-      level: "Elite Agent",
-      initials: "SF",
-      photo: AGENT_PHOTOS["SF"],
-      recruitsCount: 2,
-      children: [
-        { name: "Linda Kusuma", level: "Junior Agent", initials: "LK", photo: AGENT_PHOTOS["LK"], recruitsCount: 0, children: [] },
-        { name: "Doni Saputra", level: "Rookie Agent", initials: "DS", photo: AGENT_PHOTOS["DS"], recruitsCount: 0, children: [] }
-      ]
-    },
-    {
-      name: "Ahmad Fadhil",
-      level: "Senior Agent",
-      initials: "AF",
-      photo: AGENT_PHOTOS["AF"],
-      recruitsCount: 1,
-      children: [
-        { name: "Rendi Setiawan", level: "Junior Agent", initials: "RS", photo: AGENT_PHOTOS["RS"], recruitsCount: 0, children: [] }
-      ]
-    },
-    {
-      name: "Eko Purnomo",
-      level: "Junior Agent",
-      initials: "EP",
-      photo: AGENT_PHOTOS["EP"],
-      recruitsCount: 1,
-      children: [
-        { name: "Maya Putri", level: "Rookie Agent", initials: "MP", photo: AGENT_PHOTOS["MP"], recruitsCount: 0, children: [] }
-      ]
-    },
-    {
-      name: "Andi Wijaya",
-      level: "Senior Agent",
-      initials: "AW",
-      photo: AGENT_PHOTOS["AW"],
-      recruitsCount: 0,
-      children: []
-    }
-  ]
-};
 
 // Helper to map agent level to brand colors
 function getLevelColor(level: string): string {
@@ -89,7 +41,8 @@ function getLevelColor(level: string): string {
 }
 
 // Recursive helper to calculate recruitment tree statistics
-function getTreeStats(node: TreeNodeData): { total: number; byLevel: Record<string, number> } {
+function getTreeStats(node: TreeNodeData | null): { total: number; byLevel: Record<string, number> } {
+  if (!node) return { total: 0, byLevel: {} };
   let total = 1;
   const byLevel: Record<string, number> = { [node.level]: 1 };
 
@@ -100,7 +53,7 @@ function getTreeStats(node: TreeNodeData): { total: number; byLevel: Record<stri
       recurse(child);
     });
   }
-  
+
   recurse(node);
   return { total, byLevel };
 }
@@ -122,11 +75,10 @@ function TreeNode({
   return (
     <div className="flex flex-col items-center flex-shrink-0">
       <div
-        className={`p-4 rounded-2xl border text-center transition-all duration-300 w-[168px] flex-shrink-0 flex flex-col items-center gap-2 shadow-md relative ${
-          isMatch
+        className={`p-4 rounded-2xl border text-center transition-all duration-300 w-[168px] flex-shrink-0 flex flex-col items-center gap-2 shadow-md relative ${isMatch
             ? "ring-2 ring-[#E8A500] shadow-[0_0_20px_rgba(232,165,0,0.5)] bg-[#E8A500]/10 scale-105"
             : "bg-card border-border/80 hover:border-[#C8922A]/50"
-        }`}
+          }`}
       >
         <div className="w-10 h-10 rounded-full overflow-hidden border border-border flex-shrink-0">
           {node.photo ? (
@@ -135,8 +87,8 @@ function TreeNode({
             <div className="w-full h-full flex items-center justify-center bg-muted text-xs font-bold">{node.initials}</div>
           )}
         </div>
-        <EllipsisTooltip 
-          text={node.name} 
+        <EllipsisTooltip
+          text={node.name}
           className="font-bold text-xs text-foreground truncate w-full px-0.5 leading-snug"
         />
         <p className="text-[9px] text-muted-foreground font-semibold uppercase tracking-wider leading-snug">{node.level}</p>
@@ -207,7 +159,7 @@ function VerticalTreeNode({
     <div className="w-full relative text-left py-1 select-none">
       {/* Branch Line L-Shape for children (Themed gold threads) */}
       {depth > 0 && (
-        <div 
+        <div
           className="absolute border-l border-b border-dashed transition-colors animate-fade-in"
           style={{
             left: "-14px",
@@ -220,14 +172,13 @@ function VerticalTreeNode({
         />
       )}
 
-      <div 
-        className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-all border ${
-          isMatch 
-            ? "bg-[#E8A500]/10 border-[#E8A500] shadow-[0_0_12px_rgba(232,165,0,0.3)] scale-[1.01]" 
-            : isDark 
-              ? "bg-[#18181A]/80 border-[#2A2A2E] hover:bg-[#202024]/80 hover:border-[#3A3A40]" 
+      <div
+        className={`flex items-center gap-2.5 p-2.5 rounded-xl transition-all border ${isMatch
+            ? "bg-[#E8A500]/10 border-[#E8A500] shadow-[0_0_12px_rgba(232,165,0,0.3)] scale-[1.01]"
+            : isDark
+              ? "bg-[#18181A]/80 border-[#2A2A2E] hover:bg-[#202024]/80 hover:border-[#3A3A40]"
               : "bg-white border-gray-100 hover:bg-gray-50/80 hover:shadow-sm"
-        }`}
+          }`}
         style={{
           borderLeftWidth: "4px",
           borderLeftColor: lvlColor,
@@ -237,7 +188,7 @@ function VerticalTreeNode({
       >
         {/* Collapse/Expand Toggle */}
         {hasChildren ? (
-          <button 
+          <button
             onClick={() => setIsOpen(!isOpen)}
             className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-muted text-muted-foreground flex-shrink-0 transition-transform duration-200"
             style={{ transform: isOpen ? "rotate(90deg)" : "rotate(0deg)" }}
@@ -255,11 +206,11 @@ function VerticalTreeNode({
           {node.photo ? (
             <img src={node.photo} alt={node.name} className="w-full h-full object-cover" />
           ) : (
-            <div 
+            <div
               className="w-full h-full flex items-center justify-center font-bold text-[10px]"
-              style={{ 
-                backgroundColor: lvlColor + "15", 
-                color: lvlColor 
+              style={{
+                backgroundColor: lvlColor + "15",
+                color: lvlColor
               }}
             >
               {node.initials}
@@ -269,11 +220,11 @@ function VerticalTreeNode({
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <EllipsisTooltip 
-            text={node.name} 
-            className="text-xs font-bold text-foreground truncate leading-tight" 
+          <EllipsisTooltip
+            text={node.name}
+            className="text-xs font-bold text-foreground truncate leading-tight"
           />
-          <p 
+          <p
             className="text-[8px] font-extrabold uppercase tracking-widest leading-none mt-1"
             style={{ color: lvlColor }}
           >
@@ -296,7 +247,7 @@ function VerticalTreeNode({
       {/* Children container with animation */}
       <AnimatePresence initial={false}>
         {hasChildren && isOpen && (
-          <motion.div 
+          <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
@@ -305,13 +256,13 @@ function VerticalTreeNode({
             style={{ borderColor: isDark ? "rgba(232, 165, 0, 0.2)" : "rgba(200, 146, 42, 0.15)" }}
           >
             {node.children.map((child, idx) => (
-              <VerticalTreeNode 
-                key={idx} 
-                node={child} 
-                depth={depth + 1} 
-                search={search} 
-                isDark={isDark} 
-                onShowRecruits={onShowRecruits} 
+              <VerticalTreeNode
+                key={idx}
+                node={child}
+                depth={depth + 1}
+                search={search}
+                isDark={isDark}
+                onShowRecruits={onShowRecruits}
               />
             ))}
           </motion.div>
@@ -329,7 +280,8 @@ export default function AdminAgentsPage() {
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [recruitsModal, setRecruitsModal] = useState<TreeNodeData | null>(null);
   const { isDark } = useTheme();
-  const stats = getTreeStats(TREE_ROOT);
+  const [treeRoot, setTreeRoot] = useState<TreeNodeData | null>(null);
+  const stats = getTreeStats(treeRoot);
 
   const formatJoined = (createdAt?: string) => {
     if (!createdAt) return "-";
@@ -362,6 +314,18 @@ export default function AdminAgentsPage() {
       }
     })();
 
+    (async () => {
+      try {
+        const treeData = await api.admin.getAgentsTree();
+        if (cancelled) return;
+        if (treeData && treeData?.name) {
+          setTreeRoot(treeData);
+        }
+      } catch {
+        // Fallback is maintained
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
@@ -384,8 +348,8 @@ export default function AdminAgentsPage() {
 
   const StatusChip = ({ s }: { s: string }) => {
     const cfg = s === "Active" ? { bg: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7", c: isDark ? "#34D399" : "#16A34A" }
-              : s === "Pending"   ? { bg: isDark ? "rgba(217, 119, 6, 0.15)" : "#FEF3C7", c: isDark ? "#F59E0B" : "#D97706" }
-              : { bg: isDark ? "rgba(220, 38, 38, 0.15)" : "#FEE2E2", c: isDark ? "#F87171" : "#DC2626" };
+      : s === "Pending" ? { bg: isDark ? "rgba(217, 119, 6, 0.15)" : "#FEF3C7", c: isDark ? "#F59E0B" : "#D97706" }
+        : { bg: isDark ? "rgba(220, 38, 38, 0.15)" : "#FEE2E2", c: isDark ? "#F87171" : "#DC2626" };
     return <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: cfg.bg, color: cfg.c }}>{s}</span>;
   };
 
@@ -393,13 +357,13 @@ export default function AdminAgentsPage() {
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5">
       <div className="flex flex-col gap-3.5 items-start border-b pb-4" style={{ borderColor: T.border }}>
         <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>Agent Management</h1>
-        
+
         {/* Tab switch placed below the title */}
         <div className="flex gap-1 p-1 rounded-xl w-full sm:w-auto" style={{ backgroundColor: T.muted }}>
           <button onClick={() => { setActiveTab("list"); setSearch(""); }}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all"
-            style={{ 
-              backgroundColor: activeTab === "list" ? (isDark ? "#2A241C" : "white") : "transparent", 
+            style={{
+              backgroundColor: activeTab === "list" ? (isDark ? "#2A241C" : "white") : "transparent",
               color: activeTab === "list" ? "#E8A500" : (isDark ? "#9CA3AF" : "#6B7280"),
               boxShadow: activeTab === "list" && !isDark ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
             }}>
@@ -407,8 +371,8 @@ export default function AdminAgentsPage() {
           </button>
           <button onClick={() => { setActiveTab("tree"); setSearch(""); }}
             className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all"
-            style={{ 
-              backgroundColor: activeTab === "tree" ? (isDark ? "#2A241C" : "white") : "transparent", 
+            style={{
+              backgroundColor: activeTab === "tree" ? (isDark ? "#2A241C" : "white") : "transparent",
               color: activeTab === "tree" ? "#E8A500" : (isDark ? "#9CA3AF" : "#6B7280"),
               boxShadow: activeTab === "tree" && !isDark ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
             }}>
@@ -418,7 +382,7 @@ export default function AdminAgentsPage() {
       </div>
 
       <AnimatePresence mode="wait">
-        
+
         {/* TAB 1: LIST VIEW */}
         {activeTab === "list" && (
           <motion.div key="list" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
@@ -437,12 +401,12 @@ export default function AdminAgentsPage() {
                   )}
                 </div>
                 <div className="flex gap-1 overflow-x-auto pb-0.5 scrollbar-none" style={{ scrollbarWidth: "none" }}>
-                  {["All","Active","Pending","Suspended"].map(s => (
+                  {["All", "Active", "Pending", "Suspended"].map(s => (
                     <button key={s} onClick={() => setStatusFilter(s)}
                       className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex-shrink-0"
-                      style={{ 
-                        backgroundColor: statusFilter === s ? "#E8A500" : (isDark ? "rgba(255,255,255,0.05)" : "#F3F4F6"), 
-                        color: statusFilter === s ? "white" : "var(--foreground)" 
+                      style={{
+                        backgroundColor: statusFilter === s ? "#E8A500" : (isDark ? "rgba(255,255,255,0.05)" : "#F3F4F6"),
+                        color: statusFilter === s ? "white" : "var(--foreground)"
                       }}>
                       {s}
                     </button>
@@ -454,7 +418,7 @@ export default function AdminAgentsPage() {
               <div className="overflow-x-auto hidden sm:block">
                 <table className="w-full">
                   <thead><tr className="border-b" style={{ borderColor: T.border }}>
-                    {["AGENT","KANTOR","LEVEL","STATUS","BERGABUNG","AKSI"].map(h => (
+                    {["AGENT", "KANTOR", "LEVEL", "STATUS", "BERGABUNG", "AKSI"].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: T.text3 }}>{h}</th>
                     ))}
                   </tr></thead>
@@ -490,11 +454,11 @@ export default function AdminAgentsPage() {
                                 className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-[#DCFCE7] text-[#16A34A] hover:bg-[#DCFCE7]/80">Approve</button>
                             )}
                             {a.status === "Active" && (
-                                <button onClick={() => updateStatus(a.id, "Suspended")}
+                              <button onClick={() => updateStatus(a.id, "Suspended")}
                                 className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2]/80">Suspend</button>
                             )}
                             {a.status === "Suspended" && (
-                                <button onClick={() => updateStatus(a.id, "Active")}
+                              <button onClick={() => updateStatus(a.id, "Active")}
                                 className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#EEF5FC] text-[#1A6FC4] hover:bg-[#EEF5FC]/80">Aktifkan</button>
                             )}
                           </div>
@@ -516,18 +480,17 @@ export default function AdminAgentsPage() {
                     const isCardMatch = search && (a.name.toLowerCase().includes(search.toLowerCase()) || a.email.toLowerCase().includes(search.toLowerCase()));
                     const isAnySearchActive = search.length > 0;
                     const isCardDimmed = isAnySearchActive && !isCardMatch;
-                    
+
                     return (
-                      <motion.div 
-                        key={a.id} 
+                      <motion.div
+                        key={a.id}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`rounded-2xl border shadow-sm overflow-hidden transition-all bg-card flex flex-col ${
-                          isCardMatch 
-                            ? "ring-2 ring-[#E8A500] shadow-[0_0_12px_rgba(232,165,0,0.3)] scale-[1.01]" 
+                        className={`rounded-2xl border shadow-sm overflow-hidden transition-all bg-card flex flex-col ${isCardMatch
+                            ? "ring-2 ring-[#E8A500] shadow-[0_0_12px_rgba(232,165,0,0.3)] scale-[1.01]"
                             : "hover:shadow-md hover:scale-[1.005]"
-                        }`}
-                        style={{ 
+                          }`}
+                        style={{
                           borderColor: T.border,
                           borderLeft: `4px solid ${statusBorderColor}`,
                           opacity: isCardDimmed ? 0.5 : 1.0,
@@ -539,17 +502,17 @@ export default function AdminAgentsPage() {
                           <div className="flex items-center gap-3">
                             <LevelBadge title={a.level} size={36} />
                             <div className="flex-1 min-w-0 text-left">
-                              <EllipsisTooltip 
-                                text={a.name} 
+                              <EllipsisTooltip
+                                text={a.name}
                                 className="text-sm font-bold truncate text-foreground block"
                                 style={{ color: T.text1 }}
                               />
-                              <EllipsisTooltip 
-                                text={a.email} 
+                              <EllipsisTooltip
+                                text={a.email}
                                 className="text-xs truncate text-muted-foreground block"
                                 style={{ color: T.text3 }}
                               />
-                              <span 
+                              <span
                                 className="inline-block text-[8px] font-black uppercase tracking-wider mt-1 px-1.5 py-0.5 rounded-md"
                                 style={{ backgroundColor: lvlColor + "12", color: lvlColor }}
                               >
@@ -560,16 +523,16 @@ export default function AdminAgentsPage() {
                               <StatusChip s={a.status} />
                               <div className="flex items-center gap-1.5">
                                 {a.phone && (
-                                  <a 
-                                    href={`tel:${a.phone}`} 
+                                  <a
+                                    href={`tel:${a.phone}`}
                                     className="w-7 h-7 rounded-lg flex items-center justify-center transition-all bg-[#1A6FC4]/10 text-[#1A6FC4] dark:bg-[#1A6FC4]/25 dark:text-[#60A5FA] hover:scale-110 active:scale-95 cursor-pointer"
                                     title="Hubungi Telepon"
                                   >
                                     <Phone size={12} />
                                   </a>
                                 )}
-                                <a 
-                                  href={`mailto:${a.email}`} 
+                                <a
+                                  href={`mailto:${a.email}`}
                                   className="w-7 h-7 rounded-lg flex items-center justify-center transition-all bg-[#E8A500]/10 text-[#E8A500] dark:bg-[#E8A500]/25 dark:text-[#FBBF24] hover:scale-110 active:scale-95 cursor-pointer"
                                   title="Kirim Email"
                                 >
@@ -578,15 +541,15 @@ export default function AdminAgentsPage() {
                               </div>
                             </div>
                           </div>
-                          
+
                           {/* Office & Joined metadata with micro-icons */}
                           <div className="grid grid-cols-2 gap-3 pt-3 text-xs border-t" style={{ borderColor: T.border }}>
                             <div className="text-left flex items-start gap-1.5">
                               <MapPin size={13} className="mt-0.5 text-muted-foreground flex-shrink-0" style={{ color: T.text3 }} />
                               <div className="min-w-0">
                                 <p className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground" style={{ color: T.text3 }}>KANTOR</p>
-                                <EllipsisTooltip 
-                                  text={a.office} 
+                                <EllipsisTooltip
+                                  text={a.office}
                                   className="font-semibold text-foreground truncate mt-0.5 block"
                                   style={{ color: T.text2 }}
                                 />
@@ -605,7 +568,7 @@ export default function AdminAgentsPage() {
                         {/* Action buttons panel */}
                         <div className="px-4 pb-3 flex gap-2">
                           {a.status === "Pending" && (
-                            <button 
+                            <button
                               onClick={() => updateStatus(a.id, "Active")}
                               className="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#DCFCE7] text-[#16A34A] hover:bg-[#DCFCE7]/80 dark:bg-[#16A34A]/15 dark:text-[#34D399] dark:hover:bg-[#16A34A]/25"
                             >
@@ -613,7 +576,7 @@ export default function AdminAgentsPage() {
                             </button>
                           )}
                           {a.status === "Active" && (
-                            <button 
+                            <button
                               onClick={() => updateStatus(a.id, "Suspended")}
                               className="flex-1 py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2]/80 dark:bg-[#DC2626]/15 dark:text-[#F87171] dark:hover:bg-[#DC2626]/25"
                             >
@@ -621,7 +584,7 @@ export default function AdminAgentsPage() {
                             </button>
                           )}
                           {a.status === "Suspended" && (
-                            <button 
+                            <button
                               onClick={() => updateStatus(a.id, "Active")}
                               className="flex-1 py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#EEF5FC] text-[#1A6FC4] hover:bg-[#EEF5FC]/80 dark:bg-[#1A6FC4]/15 dark:text-[#60A5FA] dark:hover:bg-[#1A6FC4]/25"
                             >
@@ -686,23 +649,32 @@ export default function AdminAgentsPage() {
                   )}
                 </div>
               </div>
-              
-              {/* Mobile View: Vertical Folder Tree (visible on mobile) */}
-              <div className="block lg:hidden w-full border rounded-2xl p-2.5 bg-card/20" style={{ borderColor: T.border }}>
-                <VerticalTreeNode node={TREE_ROOT} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
-              </div>
 
-              {/* Desktop View: Horizontal Tree Scroll (visible on desktop) */}
-              <div
-                className="hidden lg:block w-full overflow-x-auto overscroll-x-contain py-8 bg-card/40 rounded-2xl border min-h-[500px]"
-                style={{ borderColor: T.border, WebkitOverflowScrolling: "touch" }}
-              >
-                <div className="w-max min-w-full mx-auto px-8 sm:px-12">
-                  <div className="flex flex-col items-center flex-shrink-0">
-                    <TreeNode node={TREE_ROOT} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
-                  </div>
+              {!treeRoot ? (
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E8A500]"></div>
+                  <p className="text-xs font-semibold">Memuat Jaringan Rekrutmen...</p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Mobile View: Vertical Folder Tree (visible on mobile) */}
+                  <div className="block lg:hidden w-full border rounded-2xl p-2.5 bg-card/20" style={{ borderColor: T.border }}>
+                    <VerticalTreeNode node={treeRoot} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
+                  </div>
+
+                  {/* Desktop View: Horizontal Tree Scroll (visible on desktop) */}
+                  <div
+                    className="hidden lg:block w-full overflow-x-auto overscroll-x-contain py-8 bg-card/40 rounded-2xl border min-h-[500px]"
+                    style={{ borderColor: T.border, WebkitOverflowScrolling: "touch" }}
+                  >
+                    <div className="w-max min-w-full mx-auto px-8 sm:px-12">
+                      <div className="flex flex-col items-center flex-shrink-0">
+                        <TreeNode node={treeRoot} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </Card>
           </motion.div>
         )}
@@ -757,8 +729,8 @@ export default function AdminAgentsPage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
-                      <EllipsisTooltip 
-                        text={recruit.name} 
+                      <EllipsisTooltip
+                        text={recruit.name}
                         className="text-sm font-semibold truncate block"
                         style={{ color: T.text1 }}
                       />

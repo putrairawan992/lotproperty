@@ -279,6 +279,7 @@ export const api = {
   // Admin Panel
   admin: {
     getAgents: () => request<any[]>("/admin/agents"),
+    getAgentsTree: () => request<any>("/admin/agents/tree"),
     getHof: (period?: string) => {
       const params = new URLSearchParams();
       if (period) params.append("period", period);

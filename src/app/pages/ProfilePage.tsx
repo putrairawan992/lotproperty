@@ -552,21 +552,21 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     const leftX = 72;
     ctx.fillStyle = "#FFFFFF";
     ctx.font = "900 64px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(profileCard.name, leftX, 310);
+    ctx.fillText(profileCard.name, leftX, 230);
 
     ctx.fillStyle = "#C8922A";
     ctx.font = "900 32px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(profileCard.tier.toUpperCase(), leftX, 370);
+    ctx.fillText(profileCard.tier.toUpperCase(), leftX, 280);
 
     ctx.fillStyle = "#9ca3af";
     ctx.font = "700 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.transactions.toUpperCase(), leftX, 490);
+    ctx.fillText(Lx.commission.toUpperCase(), leftX, 375);
 
     ctx.fillStyle = "#E8A500";
     ctx.font = "900 76px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(`${profileCard.totalTransactions} ${activeLang === "ID" ? "Transaksi" : activeLang === "CN" ? "笔交易" : "Transactions"}`, leftX, 585);
+    ctx.fillText(profileCard.commission, leftX, 450);
 
-    const statYTop = 665;
+    const statYTop = 530;
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -576,28 +576,119 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
     const statBlockW = 296;
     const stats = [
-      { label: Lx.level.toUpperCase(), value: String(profileCard.level) },
-      { label: Lx.hof.toUpperCase(), value: String(hofHistory.length) },
-      { label: Lx.badges.toUpperCase(), value: `${unlockedBadges}/${totalBadges}` },
+      { label: Lx.levelLabel.toUpperCase(), value: String(profileCard.level) },
+      { label: Lx.listings.toUpperCase(), value: String(profileCard.totalListings) },
+      { label: Lx.prospects.toUpperCase(), value: String(profileCard.totalProspects) },
     ];
 
     stats.forEach((s, i) => {
       const x = leftX + i * statBlockW;
       ctx.fillStyle = "#8a8a8a";
       ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.label, x, 735);
+      ctx.fillText(s.label, x, 590);
       ctx.fillStyle = "#ffffff";
       ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.value, x, 815);
+      ctx.fillText(s.value, x, 660);
 
       if (i < stats.length - 1) {
         ctx.strokeStyle = "rgba(255,255,255,0.12)";
         ctx.beginPath();
-        ctx.moveTo(x + statBlockW - 18, 735);
-        ctx.lineTo(x + statBlockW - 18, 820);
+        ctx.moveTo(x + statBlockW - 18, 590);
+        ctx.lineTo(x + statBlockW - 18, 665);
         ctx.stroke();
       }
     });
+
+    // Draw Divider for Badges & HOF section
+    const badgeHofDividerY = 720;
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath();
+    ctx.moveTo(leftX, badgeHofDividerY);
+    ctx.lineTo(960, badgeHofDividerY);
+    ctx.stroke();
+
+    // Column 1: Featured Badges
+    ctx.fillStyle = "#8a8a8a";
+    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 765);
+
+    const badgeSize = 55;
+    const badgeGap = 20;
+    const badgeY = 790;
+
+    if (featured.length === 0) {
+      ctx.fillStyle = "#5c5a61";
+      ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("None", leftX, badgeY + 35);
+    } else {
+      for (let idx = 0; idx < Math.min(featured.length, 3); idx++) {
+        const badgeName = featured[idx];
+        const asset = BADGE_ASSETS[badgeName];
+        if (asset) {
+          try {
+            const badgeImg = await loadDataImage(asset);
+            ctx.drawImage(badgeImg, leftX + idx * (badgeSize + badgeGap), badgeY, badgeSize, badgeSize);
+          } catch (e) {
+            console.error("Failed to load canvas badge image", e);
+          }
+        }
+      }
+    }
+
+    // Column 2: Hall of Fame Highlights
+    const hofX = 520;
+    ctx.fillStyle = "#8a8a8a";
+    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 765);
+
+    const hofSize = 55;
+    const hofGap = 20;
+    const hofY = 790;
+
+    if (hofHistory.length === 0) {
+      ctx.fillStyle = "#5c5a61";
+      ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("None", hofX, hofY + 35);
+    } else {
+      for (let idx = 0; idx < Math.min(hofHistory.length, 3); idx++) {
+        const hof = hofHistory[idx];
+        const rankNum = parseInt(hof.rank.replace("#", ""), 10);
+        const isFirst = rankNum === 1;
+        const isTop5 = rankNum <= 5;
+        
+        const circleX = hofX + idx * (hofSize + hofGap) + hofSize / 2;
+        const circleY = hofY + hofSize / 2;
+        const radius = hofSize / 2;
+
+        ctx.save();
+        // Draw glow behind HOF medal
+        const glow = ctx.createRadialGradient(circleX, circleY, 0, circleX, circleY, radius * 1.5);
+        glow.addColorStop(0, isFirst ? "rgba(232, 194, 103, 0.4)" : isTop5 ? "rgba(199, 206, 219, 0.3)" : "rgba(207, 142, 87, 0.3)");
+        glow.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(circleX, circleY, radius * 1.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw gold/silver/bronze medal background
+        ctx.fillStyle = isFirst ? "#e8c267" : isTop5 ? "#c7cedb" : "#cf8e57";
+        ctx.beginPath();
+        ctx.arc(circleX, circleY, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(255,255,255,0.2)";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Draw Rank Text inside Circle
+        ctx.fillStyle = "#121115";
+        ctx.font = "900 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(hof.rank, circleX, circleY);
+        ctx.restore();
+      }
+    }
 
     try {
       const photo = await loadDataImage(profileCard.photo);
@@ -1330,35 +1421,92 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         </p>
                       </div>
 
-                      {/* Main Metric: Total Transactions */}
+                      {/* Main Metric: Career Commission */}
                       <div>
-                        <p className="text-[8px] text-zinc-400 font-bold tracking-wider uppercase">{L.transactions}</p>
+                        <p className="text-[8px] text-zinc-400 font-bold tracking-wider uppercase">{L.commission}</p>
                         <h2 className="font-black text-xl text-gradient-gold leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                          {profileCard.totalTransactions} {activeLang === "ID" ? "Transaksi" : activeLang === "CN" ? "笔交易" : "Transactions"}
+                          {profileCard.commission}
                         </h2>
                       </div>
 
-                      {/* Smaller stats: horizontal clean layout with vertical dividers */}
-                      <div className="flex items-center justify-between pt-2.5 border-t border-white/10 mt-2">
+                      {/* Smaller stats: LEVEL AGEN, TOTAL LISTING, TOTAL PROSPEK */}
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2">
                         <div className="flex-1 text-center">
-                          <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.level}</p>
-                          <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.levelLabel}</p>
+                          <p className="font-black text-[13px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                             {profileCard.level}
                           </p>
                         </div>
-                        <div className="w-[1px] h-5 bg-white/10" />
+                        <div className="w-[1px] h-4 bg-white/10" />
                         <div className="flex-1 text-center">
-                          <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.hof}</p>
-                          <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {hofHistory.length}
+                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.listings}</p>
+                          <p className="font-black text-[13px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                            {profileCard.totalListings}
                           </p>
                         </div>
-                        <div className="w-[1px] h-5 bg-white/10" />
+                        <div className="w-[1px] h-4 bg-white/10" />
                         <div className="flex-1 text-center">
-                          <p className="text-[8.5px] font-black text-zinc-400 uppercase tracking-wide">{L.badges}</p>
-                          <p className="font-black text-[13.5px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {unlockedBadges}/{totalBadges}
+                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.prospects}</p>
+                          <p className="font-black text-[13px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                            {profileCard.totalProspects}
                           </p>
+                        </div>
+                      </div>
+
+                      {/* Featured Badges & HOF Highlights */}
+                      <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2 gap-4">
+                        {/* Column 1: Lencana Utama */}
+                        <div className="flex-1 text-left">
+                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.featuredBadges}</p>
+                          <div className="flex gap-1">
+                            {featured.length === 0 ? (
+                              <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
+                            ) : (
+                              featured.slice(0, 3).map((badgeName, idx) => {
+                                const asset = BADGE_ASSETS[badgeName];
+                                if (!asset) return null;
+                                return (
+                                  <img
+                                    key={idx}
+                                    src={asset}
+                                    alt={badgeName}
+                                    className="w-[18px] h-[18px] object-contain"
+                                    title={badgeName}
+                                  />
+                                );
+                              })
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Column 2: Hall of Fame */}
+                        <div className="flex-1 text-left">
+                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.hofTitle}</p>
+                          <div className="flex gap-1 items-center">
+                            {hofHistory.length === 0 ? (
+                              <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
+                            ) : (
+                              hofHistory.slice(0, 3).map((hof, idx) => {
+                                const rankNum = parseInt(hof.rank.replace("#", ""), 10);
+                                const isFirst = rankNum === 1;
+                                const isTop5 = rankNum <= 5;
+                                const bgColor = isFirst
+                                  ? "bg-[#e8c267]"
+                                  : isTop5
+                                  ? "bg-[#c7cedb]"
+                                  : "bg-[#cf8e57]";
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[7px] font-black text-[#121115] ${bgColor} border border-white/10 shadow-sm`}
+                                    title={`${hof.cat} (${hof.period})`}
+                                  >
+                                    {hof.rank}
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
