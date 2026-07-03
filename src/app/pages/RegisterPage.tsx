@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { User, Mail, Phone, Lock, Eye, EyeOff, AlertCircle, Building2, ImagePlus, X, Check } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { User, Mail, Phone, Lock, Eye, EyeOff, AlertCircle, ImagePlus, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import AuthInput from "../components/AuthInput";
@@ -10,7 +10,7 @@ import { api } from "../services/api";
 
 export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void; onSubmit: () => void }) {
   const { isDark } = useTheme();
-  const [form, setForm] = useState({ name: "", email: "", phone: "", office: "", password: "", confirm: "" });
+  const [form, setForm] = useState({ name: "", email: "", phone: "", password: "", confirm: "" });
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -18,10 +18,73 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"error" | "success">("error");
   const [loading, setLoading] = useState(false);
+
+  const [showCamera, setShowCamera] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   
   const set = (k: keyof typeof form) => (v: string) => setForm(f => ({ ...f, [k]: v }));
 
-  const valid = form.name && form.email && form.phone && form.office && form.password && form.password === form.confirm;
+  const valid = form.name && form.email && form.phone && form.password && form.password === form.confirm;
+
+  useEffect(() => {
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [cameraStream]);
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: 480, height: 480 } });
+      setCameraStream(stream);
+      setShowCamera(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(err => console.error("Error playing video", err));
+        }
+      }, 100);
+    } catch (err) {
+      showToast("Tidak dapat mengakses kamera. Pastikan izin kamera telah diberikan.");
+      console.error("Camera access error:", err);
+    }
+  };
+
+  const stopCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current) {
+      const video = videoRef.current;
+      const canvas = document.createElement("canvas");
+      const size = Math.min(video.videoWidth, video.videoHeight) || 400;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.translate(size, 0);
+        ctx.scale(-1, 1);
+        const sx = (video.videoWidth - size) / 2;
+        const sy = (video.videoHeight - size) / 2;
+        ctx.drawImage(video, sx, sy, size, size, 0, 0, size, size);
+
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `profile-camera-${Date.now()}.jpg`, { type: "image/jpeg" });
+            handlePhotoPick(file);
+          }
+        }, "image/jpeg", 0.9);
+      }
+      stopCamera();
+    }
+  };
 
   useEffect(() => {
     if (toastMsg) {
@@ -69,7 +132,6 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
         name: form.name,
         email: form.email,
         phone: form.phone,
-        office: form.office,
         password: form.password,
         photo_url: photoUrl,
       });
@@ -123,7 +185,7 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
             <div>
               <p className="mb-2" style={{ color: T.text3, fontSize: 13 }}>Foto Profil (Opsional)</p>
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full overflow-hidden border" style={{ borderColor: T.border, backgroundColor: T.muted }}>
+                <div className="w-14 h-14 rounded-full overflow-hidden border flex-shrink-0" style={{ borderColor: T.border, backgroundColor: T.muted }}>
                   {photoPreview ? (
                     <img src={photoPreview} alt="Preview foto profil" className="w-full h-full object-cover" />
                   ) : (
@@ -132,18 +194,32 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
                     </div>
                   )}
                 </div>
-                <label
-                  className="px-3 py-2 rounded-xl border text-sm font-semibold cursor-pointer inline-flex items-center gap-1.5"
-                  style={{ borderColor: T.border, color: T.text2 }}
-                >
-                  <ImagePlus size={14} /> Pilih Foto
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handlePhotoPick(e.target.files?.[0])}
-                  />
-                </label>
+                <div className="flex gap-2">
+                  <label
+                    className="px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-all hover:bg-muted/30"
+                    style={{ borderColor: T.border, color: T.text2 }}
+                  >
+                    <ImagePlus size={14} /> Pilih Galeri
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handlePhotoPick(e.target.files?.[0])}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={startCamera}
+                    className="px-3 py-2 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-all hover:bg-muted/30"
+                    style={{ borderColor: T.border, color: T.text2 }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                    Ambil Kamera
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -159,9 +235,7 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
             <AuthInput label="Nomor HP" type="tel" placeholder="08xx-xxxx-xxxx"
               icon={<Phone size={17} />} value={form.phone} onChange={set("phone")} />
 
-            {/* Office */}
-            <AuthInput label="Office" type="text" placeholder="Contoh: BSD"
-              icon={<Building2 size={17} />} value={form.office} onChange={set("office")} />
+            {/* Office removed as requested by user */}
 
             {/* Password */}
             <AuthInput label="Password" type={showPass ? "text" : "password"} placeholder="Min. 8 karakter"
@@ -215,6 +289,60 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
           </p>
         </Card>
       </div>
+
+      {/* Modal Kamera */}
+      <AnimatePresence>
+        {showCamera && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={stopCamera}
+              className="absolute inset-0 bg-black/80"
+            />
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card w-full max-w-sm rounded-3xl border shadow-2xl overflow-hidden relative z-10 flex flex-col p-6 items-center"
+              style={{ borderColor: T.border, backgroundColor: T.card }}
+            >
+              <h3 className="font-bold text-lg mb-4 text-center" style={{ color: T.text1 }}>
+                Ambil Foto Profil
+              </h3>
+              
+              <div className="relative w-64 h-64 rounded-full overflow-hidden border-2 border-[#E8A500] bg-black mb-6">
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  muted
+                  className="w-full h-full object-cover scale-x-[-1]"
+                />
+              </div>
+
+              <div className="flex gap-4 w-full">
+                <button
+                  type="button"
+                  onClick={capturePhoto}
+                  className="flex-1 py-2.5 rounded-xl font-bold bg-[#E8A500] text-white transition-all hover:bg-[#CC9200]"
+                >
+                  Ambil Foto
+                </button>
+                <button
+                  type="button"
+                  onClick={stopCamera}
+                  className="flex-1 py-2.5 rounded-xl font-semibold border transition-all hover:bg-muted/10"
+                  style={{ borderColor: T.border, color: T.text3 }}
+                >
+                  Batal
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

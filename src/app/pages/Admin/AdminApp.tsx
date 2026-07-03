@@ -26,6 +26,7 @@ const ADMIN_NAV: { id: AdminPage; label: string; icon: React.ElementType; badge?
 ];
 
 export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout: () => void }) {
+  const { isDark, toggle } = useTheme();
   const { path, navigate } = useLocation();
   const rawPage = path.replace(/^\/admin\//, "");
   const page: AdminPage = ["dashboard", "agents", "commission", "hof", "academy", "events", "xp", "log"].includes(rawPage)
@@ -166,22 +167,42 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
         <div className="lg:hidden flex items-center justify-between px-4 bg-card border-b" style={{ height: 56, borderColor: T.border }}>
           <button onClick={() => setDrawerOpen(true)} className="p-2" style={{ color: T.text2 }}><Menu size={22} /></button>
           <Logo />
-          <div style={{ width: 38 }} />
+          {/* Dark/light toggle */}
+          <button onClick={toggle}
+            className="p-2 rounded-xl transition-all"
+            style={{ color: T.text3, fontSize: 18 }}
+            onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+            onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
+            {isDark ? "☀️" : "🌙"}
+          </button>
         </div>
 
         {/* Desktop top bar */}
         <div className="hidden lg:flex items-center justify-between px-6 bg-card border-b flex-shrink-0" style={{ height: 56, borderColor: T.border }}>
           <div className="flex items-center gap-3">
+            <h2 className="font-bold text-sm uppercase tracking-wider" style={{ color: T.text1, fontFamily: "'Rajdhani', sans-serif" }}>
+              {pageTitles[page]}
+            </h2>
           </div>
-          <button onClick={onLogout} className="text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors"
-            style={{ borderColor: T.border, color: T.text3 }}
-            onMouseEnter={e => { e.currentTarget.style.color = "#DC2626"; e.currentTarget.style.borderColor = "#DC262640"; }}
-            onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.borderColor = "var(--border)"; }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-            </svg>
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Dark/light toggle */}
+            <button onClick={toggle}
+              className="p-2 rounded-xl transition-all"
+              style={{ color: T.text3, fontSize: 18 }}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
+              {isDark ? "☀️" : "🌙"}
+            </button>
+            <button onClick={onLogout} className="text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-colors"
+              style={{ borderColor: T.border, color: T.text3 }}
+              onMouseEnter={e => { e.currentTarget.style.color = "#DC2626"; e.currentTarget.style.borderColor = "#DC262640"; }}
+              onMouseLeave={e => { e.currentTarget.style.color = "#9CA3AF"; e.currentTarget.style.borderColor = "var(--border)"; }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+              </svg>
+              Logout
+            </button>
+          </div>
         </div>
 
         <main className="flex-1 overflow-y-auto">{renderPage()}</main>
