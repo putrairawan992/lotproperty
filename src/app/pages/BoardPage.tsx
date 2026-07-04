@@ -409,7 +409,7 @@ export default function BoardPage() {
                       </div>
 
                       {/* Role subtitle */}
-                      <p className="text-[9px] text-muted-foreground leading-none mt-0.5 uppercase tracking-wide">
+                      <p className="text-[9px] text-muted-foreground mt-1.5 uppercase tracking-wide" style={{ color: T.text3 }}>
                         {post.tier}
                       </p>
 
