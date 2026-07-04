@@ -283,6 +283,7 @@ export const api = {
     getEvents: () => request<any[]>("/public/events"),
     getBoardPosts: () => request<any[]>("/public/board/posts"),
     getAcademyModules: () => request<any[]>("/public/academy"),
+    getAgentsMinimal: () => request<Array<{ id: number; name: string }>>("/public/agents/minimal"),
   },
 
   // Admin Panel
@@ -298,7 +299,7 @@ export const api = {
     updateAgentStatus: (id: number | string, action: "approve" | "suspend" | "reactivate") => {
       return request<any>(`/admin/agents/${id}/status?action=${action}`, { method: "POST" });
     },
-    updateAgent: (id: number | string, payload: { name?: string; email?: string; password?: string; role?: string }) => {
+    updateAgent: (id: number | string, payload: { name?: string; email?: string; password?: string; role?: string; mentor_id?: number | null }) => {
       return request<any>(`/admin/agents/${id}`, { method: "PUT", body: JSON.stringify(payload) });
     },
     deleteAgent: (id: number | string) => {

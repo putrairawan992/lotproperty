@@ -17,6 +17,8 @@ interface AgentItem {
   level: string;
   status: string;
   joined: string;
+  mentor_id?: number | null;
+  role?: string;
 }
 
 interface TreeNodeData {
@@ -287,11 +289,14 @@ export default function AdminAgentsPage() {
   const [editEmail, setEditEmail] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editRole, setEditRole] = useState("");
+  const [editMentorId, setEditMentorId] = useState<number | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState("");
   const [toastError, setToastError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [activeStatusSelectAgentId, setActiveStatusSelectAgentId] = useState<number | null>(null);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
   const { isDark } = useTheme();
   const [treeRoot, setTreeRoot] = useState<TreeNodeData | null>(null);
   const stats = getTreeStats(treeRoot);
@@ -319,6 +324,8 @@ export default function AdminAgentsPage() {
           level: String(r.title || "Rookie Agent"),
           status: String(r.status || "Pending"),
           joined: formatJoined(r.created_at),
+          mentor_id: r.mentor_id ? Number(r.mentor_id) : null,
+          role: String(r.role || "Agent"),
         })));
       } catch {
         // Keep empty list when API fails.
@@ -387,7 +394,8 @@ export default function AdminAgentsPage() {
     setEditName(a.name);
     setEditEmail(a.email);
     setEditPassword("");
-    setEditRole("");
+    setEditRole(a.role || "");
+    setEditMentorId(a.mentor_id || 0);
     setOpenDropdownId(null);
   };
 
@@ -400,12 +408,32 @@ export default function AdminAgentsPage() {
       if (editEmail !== editModal.email) payload.email = editEmail;
       if (editPassword) payload.password = editPassword;
       if (editRole) payload.role = editRole;
+
+      const prevMentorId = editModal.mentor_id || 0;
+      const nextMentorId = editMentorId || 0;
+      if (nextMentorId !== prevMentorId) {
+        payload.mentor_id = nextMentorId; // Will send 0 to clear, or standard ID to set
+      }
+
       await api.admin.updateAgent(editModal.id, payload);
       setAgents(prev => prev.map(a => a.id === editModal.id ? {
         ...a,
         name: editName || a.name,
         email: editEmail || a.email,
+        mentor_id: nextMentorId > 0 ? nextMentorId : null,
+        role: editRole || a.role,
       } : a));
+
+      // Rebuild tree root representation immediately
+      try {
+        const treeData = await api.admin.getAgentsTree();
+        if (treeData && treeData?.name) {
+          setTreeRoot(treeData);
+        }
+      } catch (e) {
+        console.error("Failed to reload tree after edit", e);
+      }
+
       setEditModal(null);
       triggerToast("Agent berhasil diperbarui");
     } catch {
@@ -415,22 +443,41 @@ export default function AdminAgentsPage() {
     }
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpenDropdownId(null);
+      }
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(e.target as Node)) {
+        setActiveStatusSelectAgentId(null);
       }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const StatusChip = ({ s }: { s: string }) => {
+  const StatusChip = ({ s, onClick }: { s: string; onClick?: (e: React.MouseEvent) => void }) => {
     const cfg = s === "Active" ? { bg: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7", c: isDark ? "#34D399" : "#16A34A" }
       : s === "Pending" ? { bg: isDark ? "rgba(217, 119, 6, 0.15)" : "#FEF3C7", c: isDark ? "#F59E0B" : "#D97706" }
         : { bg: isDark ? "rgba(220, 38, 38, 0.15)" : "#FEE2E2", c: isDark ? "#F87171" : "#DC2626" };
-    return <span className="px-2.5 py-1 rounded-full text-xs font-semibold" style={{ backgroundColor: cfg.bg, color: cfg.c }}>{s}</span>;
+    return (
+      <button
+        onClick={onClick}
+        type="button"
+        className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1 transition-all select-none border border-transparent ${
+          onClick 
+            ? "hover:opacity-85 hover:border-current active:scale-95 cursor-pointer shadow-sm hover:shadow" 
+            : "cursor-default"
+        }`}
+        style={{ backgroundColor: cfg.bg, color: cfg.c }}
+      >
+        <span>{s}</span>
+        {onClick && (
+          <ChevronDown size={11} className="opacity-70" />
+        )}
+      </button>
+    );
   };
 
   return (
@@ -541,7 +588,37 @@ export default function AdminAgentsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3 text-sm text-left" style={{ color: T.text2 }}>{a.level}</td>
-                        <td className="px-4 py-3 text-left"><StatusChip s={a.status} /></td>
+                        <td className="px-4 py-3 text-left relative">
+                          <StatusChip 
+                            s={a.status} 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveStatusSelectAgentId(activeStatusSelectAgentId === a.id ? null : a.id);
+                            }}
+                          />
+                          {activeStatusSelectAgentId === a.id && (
+                            <div 
+                              ref={statusDropdownRef} 
+                              className="absolute left-4 z-50 w-32 rounded-xl border shadow-xl py-1 mt-1 bg-card"
+                              style={{ backgroundColor: "var(--card)", borderColor: T.border }}
+                            >
+                              {["Active", "Pending", "Suspended"].map(statusOption => (
+                                <button 
+                                  key={statusOption} 
+                                  onClick={() => { 
+                                    updateStatus(a.id, statusOption); 
+                                    setActiveStatusSelectAgentId(null); 
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-muted transition-colors flex items-center justify-between"
+                                  style={{ color: statusOption === "Active" ? "#16A34A" : statusOption === "Pending" ? "#D97706" : "#DC2626" }}
+                                >
+                                  <span>{statusOption}</span>
+                                  {a.status === statusOption && <Check size={11} />}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-sm text-left" style={{ color: T.text3 }}>{a.joined}</td>
                         <td className="px-4 py-3 text-left relative">
                           <button
@@ -658,8 +735,36 @@ export default function AdminAgentsPage() {
                                 {a.level}
                               </span>
                             </div>
-                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0 self-start">
-                              <StatusChip s={a.status} />
+                            <div className="flex flex-col items-end gap-1.5 flex-shrink-0 self-start relative">
+                              <StatusChip 
+                                s={a.status} 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveStatusSelectAgentId(activeStatusSelectAgentId === a.id ? null : a.id);
+                                }}
+                              />
+                              {activeStatusSelectAgentId === a.id && (
+                                <div 
+                                  ref={statusDropdownRef} 
+                                  className="absolute right-0 top-full z-50 w-32 rounded-xl border shadow-xl py-1 mt-1 bg-card"
+                                  style={{ backgroundColor: "var(--card)", borderColor: T.border }}
+                                >
+                                  {["Active", "Pending", "Suspended"].map(statusOption => (
+                                    <button 
+                                      key={statusOption} 
+                                      onClick={() => { 
+                                        updateStatus(a.id, statusOption); 
+                                        setActiveStatusSelectAgentId(null); 
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-xs font-semibold hover:bg-muted transition-colors flex items-center justify-between"
+                                      style={{ color: statusOption === "Active" ? "#16A34A" : statusOption === "Pending" ? "#D97706" : "#DC2626" }}
+                                    >
+                                      <span>{statusOption}</span>
+                                      {a.status === statusOption && <Check size={11} />}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
                               <div className="flex items-center gap-1.5">
                                 {a.phone && (
                                   <a
@@ -903,12 +1008,24 @@ export default function AdminAgentsPage() {
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Role (kosongkan jika tidak diubah)</label>
                   <select value={editRole} onChange={e => setEditRole(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }}>
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card font-medium" style={{ borderColor: T.border, color: T.text1 }}>
                     <option value="">-- Tidak diubah --</option>
                     <option value="Agent">Agent</option>
                     <option value="Office Manager">Office Manager</option>
                     <option value="Finance">Finance</option>
                     <option value="Super Admin">Super Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Mentor / Upline</label>
+                  <select value={editMentorId || 0} onChange={e => setEditMentorId(Number(e.target.value))}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card font-medium" style={{ borderColor: T.border, color: T.text1 }}>
+                    <option value={0}>— Tidak ada (Mandiri / No Mentor) —</option>
+                    {agents
+                      .filter(a => a.id !== editModal.id && (a.role === "Agent" || a.role === "Office Manager"))
+                      .map(a => (
+                        <option key={a.id} value={a.id}>{a.name} ({a.email})</option>
+                      ))}
                   </select>
                 </div>
               </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { GraduationCap, BookOpen, Clock, Award, Plus, Trash2, CheckCircle, AlertCircle, Play, Users, Pencil } from "lucide-react";
+import { GraduationCap, BookOpen, Clock, Award, Plus, Trash2, CheckCircle, AlertCircle, Play, Users, Pencil, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
@@ -185,67 +185,80 @@ export default function AdminAcademyPage() {
         </button>
       </div>
 
-      <AnimatePresence mode="wait">
-        {/* ADD MODULE FORM */}
+      {/* ADD/EDIT MODULE MODAL POP-UP */}
+      <AnimatePresence>
         {showAddForm && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
-            <Card className="p-5">
-              <div className="flex items-center gap-2.5 mb-4 pb-2 border-b" style={{ borderColor: T.border }}>
-                <GraduationCap className="text-[#E8A500]" size={18} />
-                <h3 className="font-bold text-sm uppercase tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                  {editId ? "Form Edit Modul Akademi" : "Form Pembuatan Modul Baru"}
-                </h3>
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={handleToggleForm} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card w-full max-w-lg rounded-3xl border shadow-2xl overflow-hidden relative z-10" style={{ borderColor: T.border }}>
+              
+              <div className="px-6 py-4 border-b flex justify-between items-center" style={{ borderColor: T.border }}>
+                <div className="flex items-center gap-2.5">
+                  <GraduationCap className="text-[#E8A500]" size={18} />
+                  <h3 className="font-bold text-sm uppercase tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>
+                    {editId ? "Edit Modul Akademi" : "Tambah Modul Baru"}
+                  </h3>
+                </div>
+                <button onClick={handleToggleForm} style={{ color: T.text3 }} className="cursor-pointer hover:opacity-80 transition-opacity"><X size={20} /></button>
               </div>
 
-              <form onSubmit={handleCreateOrUpdateModule} className="space-y-4 text-left">
-
-                <div>
-                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Judul Modul</label>
-                  <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-                    placeholder="Contoh: Kunci Keberhasilan Closing Cepat"
-                    className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                    style={{ borderColor: T.border }} />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <form onSubmit={handleCreateOrUpdateModule}>
+                <div className="p-6 space-y-4 text-left">
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Kategori</label>
-                    <select value={cat} onChange={e => setCat(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none cursor-pointer"
-                      style={{ borderColor: T.border }}>
-                      {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Durasi</label>
-                    <input type="text" value={dur} onChange={e => setDur(e.target.value)}
-                      placeholder="Contoh: 2 jam / 45 min"
+                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Judul Modul</label>
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)}
+                      placeholder="Contoh: Kunci Keberhasilan Closing Cepat"
                       className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                      style={{ borderColor: T.border }} />
+                      style={{ borderColor: T.border, color: T.text1 }} />
                   </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Kategori</label>
+                      <select value={cat} onChange={e => setCat(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none cursor-pointer"
+                        style={{ borderColor: T.border, color: T.text1 }}>
+                        {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Durasi</label>
+                      <input type="text" value={dur} onChange={e => setDur(e.target.value)}
+                        placeholder="Contoh: 2 jam / 45 min"
+                        className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
+                        style={{ borderColor: T.border, color: T.text1 }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Reward XP</label>
+                      <input type="number" value={xp} onChange={e => setXp(e.target.value)}
+                        placeholder="Contoh: 200"
+                        className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none font-semibold"
+                        style={{ borderColor: T.border, color: T.text1 }} />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Reward XP</label>
-                    <input type="number" value={xp} onChange={e => setXp(e.target.value)}
-                      placeholder="Contoh: 200"
-                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none font-semibold"
-                      style={{ borderColor: T.border }} />
+                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">URL Video Pembelajaran</label>
+                    <input type="url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
+                      placeholder="Contoh: https://www.youtube.com/watch?v=..."
+                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
+                      style={{ borderColor: T.border, color: T.text1 }} />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">URL Video Pembelajaran</label>
-                  <input type="url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
-                    placeholder="Contoh: https://www.youtube.com/watch?v=..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                    style={{ borderColor: T.border }} />
+                <div className="px-6 py-4 border-t flex justify-end gap-3 bg-muted/10" style={{ borderColor: T.border }}>
+                  <button type="button" onClick={handleToggleForm}
+                    className="px-5 py-2.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer"
+                    style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
+                  <button type="submit" disabled={saving}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#E8A500] text-white transition-all hover:bg-[#CC9200] disabled:opacity-60 disabled:cursor-not-allowed">
+                    {saving ? "Menyimpan..." : (editId ? "Simpan Perubahan" : "Simpan & Rilis")}
+                  </button>
                 </div>
-
-                <button type="submit" disabled={saving} className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer disabled:opacity-50">
-                  {saving ? "Menyimpan..." : (editId ? "Perbarui & Simpan Modul" : "Simpan & Rilis Modul")}
-                </button>
               </form>
-            </Card>
-          </motion.div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
