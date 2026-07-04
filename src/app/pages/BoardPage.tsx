@@ -219,16 +219,12 @@ export default function BoardPage() {
           <div className="flex gap-3">
             {/* My User Avatar */}
             <div className="flex-shrink-0">
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold animate-fade-in"
-                style={{
-                  background: "linear-gradient(135deg, #E8A500, #C8922A)",
-                  fontSize: 11,
-                  fontFamily: "'Rajdhani', sans-serif"
-                }}
-              >
-                {getInitials(user?.name)}
-              </div>
+              <AgentAvatar
+                initials={getInitials(user?.name)}
+                size={36}
+                isMe={true}
+                photo={user?.photo_url || user?.photo}
+              />
             </div>
 
             {/* Input field */}
