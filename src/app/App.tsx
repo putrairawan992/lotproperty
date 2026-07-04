@@ -45,6 +45,7 @@ export default function App() {
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const [levelUpData, setLevelUpData] = useState<{ level: number; tier: string; xp: string } | null>(null);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
+  const [attendanceXp, setAttendanceXp] = useState(0);
   const [appLoading, setAppLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
   
@@ -122,16 +123,35 @@ export default function App() {
     }
   }, [user]);
 
-  // Trigger auto-attendance popup immediately on dashboard enter after login
+  // Trigger auto-attendance popup immediately on dashboard enter after login (non-guest only)
   useEffect(() => {
-    if (loggedIn) {
+    if (loggedIn && !isGuest) {
       const showPopup = localStorage.getItem("lotproperty-show-attendance-popup") === "true";
       if (showPopup) {
         setShowAttendancePopup(true);
         localStorage.setItem("lotproperty-show-attendance-popup", "false");
       }
     }
-  }, [loggedIn]);
+  }, [loggedIn, isGuest]);
+
+  // When attendance popup opens, call API to mark attendance & sync XP
+  useEffect(() => {
+    if (showAttendancePopup && !isGuest) {
+      (async () => {
+        try {
+          const result = await api.quests.markAttendance();
+          if (result && typeof result.xp_earned === "number") {
+            setAttendanceXp(result.xp_earned);
+          } else {
+            setAttendanceXp(100); // fallback default
+          }
+        } catch (e) {
+          console.error("Failed to mark attendance via API:", e);
+          setAttendanceXp(100); // fallback default
+        }
+      })();
+    }
+  }, [showAttendancePopup, isGuest]);
 
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -228,10 +248,6 @@ export default function App() {
       if (authView === "pending") return <PendingPage onBack={() => setAuthView("login")} />;
       return <LoginPage onLogin={async () => {
         const todayStr = new Date().toDateString();
-        if (localStorage.getItem("lotproperty-attendance-date") !== todayStr) {
-          localStorage.setItem("lotproperty-attendance-date", todayStr);
-          localStorage.setItem("lotproperty-show-attendance-popup", "true");
-        }
         
         // Fetch user profile immediately
         try {
@@ -239,6 +255,24 @@ export default function App() {
           setUser(profile);
           if (profile.role && profile.role !== "Agent") {
             setAdminRole(profile.role);
+          }
+
+          // Show attendance popup only if:
+          // 1. localStorage date differs from today (hasn't been shown yet)
+          // 2. API confirms user hasn't checked in today
+          if (localStorage.getItem("lotproperty-attendance-date") !== todayStr) {
+            try {
+              const status = await api.attendance.getStatus();
+              if (!status.checked_today) {
+                localStorage.setItem("lotproperty-attendance-date", todayStr);
+                localStorage.setItem("lotproperty-show-attendance-popup", "true");
+              }
+            } catch (e) {
+              // API unavailable — fallback to localStorage-only check
+              console.error("Failed to check attendance status from API:", e);
+              localStorage.setItem("lotproperty-attendance-date", todayStr);
+              localStorage.setItem("lotproperty-show-attendance-popup", "true");
+            }
           }
         } catch (e) {
           console.error("Failed to load user profile on login:", e);
@@ -314,9 +348,9 @@ export default function App() {
           />
         )}
 
-        {/* 3D Celebration Popup Modal */}
+        {/* 3D Celebration Popup Modal — non-guest only */}
         <AnimatePresence>
-          {showAttendancePopup && (
+          {showAttendancePopup && !isGuest && (
             <motion.div
               className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-fade-in"
               initial={{ opacity: 0 }}
@@ -342,7 +376,7 @@ export default function App() {
 
                 {/* Close Button */}
                 <button
-                  onClick={() => setShowAttendancePopup(false)}
+                  onClick={() => { setShowAttendancePopup(false); refreshUser(); }}
                   className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-muted text-text3 transition-colors z-10"
                   style={{ backgroundColor: T.muted }}
                 >
@@ -390,14 +424,14 @@ export default function App() {
                       className="font-bold text-2xl flex items-center gap-1"
                       style={{ fontFamily: "'Rajdhani', sans-serif", color: "#C8922A" }}
                     >
-                      ⚡ <span className="text-[#E8A500]">+100</span> <span className="text-xs font-semibold text-text3">XP</span>
+                      ⚡ <span className="text-[#E8A500]">+{attendanceXp || 100}</span> <span className="text-xs font-semibold text-text3">XP</span>
                     </p>
                   </div>
                 </div>
 
                 {/* Action Button */}
                 <motion.button
-                  onClick={() => setShowAttendancePopup(false)}
+                  onClick={() => { setShowAttendancePopup(false); refreshUser(); }}
                   className="w-full py-3 rounded-xl font-bold transition-all text-white shadow-md"
                   style={{
                     background: "linear-gradient(135deg, #E8A500, #C8922A)",
