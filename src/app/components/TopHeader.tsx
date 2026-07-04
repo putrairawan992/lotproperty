@@ -10,7 +10,7 @@ export default function TopHeader({ page, onNav, onLogout }: {
   onNav: (p: Page) => void;
   onLogout?: () => void;
 }) {
-  const { isDark, toggle, isGuest, user, onLoginRequest } = useTheme();
+  const { isDark, toggle, isGuest, user, onLoginRequest, unreadNotifCount } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const getInitials = (nameStr?: string) => {
@@ -54,8 +54,12 @@ export default function TopHeader({ page, onNav, onLogout }: {
             onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
             onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
             <Bell size={20} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full"
-              style={{ backgroundColor: "#E8A500" }} />
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold leading-none px-1"
+                style={{ backgroundColor: "#E8A500", color: "#fff" }}>
+                {unreadNotifCount > 99 ? "99+" : unreadNotifCount}
+              </span>
+            )}
           </button>
 
           {/* Avatar + dropdown */}

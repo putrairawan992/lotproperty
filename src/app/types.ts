@@ -8,6 +8,8 @@ export const ThemeCtx = createContext<{
   onLoginRequest: () => void;
   user: any;
   refreshUser: () => Promise<void>;
+  unreadNotifCount: number;
+  setUnreadNotifCount: React.Dispatch<React.SetStateAction<number>>;
 }>({
   isDark: true,
   toggle: () => {},
@@ -15,6 +17,8 @@ export const ThemeCtx = createContext<{
   onLoginRequest: () => {},
   user: null,
   refreshUser: async () => {},
+  unreadNotifCount: 0,
+  setUnreadNotifCount: (_value: number | ((prev: number) => number)) => {},
 });
 export const useTheme = () => useContext(ThemeCtx);
 

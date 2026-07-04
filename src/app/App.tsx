@@ -48,6 +48,7 @@ export default function App() {
   const [attendanceXp, setAttendanceXp] = useState(0);
   const [appLoading, setAppLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
   
   const mainRef = useRef<HTMLDivElement>(null);
 
@@ -59,6 +60,18 @@ export default function App() {
       } catch (e) {
         console.error("Failed to refresh user profile", e);
       }
+    }
+  };
+
+  const fetchUnreadCount = async () => {
+    if (!localStorage.getItem("lotproperty-auth-token")) return;
+    try {
+      const data = await api.notifications.getList();
+      if (Array.isArray(data)) {
+        setUnreadNotifCount(data.filter((n: any) => !n.is_read).length);
+      }
+    } catch {
+      // Silently fail
     }
   };
 
@@ -88,6 +101,9 @@ export default function App() {
           const profile = await api.auth.getMe();
           setUser(profile);
           setLoggedIn(true);
+          
+          // Fetch notification unread count
+          fetchUnreadCount();
           
           // Check role and redirect if not regular Agent
           if (profile.role && profile.role !== "Agent") {
@@ -234,7 +250,7 @@ export default function App() {
   // Admin flow
   if (adminRole) {
     return (
-      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser }}>
+      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount }}>
         <AdminApp role={adminRole} onLogout={handleLogout} />
       </ThemeCtx.Provider>
     );
@@ -279,10 +295,11 @@ export default function App() {
         }
 
         setLoggedIn(true);
+        fetchUnreadCount();
       }} onRegister={() => setAuthView("register")} onForgotPassword={() => setAuthView("forgot")} onAdminLogin={() => { setAuthView("admin"); navigate("/admin"); }} onGuest={() => setIsGuest(true)} />;
     };
     return (
-      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser }}>
+      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount }}>
         {renderAuth()}
       </ThemeCtx.Provider>
     );
@@ -320,7 +337,7 @@ export default function App() {
   };
 
   return (
-    <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest, onLoginRequest: handleLoginRequest, user, refreshUser }}>
+    <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount }}>
       <div className="flex flex-col h-screen overflow-hidden animate-fade-in" style={{ backgroundColor: T.bg, fontFamily: "'Inter', sans-serif" }}>
         {/* Top Header */}
         <TopHeader page={page} onNav={handlePageChange} onLogout={handleLogout} />

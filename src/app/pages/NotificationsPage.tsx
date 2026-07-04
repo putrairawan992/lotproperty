@@ -20,7 +20,7 @@ interface NotifItem {
 
 export default function NotificationsPage() {
   const loading = useLoading(900);
-  const { isDark } = useTheme();
+  const { isDark, setUnreadNotifCount } = useTheme();
   const [tab, setTab] = useTabQuery("tab", "All");
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
 
@@ -50,6 +50,7 @@ export default function NotificationsPage() {
     try {
       await api.notifications.markRead(id);
       setNotifs(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+      setUnreadNotifCount((prev: number) => Math.max(0, prev - 1));
     } catch {
       // Silently fail
     }
@@ -59,6 +60,7 @@ export default function NotificationsPage() {
     try {
       await api.notifications.markAllRead();
       setNotifs(prev => prev.map(n => ({ ...n, unread: false })));
+      setUnreadNotifCount(0);
     } catch {
       // Silently fail
     }
