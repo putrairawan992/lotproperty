@@ -46,6 +46,24 @@ export default function NotificationsPage() {
     loadNotifs();
   }, []);
 
+  const handleMarkRead = async (id: number) => {
+    try {
+      await api.notifications.markRead(id);
+      setNotifs(prev => prev.map(n => n.id === id ? { ...n, unread: false } : n));
+    } catch {
+      // Silently fail
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    try {
+      await api.notifications.markAllRead();
+      setNotifs(prev => prev.map(n => ({ ...n, unread: false })));
+    } catch {
+      // Silently fail
+    }
+  };
+
   function formatTimeAgo(dateStr: string): string {
     if (!dateStr) return "";
     const d = new Date(dateStr);
@@ -84,7 +102,7 @@ export default function NotificationsPage() {
       <div className="max-w-2xl mx-auto">
         <div className="flex items-center justify-between mb-5">
           <h1 className="font-bold animate-fade-in" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 24, color: T.text1 }}>Notifications</h1>
-          <button className="text-xs font-semibold hover:opacity-80 transition-opacity" style={{ color: "#E8A500" }}>Tandai Semua Dibaca</button>
+          <button className="text-xs font-semibold hover:opacity-80 transition-opacity" style={{ color: "#E8A500" }} onClick={handleMarkAllRead}>Tandai Semua Dibaca</button>
         </div>
 
         <div className="flex overflow-x-auto border-b mb-5 gap-0" style={{ borderColor: T.border }}>
@@ -116,6 +134,7 @@ export default function NotificationsPage() {
 
             return (
               <div key={i} className="flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer relative overflow-hidden"
+                onClick={() => n.unread && handleMarkRead(n.id)}
                 style={{ 
                   borderColor: n.pinned 
                     ? "rgba(232, 165, 0, 0.45)" 

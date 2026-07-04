@@ -233,6 +233,12 @@ export const api = {
   // Notifications
   notifications: {
     getList: () => request<any[]>("/notifications"),
+    markRead: (id: number | string) => {
+      return request<any>(`/notifications/${id}/read`, { method: "PUT" });
+    },
+    markAllRead: () => {
+      return request<any>("/notifications/read-all", { method: "PUT" });
+    },
   },
 
   // Events
