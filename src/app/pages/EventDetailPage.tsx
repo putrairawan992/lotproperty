@@ -237,12 +237,21 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
           <Card className="p-5" style={{ borderColor: isDark ? "rgba(232,165,0,0.15)" : T.border }}>
             <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: sectionLabel }}>Reward</p>
             <div className="space-y-2">
-              {[
-                { rank: "🥇 Juara 1", prize: "Rp 80.000.000" },
-                { rank: "🥈 Juara 2", prize: "Rp 40.000.000" },
-                { rank: "🥉 Juara 3", prize: "Rp 20.000.000" },
-                { rank: "🏅 Top 5", prize: "+10.000 XP" },
-              ].map(r => (
+              {((): {rank: string; prize: string}[] => {
+                if (ev?.prizes) {
+                  try {
+                    const parsed = JSON.parse(ev.prizes);
+                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+                  } catch { /* fall through to default */ }
+                }
+                // Fallback default prizes if none configured
+                return [
+                  { rank: "🥇 Juara 1", prize: "Rp 80.000.000" },
+                  { rank: "🥈 Juara 2", prize: "Rp 40.000.000" },
+                  { rank: "🥉 Juara 3", prize: "Rp 20.000.000" },
+                  { rank: "🏅 Top 5", prize: "+10.000 XP" },
+                ];
+              })().map(r => (
                 <div
                   key={r.rank}
                   className="flex items-center justify-between px-2 py-1.5 rounded-lg"

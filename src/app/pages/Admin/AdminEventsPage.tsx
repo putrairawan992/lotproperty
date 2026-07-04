@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage, X, Pencil } from "lucide-react";
+import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage, X, Pencil, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import { DateInput } from "../../components/DateTimeInput";
@@ -29,6 +29,7 @@ export default function AdminEventsPage() {
             xpPool: Number(ev.xp_pool || 0),
             badge: ev.badge?.name || "Event Badge",
             banner: ev.banner || "",
+            prizes: ev.prizes || "",
             status: ev.status || "Upcoming",
           })));
         } else {
@@ -48,10 +49,32 @@ export default function AdminEventsPage() {
   const [end, setEnd] = useState("");
   const [xpPool, setXpPool] = useState("");
   const [badge, setBadge] = useState("Merdeka Creator");
+  const [prizeItems, setPrizeItems] = useState<{rank: string; prize: string}[]>([]);
+  
+  // Prize helpers
+  const addPrizeItem = () => setPrizeItems(prev => [...prev, {rank: "", prize: ""}]);
+  const removePrizeItem = (i: number) => setPrizeItems(prev => prev.filter((_, idx) => idx !== i));
+  const updatePrizeItem = (i: number, field: "rank" | "prize", value: string) => {
+    setPrizeItems(prev => prev.map((item, idx) => idx === i ? {...item, [field]: value} : item));
+  };
+  const serializePrizes = () => {
+    const valid = prizeItems.filter(p => p.rank.trim() || p.prize.trim());
+    return valid.length > 0 ? JSON.stringify(valid) : "";
+  };
+  const parsePrizes = (json: string) => {
+    if (!json) { setPrizeItems([]); return; }
+    try {
+      const arr = JSON.parse(json);
+      if (Array.isArray(arr)) setPrizeItems(arr);
+      else setPrizeItems([]);
+    } catch { setPrizeItems([]); }
+  };
   
   // Banner Upload States
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [bannerPreview, setBannerPreview] = useState("");
+  const [bannerUrl, setBannerUrl] = useState(""); // uploaded URL from API
+  const [uploadingBanner, setUploadingBanner] = useState(false);
   const [bannerError, setBannerError] = useState("");
   const [formError, setFormError] = useState("");
 
@@ -75,8 +98,10 @@ export default function AdminEventsPage() {
       setEnd("");
       setXpPool("");
       setBadge("Merdeka Creator");
+      setPrizeItems([]);
       setBannerFile(null);
       setBannerPreview("");
+      setBannerUrl("");
       setBannerError("");
       setEditId(null);
       setShowAddForm(false);
@@ -85,17 +110,32 @@ export default function AdminEventsPage() {
     }
   };
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Show local preview immediately
     const reader = new FileReader();
     reader.onload = (event) => {
-      setBannerFile(file);
-      setBannerError("");
       setBannerPreview(event.target?.result as string);
     };
     reader.readAsDataURL(file);
+
+    // Upload to server
+    setBannerFile(file);
+    setBannerError("");
+    setUploadingBanner(true);
+    try {
+      const result = await api.admin.uploadEventBanner(file);
+      if (result?.banner_url) {
+        setBannerUrl(result.banner_url);
+      }
+    } catch (err) {
+      setBannerError("Gagal upload banner. Coba lagi.");
+      console.error("Banner upload failed:", err);
+    } finally {
+      setUploadingBanner(false);
+    }
   };
 
   const handleCreateOrUpdateEvent = async (e: React.FormEvent) => {
@@ -105,39 +145,33 @@ export default function AdminEventsPage() {
       return;
     }
 
+    // Use uploaded banner URL; fallback to existing bannerPreview for editing
+    const finalBanner = bannerUrl || bannerPreview;
+
     setToastMsg("");
     setSaving(true);
     try {
+      const payload = {
+        title: title.trim(),
+        desc: desc.trim(),
+        start_date: new Date(start).toISOString(),
+        end_date: new Date(end).toISOString(),
+        xp_pool: parseInt(xpPool) || 0,
+        subtitle: title.trim().toUpperCase(),
+        heading: title.trim().toUpperCase(),
+        tagline: "Ikuti event dan raih",
+        tagline_highlight: "hadiah eksklusif!",
+        accent_color: "#E53E3E",
+        banner: finalBanner,
+        prizes: serializePrizes(),
+      };
+
       if (editId) {
         const rawId = editId.replace("EV-", "");
-        await api.admin.updateEvent(rawId, {
-          title: title.trim(),
-          desc: desc.trim(),
-          start_date: new Date(start).toISOString(),
-          end_date: new Date(end).toISOString(),
-          xp_pool: parseInt(xpPool) || 0,
-          subtitle: title.trim().toUpperCase(),
-          heading: title.trim().toUpperCase(),
-          tagline: "Ikuti event dan raih",
-          tagline_highlight: "hadiah eksklusif!",
-          accent_color: "#E53E3E",
-          banner: bannerPreview,
-        });
+        await api.admin.updateEvent(rawId, payload);
         setToastMsg("Event Berhasil Diperbarui!");
       } else {
-        await api.admin.createEvent({
-          title: title.trim(),
-          desc: desc.trim(),
-          start_date: new Date(start).toISOString(),
-          end_date: new Date(end).toISOString(),
-          xp_pool: parseInt(xpPool) || 0,
-          subtitle: title.trim().toUpperCase(),
-          heading: title.trim().toUpperCase(),
-          tagline: "Ikuti event dan raih",
-          tagline_highlight: "hadiah eksklusif!",
-          accent_color: "#E53E3E",
-          banner: bannerPreview,
-        });
+        await api.admin.createEvent(payload);
         setToastMsg("Event Baru Berhasil Dibuat dan Dipublikasikan!");
       }
 
@@ -147,8 +181,10 @@ export default function AdminEventsPage() {
       setEnd("");
       setXpPool("");
       setBadge("Merdeka Creator");
+      setPrizeItems([]);
       setBannerFile(null);
       setBannerPreview("");
+      setBannerUrl("");
       setBannerError("");
       setEditId(null);
       setShowAddForm(false);
@@ -164,6 +200,7 @@ export default function AdminEventsPage() {
           xpPool: Number(ev.xp_pool || 0),
           badge: ev.badge?.name || "Event Badge",
           banner: ev.banner || "",
+          prizes: ev.prizes || "",
           status: ev.status || "Upcoming",
         })));
       }
@@ -181,6 +218,9 @@ export default function AdminEventsPage() {
     setEnd(ev.end);
     setXpPool(String(ev.xpPool));
     setBadge(ev.badge);
+    parsePrizes(ev.prizes || "");
+    setBannerPreview(ev.banner || "");
+    setBannerUrl(ev.banner || "");
     setEditId(ev.id);
     setShowAddForm(true);
   };
@@ -287,16 +327,72 @@ export default function AdminEventsPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Upload Banner Event (1200 x 500 px)</label>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
                       <label className="flex items-center justify-center gap-1.5 px-4 py-2.5 border border-dashed rounded-xl cursor-pointer text-xs font-bold hover:border-[#E8A500] hover:text-[#E8A500] transition-colors bg-card/50" style={{ borderColor: T.border }}>
-                        <Upload size={14} /> Upload Banner
-                        <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" />
+                        {uploadingBanner ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                        {uploadingBanner ? "Uploading..." : "Upload Banner"}
+                        <input type="file" accept="image/*" onChange={handleBannerUpload} className="hidden" disabled={uploadingBanner} />
                       </label>
-                      {bannerFile && (
+                      {bannerFile && !bannerError && (
                         <div className="flex items-center gap-1 text-xs text-green-500 font-semibold">
-                          <Check size={14} /> {bannerFile.name} (Valid)
+                          <Check size={14} /> {bannerUrl ? "Tersimpan di server" : bannerFile.name}
                         </div>
                       )}
+                      {bannerError && (
+                        <div className="flex items-center gap-1 text-xs text-red-500 font-semibold">
+                          <AlertCircle size={14} /> {bannerError}
+                        </div>
+                      )}
+                      {bannerPreview && !bannerUrl && !bannerFile && (
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                          <FileImage size={14} /> Banner tersimpan
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hadiah / Prizes</label>
+                      <button
+                        type="button"
+                        onClick={addPrizeItem}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#E8A500]/10 text-[#E8A500] border border-[#E8A500]/20 hover:bg-[#E8A500]/20 transition-colors"
+                      >
+                        <Plus size={12} /> Tambah
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {prizeItems.length === 0 && (
+                        <p className="text-[10px] text-muted-foreground italic py-1">Belum ada hadiah. Klik "Tambah" untuk menambahkan.</p>
+                      )}
+                      {prizeItems.map((item, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={item.rank}
+                            onChange={e => updatePrizeItem(i, "rank", e.target.value)}
+                            placeholder="🥇 Juara 1"
+                            className="flex-1 px-3 py-2 rounded-xl border bg-card text-sm outline-none"
+                            style={{ borderColor: T.border, minWidth: 0 }}
+                          />
+                          <input
+                            type="text"
+                            value={item.prize}
+                            onChange={e => updatePrizeItem(i, "prize", e.target.value)}
+                            placeholder="Rp 80.000.000"
+                            className="flex-1 px-3 py-2 rounded-xl border bg-card text-sm outline-none"
+                            style={{ borderColor: T.border, minWidth: 0 }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removePrizeItem(i)}
+                            className="p-2 rounded-lg text-red-400 hover:bg-red-500/10 hover:text-red-500 transition-colors flex-shrink-0"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>

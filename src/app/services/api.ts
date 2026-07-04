@@ -333,6 +333,15 @@ export const api = {
         method: "DELETE",
       });
     },
+    uploadEventBanner: (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return request<any>("/admin/events/upload-banner", {
+        method: "POST",
+        body: formData,
+        headers: {}, // Let browser set Content-Type for FormData
+      });
+    },
     createAcademyModule: (payload: any) => {
       return request<any>("/admin/academy", {
         method: "POST",
