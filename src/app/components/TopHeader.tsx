@@ -70,7 +70,6 @@ export default function TopHeader({ page, onNav, onLogout }: {
                 initials={isGuest ? "G" : getInitials(user?.name)}
                 size={32}
                 isMe={true}
-                photo={isGuest ? undefined : (user?.photo_url || user?.photo)}
               />
               <div className="hidden sm:block text-left">
                 <p className="text-xs font-bold leading-none" style={{ color: T.text1 }}>

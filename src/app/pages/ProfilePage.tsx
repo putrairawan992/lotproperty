@@ -942,7 +942,10 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
             <div className="relative z-10 flex flex-col items-center w-full">
               {/* Center-aligned avatar matching Hall of Fame cards */}
-              <div className="relative w-36 h-48 rounded-[20px] overflow-hidden border-[1.2px] border-[#C8922A] shadow-[0_8px_32px_rgba(200,146,42,0.25)] transition-transform duration-500 group-hover:scale-105 mb-4 bg-[#121115]">
+              <div
+                className={`relative w-36 h-48 rounded-[20px] overflow-hidden border-[1.2px] border-[#C8922A] shadow-[0_8px_32px_rgba(200,146,42,0.25)] transition-transform duration-500 group-hover:scale-105 mb-4 bg-[#121115] ${!getQueryParam("id") ? "cursor-pointer" : ""}`}
+                onClick={() => { if (!getQueryParam("id") && !isUploadingPhoto) handlePhotoEdit(); }}
+              >
                 {/* Glow behind photo */}
                 <div
                   className="absolute inset-0 pointer-events-none mix-blend-screen opacity-65 z-10"
@@ -982,12 +985,12 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-[#C8922A] opacity-75" />
                 </div>
 
-                {/* Edit Photo Button — only show on own profile */}
+                {/* Edit Photo Button — always visible on own profile */}
                 {!getQueryParam("id") && (
                   <button
-                    onClick={handlePhotoEdit}
+                    onClick={(e) => { e.stopPropagation(); handlePhotoEdit(); }}
                     disabled={isUploadingPhoto}
-                    className="absolute bottom-2 right-2 z-30 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/80 hover:border-[#C8922A]/50 disabled:opacity-50 disabled:cursor-wait"
+                    className="absolute bottom-2 right-2 z-30 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center transition-all duration-300 hover:bg-black/80 hover:border-[#C8922A]/50 disabled:opacity-50 disabled:cursor-wait"
                     title="Ganti foto profil"
                   >
                     {isUploadingPhoto ? (

@@ -28,58 +28,27 @@ const CAT_COLORS: Record<string, string> = {
 function getEmbedUrl(url: string): string {
   if (!url) return "";
 
+  // Extract the 11-char video ID from any YouTube URL form
+  // (/embed/ID, watch?v=ID, youtu.be/ID, ...&v=ID)
+  const idMatch = url.match(/(?:\/embed\/|[?&]v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
   let embedUrl = "";
-
-  if (url.includes("/embed/")) {
-    embedUrl = url;
-  } else if (url.includes("playlist?list=")) {
-    try {
-      const urlObj = new URL(url);
-      const listId = urlObj.searchParams.get("list");
-      if (listId) {
-        embedUrl = `https://www.youtube.com/embed/videoseries?list=${listId}`;
-      }
-    } catch (e) {
-      const match = url.match(/[?&]list=([^#\&\?]+)/);
-      if (match && match[1]) {
-        embedUrl = `https://www.youtube.com/embed/videoseries?list=${match[1]}`;
-      }
-    }
-  } else if (url.includes("watch?v=")) {
-    try {
-      const urlObj = new URL(url);
-      const videoId = urlObj.searchParams.get("v");
-      if (videoId) {
-        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-      }
-    } catch (e) {
-      const match = url.match(/[?&]v=([^#\&\?]+)/);
-      if (match && match[1]) {
-        embedUrl = `https://www.youtube.com/embed/${match[1]}`;
-      }
-    }
-  } else if (url.includes("youtu.be/")) {
-    try {
-      const urlObj = new URL(url);
-      const videoId = urlObj.pathname.substring(1);
-      if (videoId) {
-        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-      }
-    } catch (e) {
-      const parts = url.split("youtu.be/");
-      if (parts[1]) {
-        const videoId = parts[1].split(/[?#]/)[0];
-        embedUrl = `https://www.youtube.com/embed/${videoId}`;
-      }
+  if (idMatch) {
+    // Single video, no list param → no prev/next skip buttons
+    embedUrl = `https://www.youtube.com/embed/${idMatch[1]}`;
+  } else {
+    // No single video — fall back to a framable playlist embed
+    const listMatch = url.match(/[?&]list=([^#&?]+)/);
+    if (listMatch) {
+      embedUrl = `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}`;
     }
   }
 
   if (!embedUrl) return url;
 
-  // Add required params: enablejsapi for video-end detection, rel=0 to disable related videos, autoplay=0, origin for postMessage
+  // controls=0 disables all player controls (no next/prev/related videos)
   const origin = typeof window !== "undefined" ? window.location.origin : "";
   const sep = embedUrl.includes("?") ? "&" : "?";
-  return embedUrl + sep + `enablejsapi=1&rel=0&autoplay=0&origin=${encodeURIComponent(origin)}`;
+  return embedUrl + sep + `controls=0&enablejsapi=1&rel=0&autoplay=0&modestbranding=1&showinfo=0&origin=${encodeURIComponent(origin)}`;
 }
 
 export default function AcademyPage() {
@@ -125,34 +94,28 @@ export default function AcademyPage() {
   // Active module detailed state (null if listing view is active)
   const [activeModule, setActiveModule] = useState<any | null>(null);
   const [videoWatched, setVideoWatched] = useState(false);
-  const [watchStartTime, setWatchStartTime] = useState<number | null>(null);
-  const MIN_WATCH_SECONDS = 120;
-  const [watchSecondsLeft, setWatchSecondsLeft] = useState(MIN_WATCH_SECONDS);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
 
-  // Countdown timer for minimum watch time
-  useEffect(() => {
-    if (!watchStartTime || videoWatched) return;
-    const interval = setInterval(() => {
-      const elapsed = Math.floor((Date.now() - (watchStartTime || 0)) / 1000);
-      const left = Math.max(0, MIN_WATCH_SECONDS - elapsed);
-      setWatchSecondsLeft(left);
-      if (left <= 0) {
-        setVideoWatched(true);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [watchStartTime, videoWatched]);
+  // Register for YouTube player events (required to receive onStateChange)
+  const handleIframeLoad = () => {
+    iframeRef.current?.contentWindow?.postMessage('{"event":"listening"}', '*');
+  };
+
+  // Overlay click toggles play/pause — blocks native prev/next/logo clicks
+  const togglePlay = () => {
+    const func = isPlaying ? "pauseVideo" : "playVideo";
+    iframeRef.current?.contentWindow?.postMessage(`{"event":"command","func":"${func}","args":[]}`, "*");
+  };
 
   // Feedback alerts
   const [toastMessage, setToastMessage] = useState("");
 
-  // Start course player
+  // Start course player — timer starts immediately as fallback
   const handleStartModule = (m: any) => {
     if (isGuest) { onLoginRequest(); return; }
     setActiveModule(m);
     setVideoWatched(false);
-    setWatchStartTime(null);
-    setWatchSecondsLeft(MIN_WATCH_SECONDS);
     triggerToast(`Membuka modul: ${m.title}`);
   };
 
@@ -160,18 +123,25 @@ export default function AcademyPage() {
   const handleVideoMessage = useCallback((e: MessageEvent) => {
     try {
       const data = JSON.parse(e.data);
-      // YouTube IFrame API: event 0 = ended → unlock immediately
+      // Track play state for the overlay toggle (1 = playing)
+      if (data?.event === "onStateChange") {
+        setIsPlaying(data.info === 1);
+      }
+      // YouTube IFrame API: event 0 = ended → unlock + stop video to prevent next/related
       if (data?.event === "onStateChange" && data?.info === 0) {
         setVideoWatched(true);
-      }
-      // YouTube IFrame API: event 1 = playing → start timer
-      if (data?.event === "onStateChange" && data?.info === 1 && !watchStartTime) {
-        setWatchStartTime(Date.now());
+        // Seek to beginning and pause to prevent related videos / auto-next
+        if (iframeRef.current?.contentWindow) {
+          iframeRef.current.contentWindow.postMessage('{"event":"command","func":"seekTo","args":[0]}', '*');
+          setTimeout(() => {
+            iframeRef.current?.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
+          }, 200);
+        }
       }
     } catch {
       // Ignore non-JSON messages
     }
-  }, [watchStartTime]);
+  }, []);
 
   useEffect(() => {
     window.addEventListener("message", handleVideoMessage);
@@ -366,13 +336,22 @@ export default function AcademyPage() {
               </p>
 
               {activeModule.video_url ? (
-                <div className="aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
+                <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
                   <iframe
+                    ref={iframeRef}
+                    onLoad={handleIframeLoad}
                     src={getEmbedUrl(activeModule.video_url)}
                     className="w-full h-full"
                     allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     title={activeModule.title}
+                  />
+                  {/* Click-catcher: blocks native prev/next/logo, toggles play/pause */}
+                  <div
+                    className="absolute inset-0 cursor-pointer"
+                    onClick={togglePlay}
+                    role="button"
+                    aria-label={isPlaying ? "Jeda video" : "Putar video"}
                   />
                 </div>
               ) : (
@@ -405,18 +384,9 @@ export default function AcademyPage() {
                       <Award size={16} /> SELESAIKAN MODUL (+{activeModule.xp} XP)
                     </button>
                     {!videoWatched && (
-                      <div className="flex items-center justify-between">
-                        <p className="text-xs" style={{ color: T.text3 }}>
-                          ⏳ Tonton minimal {Math.ceil(watchSecondsLeft / 60)} menit — tersisa {watchSecondsLeft} detik
-                        </p>
-                        <button
-                          onClick={() => setVideoWatched(true)}
-                          className="text-xs font-bold underline flex-shrink-0"
-                          style={{ color: "#E8A500" }}
-                        >
-                          Lewati →
-                        </button>
-                      </div>
+                      <p className="text-xs" style={{ color: T.text3 }}>
+                        ⏳ Tonton video sampai selesai untuk membuka tombol
+                      </p>
                     )}
                   </div>
                 )}
