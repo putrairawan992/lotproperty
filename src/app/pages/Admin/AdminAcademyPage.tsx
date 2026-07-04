@@ -17,6 +17,25 @@ const CAT_COLORS: Record<string, string> = {
   "Product Knowledge": "#1A6FC4",
 };
 
+// Standar URL video Academy — HARUS YouTube, dan formatnya harus salah satu yang
+// bisa diputar player (lihat parseYouTube di AcademyPage): mengandung ID video
+// atau ID playlist. Regex ID video sengaja disamakan persis dengan parseYouTube.
+const YT_EXAMPLES =
+  "• https://www.youtube.com/watch?v=VIDEO_ID\n• https://youtu.be/VIDEO_ID\n• https://www.youtube.com/playlist?list=PLAYLIST_ID";
+
+function validateYoutubeUrl(raw: string): string | null {
+  const url = raw.trim();
+  if (!/^https?:\/\/(www\.|m\.)?(youtube\.com|youtu\.be)\//i.test(url)) {
+    return `URL harus dari YouTube (youtube.com atau youtu.be). Format yang didukung:\n${YT_EXAMPLES}`;
+  }
+  const hasVideoId = /(?:\/embed\/|[?&]v=|youtu\.be\/)[A-Za-z0-9_-]{11}/.test(url);
+  const hasPlaylist = /[?&]list=[A-Za-z0-9_-]+/.test(url);
+  if (!hasVideoId && !hasPlaylist) {
+    return `Link YouTube belum lengkap — harus memuat ID video (watch?v=... / youtu.be/...) atau ID playlist (list=...). Contoh:\n${YT_EXAMPLES}`;
+  }
+  return null;
+}
+
 export default function AdminAcademyPage() {
   const [modules, setModules] = useState<any[]>([]);
 
@@ -72,6 +91,7 @@ export default function AdminAcademyPage() {
       setXp("200");
       setVideoUrl("");
       setEditId(null);
+      setFormError("");
       setShowAddForm(false);
     } else {
       setShowAddForm(true);
@@ -85,6 +105,13 @@ export default function AdminAcademyPage() {
       return;
     }
 
+    const ytError = validateYoutubeUrl(videoUrl);
+    if (ytError) {
+      setFormError(ytError);
+      return;
+    }
+
+    setFormError("");
     setToastMsg("");
     setSaving(true);
     try {
@@ -143,6 +170,7 @@ export default function AdminAcademyPage() {
     setXp(String(m.xp));
     setVideoUrl(m.videoUrl);
     setEditId(m.id);
+    setFormError("");
     setShowAddForm(true);
   };
 
@@ -240,10 +268,17 @@ export default function AdminAcademyPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">URL Video Pembelajaran</label>
-                    <input type="url" value={videoUrl} onChange={e => setVideoUrl(e.target.value)}
+                    <input type="url" value={videoUrl} onChange={e => { setVideoUrl(e.target.value); if (formError) setFormError(""); }}
                       placeholder="Contoh: https://www.youtube.com/watch?v=..."
                       className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                      style={{ borderColor: T.border, color: T.text1 }} />
+                      style={{ borderColor: formError ? "#DC2626" : T.border, color: T.text1 }} />
+                    {formError ? (
+                      <p className="mt-1.5 text-xs text-[#DC2626] whitespace-pre-line leading-relaxed">{formError}</p>
+                    ) : (
+                      <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                        Standar: link YouTube — video (<code>watch?v=…</code> / <code>youtu.be/…</code>) atau playlist (<code>list=…</code>).
+                      </p>
+                    )}
                   </div>
                 </div>
 

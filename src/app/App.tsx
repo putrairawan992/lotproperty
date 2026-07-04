@@ -150,25 +150,6 @@ export default function App() {
     }
   }, [loggedIn, isGuest]);
 
-  // // When attendance popup opens, call API to mark attendance & sync XP
-  // useEffect(() => {
-  //   if (showAttendancePopup && !isGuest) {
-  //     (async () => {
-  //       try {
-  //         const result = await api.quests.markAttendance();
-  //         if (result && typeof result.xp_earned === "number") {
-  //           setAttendanceXp(result.xp_earned);
-  //         } else {
-  //           setAttendanceXp(100); // fallback default
-  //         }
-  //       } catch (e) {
-  //         console.error("Failed to mark attendance via API:", e);
-  //         setAttendanceXp(100); // fallback default
-  //       }
-  //     })();
-  //   }
-  // }, [showAttendancePopup, isGuest]);
-
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('lotquest-theme');
@@ -273,21 +254,27 @@ export default function App() {
             setAdminRole(profile.role);
           }
 
-          // Show attendance popup only if:
-          // 1. localStorage date differs from today (hasn't been shown yet)
-          // 2. API confirms user hasn't checked in today
+          // Attendance: the SERVER is the source of truth, so it can't be
+          // re-triggered from another browser. localStorage only skips a
+          // redundant round-trip once this browser has already synced today.
           if (localStorage.getItem("lotproperty-attendance-date") !== todayStr) {
             try {
               const status = await api.attendance.getStatus();
               if (!status.checked_today) {
-                localStorage.setItem("lotproperty-attendance-date", todayStr);
+                // Record on the server now — idempotent, awards +100 XP once
+                // and makes checked_today=true for every other browser/device.
+                const res = await api.attendance.checkIn();
+                const earned = typeof res?.xp_earned === "number" ? res.xp_earned : 100;
+                setAttendanceXp(earned > 0 ? earned : 100);
                 localStorage.setItem("lotproperty-show-attendance-popup", "true");
+                await refreshUser(); // keep XP accumulation in sync with the award
               }
-            } catch (e) {
-              // API unavailable — fallback to localStorage-only check
-              console.error("Failed to check attendance status from API:", e);
+              // Server answered — remember for today to skip the check next login.
               localStorage.setItem("lotproperty-attendance-date", todayStr);
-              localStorage.setItem("lotproperty-show-attendance-popup", "true");
+            } catch (e) {
+              // API unavailable: do NOT show/award — that would grant XP the server
+              // never recorded. Retry cleanly on the next login instead.
+              console.error("Failed to check/mark attendance:", e);
             }
           }
         } catch (e) {
