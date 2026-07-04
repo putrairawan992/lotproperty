@@ -288,6 +288,10 @@ export const api = {
 
   // Admin Panel
   admin: {
+    getHelpSubmissions: () => request<any[]>("/admin/help/submissions"),
+    updateHelpSubmissionStatus: (id: number | string, status: string) => {
+      return request<any>(`/admin/help/submissions/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) });
+    },
     getAgents: () => request<any[]>("/admin/agents"),
     getAgentsTree: () => request<any>("/admin/agents/tree"),
     getHof: (period?: string) => {

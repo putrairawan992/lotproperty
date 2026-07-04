@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Home, Users, DollarSign, Trophy, GraduationCap, Zap, TrendingUp, BookOpen, X, Menu } from "lucide-react";
+import { Home, Users, DollarSign, Trophy, GraduationCap, Zap, TrendingUp, BookOpen, X, Menu, LifeBuoy } from "lucide-react";
 import Logo from "../../components/Logo";
 import { T, useTheme, AdminRole, AdminPage, ROLE_COLOR } from "../../types";
 import { useLocation } from "../../routes";
@@ -17,7 +17,7 @@ import AdminAcademyPage from "./AdminAcademyPage";
 const ADMIN_NAV: { id: AdminPage; label: string; icon: React.ElementType; badge?: number }[] = [
   { id: "dashboard",  label: "Dashboard",         icon: Home },
   { id: "agents",     label: "Agent Management",  icon: Users,        badge: 3 },
-  { id: "commission", label: "Commission",         icon: DollarSign,   badge: 7 },
+  { id: "commission", label: "Agent Submissions", icon: DollarSign,   badge: 7 },
   { id: "hof",        label: "Hall of Fame",       icon: Trophy },
   { id: "academy",    label: "Academy",            icon: GraduationCap },
   { id: "events",     label: "Events",             icon: Zap },
@@ -36,6 +36,7 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [agentPendingCount, setAgentPendingCount] = useState(0);
   const [commissionPendingCount, setCommissionPendingCount] = useState(0);
+  const [helpPendingCount, setHelpPendingCount] = useState(0);
   const rc = ROLE_COLOR[role];
 
   useEffect(() => {
@@ -43,9 +44,10 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
 
     (async () => {
       try {
-        const [agents, commissions] = await Promise.all([
+        const [agents, commissions, helpSubmissions] = await Promise.all([
           api.admin.getAgents(),
           api.admin.getCommissions(),
+          api.admin.getHelpSubmissions(),
         ]);
         if (!cancelled) {
           if (Array.isArray(agents)) {
@@ -53,6 +55,9 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
           }
           if (Array.isArray(commissions)) {
             setCommissionPendingCount(commissions.filter((c: any) => String(c.status || "") === "Pending").length);
+          }
+          if (Array.isArray(helpSubmissions)) {
+            setHelpPendingCount(helpSubmissions.filter((h: any) => String(h.status || "") === "Menunggu Verifikasi" || String(h.status || "") === "Terkirim").length);
           }
         }
       } catch {
@@ -69,7 +74,7 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
     switch (page) {
       case "dashboard":  return <AdminDashboard />;
       case "agents":     return <AdminAgentsPage />;
-      case "commission": return <AdminCommissionPage />;
+      case "commission": return <AdminCommissionPage role={role} />;
       case "hof":        return <AdminHoFPage />;
       case "academy":    return <AdminAcademyPage />;
       case "events":     return <AdminEventsPage />;
@@ -93,9 +98,9 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
       </div>
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {ADMIN_NAV.map(({ id, label, icon: Icon, badge }) => {
-          const resolvedBadge = id === "agents" ? agentPendingCount : id === "commission" ? commissionPendingCount : badge;
+          const resolvedBadge = id === "agents" ? agentPendingCount : id === "commission" ? (commissionPendingCount + helpPendingCount) : badge;
           const canSee = role === "Super Admin" ? true
-            : role === "Office Manager" ? ["dashboard","agents","hof","events","academy","log"].includes(id)
+            : role === "Office Manager" ? ["dashboard","agents","commission","hof","events","academy","log"].includes(id)
             : role === "Finance" ? ["dashboard","commission","log"].includes(id)
             : false;
           if (!canSee) return null;
