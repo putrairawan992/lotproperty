@@ -16,14 +16,14 @@ export default function AdminHoFPage() {
   const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { name?: string }; period: string }>>([]);
   
   const [entries, setEntries] = useState([
-    { cat: "Top 5 Commission",     type: "auto",   overridden: false, autoList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"], overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"] },
-    { cat: "Top 5 By Unit",        type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"] },
-    { cat: "Listing Hunter",       type: "auto",   overridden: false, autoList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama"], overrideList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama"] },
-    { cat: "Prospecting Master",   type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo"] },
-    { cat: "Content Creator",      type: "auto",   overridden: false, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil"] },
-    { cat: "Top 5 Primary",        type: "manual", overridden: true,  autoList: [],                                             overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso"] },
-    { cat: "Rising Star",          type: "manual", overridden: true,  autoList: [],                                             overrideList: ["Linda Kusuma", "Rendi Setiawan", "Maya Putri"] },
-    { cat: "Top Recruiter",        type: "manual", overridden: true,  autoList: [],                                             overrideList: ["Rizki Pratama", "Budi Santoso", "Siti Fatimah"] },
+    { cat: "Top 5 Commission",     type: "auto",   overridden: false, visibleCount: 3, autoList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""], overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""] },
+    { cat: "Top 5 By Unit",        type: "auto",   overridden: false, visibleCount: 3, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""] },
+    { cat: "Listing Hunter",       type: "auto",   overridden: false, visibleCount: 3, autoList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama", "", "", "", "", ""], overrideList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama", "", "", "", "", ""] },
+    { cat: "Prospecting Master",   type: "auto",   overridden: false, visibleCount: 3, autoList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo", "", "", "", "", ""], overrideList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo", "", "", "", "", ""] },
+    { cat: "Content Creator",      type: "auto",   overridden: false, visibleCount: 3, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""] },
+    { cat: "Top 5 Primary",        type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""] },
+    { cat: "Rising Star",          type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Linda Kusuma", "Rendi Setiawan", "Maya Putri", "", "", "", "", ""] },
+    { cat: "Top Recruiter",        type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Rizki Pratama", "Budi Santoso", "Siti Fatimah", "", "", "", "", ""] },
   ]);
 
   const AGENT_DATA = AGENT_DATA_LIST;
@@ -76,6 +76,50 @@ export default function AdminHoFPage() {
     loadHof();
   }, [period]);
 
+  useEffect(() => {
+    setEntries(prev => prev.map(section => {
+      // Find saved records for this category
+      const saved = hofRecords
+        .filter(r => normalizeHofCategory(r.category, [
+          "Top 5 Commission",
+          "Top 5 By Unit",
+          "Top 5 Primary",
+          "Rising Star",
+          "Content Creator",
+          "Listing Hunter",
+          "Prospecting Master",
+          "Top Recruiter",
+        ]) === section.cat)
+        .sort((a, b) => a.rank - b.rank);
+
+      const hasSavedRecords = saved.length > 0;
+      
+      // If there are saved records in the DB, we wipe the overrideList and only set what is in the DB
+      // Otherwise, we keep the section's overrideList (which defaults to placeholders)
+      const currentOverrideList = hasSavedRecords ? Array(8).fill("") : [...section.overrideList];
+      
+      saved.forEach(r => {
+        if (r.rank >= 1 && r.rank <= 8) {
+          currentOverrideList[r.rank - 1] = r.agent?.name || "";
+        }
+      });
+
+      const maxRankSaved = saved.reduce((max, r) => r.rank > max ? r.rank : max, 3);
+      const visibleCount = Math.min(Math.max(maxRankSaved, 3), 8);
+
+      const overridden = section.type === "manual" ? true : (hasSavedRecords ? true : section.overridden);
+
+      return {
+        ...section,
+        overridden,
+        visibleCount,
+        // Set autoList to match override if overridden and saved records exist, to display nicely
+        autoList: section.type === "auto" && !overridden ? currentOverrideList : section.autoList,
+        overrideList: currentOverrideList,
+      };
+    }));
+  }, [hofRecords]);
+
   const entriesFromApi = (cat: string): string[] => {
     return hofRecords
       .filter((r) => normalizeHofCategory(r.category, [
@@ -89,7 +133,7 @@ export default function AdminHoFPage() {
         "Top Recruiter",
       ]) === cat)
       .sort((a, b) => a.rank - b.rank)
-      .slice(0, 3)
+      .slice(0, 8)
       .map((r) => r.agent?.name || "—");
   };
 
@@ -118,6 +162,34 @@ export default function AdminHoFPage() {
     }));
   };
 
+  const handleAddRank = (sectionIdx: number) => {
+    setEntries(prev => prev.map((item, idx) => {
+      if (idx === sectionIdx) {
+        const nextCount = Math.min((item.visibleCount || 3) + 1, 8);
+        return { ...item, visibleCount: nextCount };
+      }
+      return item;
+    }));
+  };
+
+  const handleRemoveRank = (sectionIdx: number, rankIdx: number) => {
+    setEntries(prev => prev.map((item, idx) => {
+      if (idx === sectionIdx) {
+        const newList = [...item.overrideList];
+        newList.splice(rankIdx, 1);
+        newList.push("");
+        
+        const nextCount = Math.max((item.visibleCount || 3) - 1, 3);
+        return { 
+          ...item, 
+          visibleCount: nextCount,
+          overrideList: newList 
+        };
+      }
+      return item;
+    }));
+  };
+
   const resolveAgentIdByName = (name: string) => {
     const fromServer = serverAgents.find(a => a.name === name);
     if (fromServer?.id) return fromServer.id;
@@ -132,7 +204,7 @@ export default function AdminHoFPage() {
   };
 
   const handleSaveCategory = async (section: any) => {
-    const listUsed = (section.overridden ? section.overrideList : section.autoList).slice(0, 3);
+    const listUsed = (section.overridden ? section.overrideList : section.autoList).slice(0, 8);
     const canonicalCategory = normalizeHofCategory(section.cat, [
       "Top 5 Commission",
       "Top 5 By Unit",
@@ -157,10 +229,20 @@ export default function AdminHoFPage() {
     setSavingCategory(section.cat);
     try {
       for (let i = 0; i < listUsed.length; i++) {
-        const agentName = listUsed[i];
-        const agentID = resolveAgentIdByName(agentName);
-        if (!agentID) {
-          throw new Error(`Agent '${agentName}' belum terdaftar di database server`);
+        let agentName = listUsed[i];
+        
+        // If the rank index exceeds current visible count, treat as cleared (empty)
+        if (i >= (section.visibleCount || 3)) {
+          agentName = "";
+        }
+
+        let agentID = 0;
+        if (agentName && agentName !== "—") {
+          const resolvedID = resolveAgentIdByName(agentName);
+          if (!resolvedID) {
+            throw new Error(`Agent '${agentName}' belum terdaftar di database server`);
+          }
+          agentID = resolvedID;
         }
 
         await api.admin.addHof({
@@ -266,26 +348,46 @@ export default function AdminHoFPage() {
 
                 {/* Rank lists */}
                 <div className="space-y-2 mb-4">
-                  {[0, 1, 2].map((rankIdx) => {
+                  {Array.from({ length: section.visibleCount || 3 }).map((_, rankIdx) => {
                     const rankNum = rankIdx + 1;
                     const selectedAgent = section.overrideList[rankIdx] || "";
                     
                     return (
                       <div key={rankIdx} className="flex items-center gap-2.5 p-2 rounded-xl" style={{ backgroundColor: T.muted }}>
-                        <span className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs text-white flex-shrink-0"
-                          style={{ background: rankIdx === 0 ? "linear-gradient(135deg,#E8A500,#C8922A)" : rankIdx === 1 ? "#9CA3AF" : "#B87333" }}>
+                        <span className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0"
+                          style={{ 
+                            background: rankIdx === 0 ? "linear-gradient(135deg,#E8A500,#C8922A)" : rankIdx === 1 ? "#9CA3AF" : rankIdx === 2 ? "#B87333" : T.muted,
+                            color: rankIdx <= 2 ? "white" : T.text3
+                          }}>
                           #{rankNum}
                         </span>
 
                         {section.overridden ? (
-                          <select value={selectedAgent}
-                            onChange={ev => handleAgentChange(si, rankIdx, ev.target.value)}
-                            className="flex-1 px-2.5 py-1.5 rounded-lg border text-xs outline-none bg-card cursor-pointer font-medium"
-                            style={{ borderColor: T.border }}>
-                            {activeAgents.map(a => (
-                              <option key={`${a.id}-${a.name}`} value={a.name}>{a.name}</option>
-                            ))}
-                          </select>
+                          <div className="flex-1 flex items-center gap-2">
+                            <select value={selectedAgent}
+                              onChange={ev => handleAgentChange(si, rankIdx, ev.target.value)}
+                              className="flex-1 px-2.5 py-1.5 rounded-lg border text-xs outline-none bg-card cursor-pointer font-medium"
+                              style={{ borderColor: T.border }}>
+                              <option value="">— Kosong / None —</option>
+                              {activeAgents.map(a => (
+                                <option key={`${a.id}-${a.name}`} value={a.name}>{a.name}</option>
+                              ))}
+                            </select>
+                            
+                            {rankIdx >= 3 && (
+                              <button
+                                onClick={() => handleRemoveRank(si, rankIdx)}
+                                type="button"
+                                className="p-1.5 rounded-lg hover:bg-red-500/10 text-red-500 transition-colors border border-transparent hover:border-red-500/20"
+                                title="Hapus peringkat ini"
+                              >
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="w-3.5 h-3.5">
+                                  <polyline points="3 6 5 6 21 6"></polyline>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                </svg>
+                              </button>
+                            )}
+                          </div>
                         ) : (
                           <div className="flex-1 text-left px-2 py-1 text-xs font-semibold text-muted-foreground bg-card/40 rounded-lg border border-dashed" style={{ borderColor: T.border }}>
                             {entriesFromApi(section.cat)[rankIdx] || "—"} <span className="text-[10px] font-normal text-muted-foreground/60">(System)</span>
@@ -295,6 +397,18 @@ export default function AdminHoFPage() {
                     );
                   })}
                 </div>
+
+                {/* Tambah Peringkat button */}
+                {section.overridden && (section.visibleCount || 3) < 8 && (
+                  <button 
+                    onClick={() => handleAddRank(si)}
+                    type="button"
+                    className="mt-1 mb-3 text-xs font-semibold flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border border-dashed hover:bg-card/60 transition-all text-[#E8A500] border-[#E8A500]/40 w-full"
+                    style={{ fontFamily: "'Rajdhani', sans-serif" }}
+                  >
+                    + Tambah Peringkat (Juara #{ (section.visibleCount || 3) + 1 })
+                  </button>
+                )}
               </div>
 
               <button onClick={() => handleSaveCategory(section)}

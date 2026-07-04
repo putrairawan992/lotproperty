@@ -77,6 +77,35 @@ type EventResponse = {
 };
 
 
+function getWeeklyRangeString(): string {
+  const now = new Date();
+  const currentDay = now.getDay();
+  const daysToMonday = currentDay === 0 ? 6 : currentDay - 1;
+
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - daysToMonday);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+  const startDay = monday.getDate();
+  const endDay = sunday.getDate();
+  const startMonth = months[monday.getMonth()];
+  const endMonth = months[sunday.getMonth()];
+  const startYear = monday.getFullYear();
+  const endYear = sunday.getFullYear();
+
+  if (startYear !== endYear) {
+    return `${startDay} ${startMonth} ${startYear} – ${endDay} ${endMonth} ${endYear}`;
+  } else if (startMonth !== endMonth) {
+    return `${startDay} ${startMonth} – ${endDay} ${endMonth} ${endYear}`;
+  } else {
+    return `${startDay} – ${endDay} ${startMonth} ${endYear}`;
+  }
+}
+
 function mapWeeklyAgent(item: WeeklyAgentResponse, currentUser?: any) {
   const initials = (item.initials || item.name || "A").slice(0, 2).toUpperCase();
   const isMe = currentUser && Number(item.id) === Number(currentUser.id);
@@ -140,10 +169,10 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
 
   useEffect(() => {
     const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
-    const filtered = selectedPeriod 
+    const filtered = selectedPeriod
       ? hofRawData.filter(r => String(r.period).toLowerCase() === selectedPeriod.toLowerCase())
       : hofRawData;
-      
+
     for (const rec of filtered) {
       const mappedCat = normalizeHofCategory(rec.category || "", HOF_TABS);
       if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
@@ -218,14 +247,14 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
               api.public.getHof().catch(() => []),
               api.public.getEvents().catch(() => []),
             ]);
-            
+
             if (Array.isArray(weeklyRes) && weeklyRes.length > 0) {
               setWeeklyData(weeklyRes.map(a => mapWeeklyAgent(a)));
             }
-            
+
             const hofPayload = Array.isArray(hofRes) ? hofRes : [];
             setHofRawData(hofPayload);
-            
+
             if (Array.isArray(eventsRes) && eventsRes.length > 0) {
               setEventData(eventsRes.map(mapEvent));
             }
@@ -320,62 +349,62 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
       >
         <HofFallingStars isDark={isDark} />
         <div className="relative z-[1] p-3 md:p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
-        {/* Left: User Avatar + Name */}
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-shrink-0">
-            <div className="w-12 h-12 rounded-full overflow-hidden border border-[#C8922A] p-0.5" style={{ boxShadow: "0 0 10px rgba(200,146,42,0.2)" }}>
-              <img
-                src={activeAgent?.photo_url || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"}
-                alt={activeAgent?.name || "Agent"}
-                className="w-full h-full object-contain object-center rounded-full"
-              />
+          {/* Left: User Avatar + Name */}
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-shrink-0">
+              <div className="w-12 h-12 rounded-full overflow-hidden border border-[#C8922A] p-0.5" style={{ boxShadow: "0 0 10px rgba(200,146,42,0.2)" }}>
+                <img
+                  src={activeAgent?.photo_url || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"}
+                  alt={activeAgent?.name || "Agent"}
+                  className="w-full h-full object-contain object-center rounded-full"
+                />
+              </div>
             </div>
-          </div>
-          <div>
-            <h2 className="font-bold text-base" style={{ fontFamily: "var(--font-display)", color: T.text1 }}>{activeAgent?.name || "Ronald Richy"}</h2>
-            <p className="text-[11px]" style={{ color: T.text3 }}>{activeAgent?.title || "Top Producer"}</p>
-            <span className="inline-block text-[10px] px-2 py-0.5 rounded font-bold mt-0.5"
-              style={{ backgroundColor: isDark ? "rgba(232,165,0,0.15)" : "#FEF3C7", color: "#D97706", fontFamily: "var(--font-display)" }}>
-              Lv. {activeAgent?.level || 23}
-            </span>
-          </div>
-        </div>
-
-        {/* Middle: Medallion & XP Progress */}
-        <div className="flex flex-1 items-center gap-3 min-w-0 w-full md:w-auto">
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <LevelBadge title={activeAgent?.title || "Rookie Agent"} size={40} />
             <div>
-              <p className="text-[9px] uppercase tracking-wider" style={{ color: T.text3, letterSpacing: "0.06em" }}>Current Rank</p>
-              <p className="font-bold leading-tight" style={{ fontFamily: "var(--font-display)", fontSize: 13, color: getLevelTierColor(activeAgent?.title || "Rookie Agent") }}>{activeAgent?.title || "Rookie Agent"}</p>
+              <h2 className="font-bold text-base" style={{ fontFamily: "var(--font-display)", color: T.text1 }}>{activeAgent?.name || "Ronald Richy"}</h2>
+              <p className="text-[11px]" style={{ color: T.text3 }}>{activeAgent?.title || "Top Producer"}</p>
+              <span className="inline-block text-[10px] px-2 py-0.5 rounded font-bold mt-0.5"
+                style={{ backgroundColor: isDark ? "rgba(232,165,0,0.15)" : "#FEF3C7", color: "#D97706", fontFamily: "var(--font-display)" }}>
+                Lv. {activeAgent?.level || 23}
+              </span>
             </div>
           </div>
-          {/* XP progress */}
-          <div className="flex-1 min-w-0">
-            <XPBar value={totalXp - currentTierXp} max={nextTierXp - currentTierXp} height={8} />
-            <p className="text-center text-[11px] mt-0.5 font-bold" style={{ fontFamily: "var(--font-numeric)", color: T.text2 }}>
-              {Number(totalXp).toLocaleString("id-ID")} <span style={{ color: T.text3, fontWeight: 400 }}>/ {Number(nextTierXp).toLocaleString("id-ID")} XP</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Right: Next Rank info */}
-        <button
-          type="button"
-          onClick={() => onNav("profile")}
-          className="flex items-center justify-between md:justify-end gap-2 border-t md:border-t-0 pt-2.5 md:pt-0 w-full md:w-auto text-left md:text-right transition-opacity hover:opacity-85 active:opacity-75 cursor-pointer"
-          style={{ borderColor: T.border }}
-          aria-label="Lihat detail profil dan progress rank"
-        >
-          <div>
-            <p style={{ fontSize: 9, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Next Rank</p>
-            <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 13 }}>{nextTier ? nextTier.title : "LOT Legendary"}</p>
+          {/* Middle: Medallion & XP Progress */}
+          <div className="flex flex-1 items-center gap-3 min-w-0 w-full md:w-auto">
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <LevelBadge title={activeAgent?.title || "Rookie Agent"} size={40} />
+              <div>
+                <p className="text-[9px] uppercase tracking-wider" style={{ color: T.text3, letterSpacing: "0.06em" }}>Current Rank</p>
+                <p className="font-bold leading-tight" style={{ fontFamily: "var(--font-display)", fontSize: 13, color: getLevelTierColor(activeAgent?.title || "Rookie Agent") }}>{activeAgent?.title || "Rookie Agent"}</p>
+              </div>
+            </div>
+            {/* XP progress */}
+            <div className="flex-1 min-w-0">
+              <XPBar value={totalXp - currentTierXp} max={nextTierXp - currentTierXp} height={8} />
+              <p className="text-center text-[11px] mt-0.5 font-bold" style={{ fontFamily: "var(--font-numeric)", color: T.text2 }}>
+                {Number(totalXp).toLocaleString("id-ID")} <span style={{ color: T.text3, fontWeight: 400 }}>/ {Number(nextTierXp).toLocaleString("id-ID")} XP</span>
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0">
-            <LevelBadge title={nextTier ? nextTier.title : "LOT Legendary"} size={38} />
-            <ChevronRight size={14} style={{ color: "#E8A500" }} />
-          </div>
-        </button>
+
+          {/* Right: Next Rank info */}
+          <button
+            type="button"
+            onClick={() => onNav("profile")}
+            className="flex items-center justify-between md:justify-end gap-2 border-t md:border-t-0 pt-2.5 md:pt-0 w-full md:w-auto text-left md:text-right transition-opacity hover:opacity-85 active:opacity-75 cursor-pointer"
+            style={{ borderColor: T.border }}
+            aria-label="Lihat detail profil dan progress rank"
+          >
+            <div>
+              <p style={{ fontSize: 9, color: T.text3, textTransform: "uppercase", letterSpacing: "0.05em" }}>Next Rank</p>
+              <p className="font-bold text-gradient-gold" style={{ fontFamily: "var(--font-display)", fontSize: 13 }}>{nextTier ? nextTier.title : "LOT Legendary"}</p>
+            </div>
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <LevelBadge title={nextTier ? nextTier.title : "LOT Legendary"} size={38} />
+              <ChevronRight size={14} style={{ color: "#E8A500" }} />
+            </div>
+          </button>
         </div>
       </Card>
 
@@ -447,7 +476,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.35 }}
               >
-                Minggu ini · 16–22 Jun 2025
+                Minggu ini · {getWeeklyRangeString()}
               </motion.p>
             </div>
           </div>
@@ -474,23 +503,16 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                 >
                   <AgentAvatar initials={agent.initials} photo={agent.photo} size={44} isMe={agent.isMe} />
                 </div>
-                  <div className="flex-1 min-w-0">
-                    {agent.level && (
-                      <EllipsisTooltip 
-                        text={agent.level} 
-                        className="text-xs font-bold mb-0.5 truncate block" 
-                        style={{ color: getLevelTierColor(agent.level), fontFamily: "'Rajdhani',sans-serif", letterSpacing: "0.02em" }} 
-                      />
-                    )}
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <EllipsisTooltip 
-                        text={agent.isMe ? "Anda" : agent.name} 
-                        className="text-sm font-medium truncate block" 
-                        style={{ color: T.text1 }} 
-                      />
-                      {agent.isMe && <span className="text-xs px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{ backgroundColor: "#E8A500", color: "white", fontSize: 9 }}>You</span>}
-                    </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <EllipsisTooltip
+                      text={agent.isMe ? "Anda" : agent.name}
+                      className="text-sm font-medium truncate block"
+                      style={{ color: T.text1 }}
+                    />
+                    {agent.isMe && <span className="text-xs px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{ backgroundColor: "#E8A500", color: "white", fontSize: 9 }}>You</span>}
                   </div>
+                </div>
                 <p className="font-bold text-xs flex-shrink-0" style={{ fontFamily: "'Rajdhani',sans-serif", color: "#E8A500" }}>
                   {agent.value}
                 </p>
