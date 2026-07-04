@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext, useRef } from "react";
 import { 
-  Award, Play, CheckCircle, ArrowLeft, ChevronRight, Check, 
-  BookOpen, Video, Info
+  Award, Play, CheckCircle, ArrowLeft, ChevronRight, Check,
+  BookOpen, Video, Info, Loader2, Maximize, Minimize
 } from "lucide-react";
 import Card from "../components/Card";
 import XPBar from "../components/XPBar";
@@ -100,9 +100,12 @@ export default function AcademyPage() {
   const [activeModule, setActiveModule] = useState<any | null>(null);
   const [videoWatched, setVideoWatched] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [finishing, setFinishing] = useState(false);
   const playerHostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const firstVideoIdRef = useRef<string | null>(null);
+  const videoBoxRef = useRef<HTMLDivElement>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Overlay click toggles play/pause — blocks native prev/next/logo clicks
   const togglePlay = () => {
@@ -110,6 +113,17 @@ export default function AcademyPage() {
     if (!p) return;
     if (isPlaying) p.pauseVideo(); else p.playVideo();
   };
+
+  // Fullscreen the whole video box (our own button — keeps YT controls/next hidden)
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) document.exitFullscreen?.();
+    else videoBoxRef.current?.requestFullscreen?.();
+  };
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
 
   // Feedback alerts
   const [toastMessage, setToastMessage] = useState("");
@@ -182,20 +196,27 @@ export default function AcademyPage() {
     setTimeout(() => setToastMessage(""), 3000);
   };
 
-  // Finish whole module, add XP
+  // Finish whole module, add XP — one successful submit locks it as done
   const handleFinishModule = async () => {
-    if (!activeModule) return;
+    if (!activeModule || finishing || activeModule.status === "done") return;
+    setFinishing(true);
     const moduleId = remoteIdMap[activeModule.title] || activeModule.id;
     let xpEarned = 200;
     try {
       const res = await api.academy.completeModule(moduleId);
       xpEarned = Number(res?.xp_earned || 200);
-    } catch {}
-    
-    setModules(prev => prev.map(m => {
-      if (m.title === activeModule.title) return { ...m, prog: 100, status: "done" };
-      return m;
-    }));
+    } catch {
+      setFinishing(false);
+      triggerToast("Gagal menyimpan. Coba lagi.");
+      return; // keep button clickable so the user can retry
+    }
+
+    setModules(prev => prev.map(m =>
+      m.title === activeModule.title ? { ...m, prog: 100, status: "done" } : m
+    ));
+    // Update the open view too, so it flips to "MODUL SELESAI" without leaving the page
+    setActiveModule((prev: any) => prev ? { ...prev, prog: 100, status: "done" } : prev);
+    setFinishing(false);
     triggerToast(`Selamat! Modul diselesaikan: +${xpEarned} XP ditambahkan!`);
   };
 
@@ -363,7 +384,7 @@ export default function AcademyPage() {
               </p>
 
               {activeModule.video_url ? (
-                <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
+                <div ref={videoBoxRef} className="relative aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
                   <div ref={playerHostRef} className="w-full h-full" />
                   {/* Click-catcher: blocks native prev/next/logo, toggles play/pause */}
                   <div
@@ -372,6 +393,15 @@ export default function AcademyPage() {
                     role="button"
                     aria-label={isPlaying ? "Jeda video" : "Putar video"}
                   />
+                  {/* Our own fullscreen toggle — keeps native controls/next hidden */}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                    className="absolute bottom-2 right-2 z-10 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors"
+                    aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                  >
+                    {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+                  </button>
                 </div>
               ) : (
                 <div className="aspect-video rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
@@ -391,7 +421,7 @@ export default function AcademyPage() {
                   <div className="space-y-2">
                     <button
                       onClick={handleFinishModule}
-                      disabled={!videoWatched}
+                      disabled={!videoWatched || finishing}
                       className="w-full py-3 rounded-xl text-sm font-bold border transition-all text-center flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                       style={{
                         backgroundColor: videoWatched ? (isDark ? "rgba(34,197,94,0.15)" : "rgba(34,197,94,0.1)") : T.muted,
@@ -400,7 +430,11 @@ export default function AcademyPage() {
                         fontFamily: "'Rajdhani', sans-serif"
                       }}
                     >
-                      <Award size={16} /> SELESAIKAN MODUL (+{activeModule.xp} XP)
+                      {finishing ? (
+                        <><Loader2 size={16} className="animate-spin" /> MENYIMPAN...</>
+                      ) : (
+                        <><Award size={16} /> SELESAIKAN MODUL (+{activeModule.xp} XP)</>
+                      )}
                     </button>
                     {!videoWatched && (
                       <p className="text-xs" style={{ color: T.text3 }}>
