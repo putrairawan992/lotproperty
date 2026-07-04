@@ -134,24 +134,24 @@ export default function App() {
     }
   }, [loggedIn, isGuest]);
 
-  // When attendance popup opens, call API to mark attendance & sync XP
-  useEffect(() => {
-    if (showAttendancePopup && !isGuest) {
-      (async () => {
-        try {
-          const result = await api.quests.markAttendance();
-          if (result && typeof result.xp_earned === "number") {
-            setAttendanceXp(result.xp_earned);
-          } else {
-            setAttendanceXp(100); // fallback default
-          }
-        } catch (e) {
-          console.error("Failed to mark attendance via API:", e);
-          setAttendanceXp(100); // fallback default
-        }
-      })();
-    }
-  }, [showAttendancePopup, isGuest]);
+  // // When attendance popup opens, call API to mark attendance & sync XP
+  // useEffect(() => {
+  //   if (showAttendancePopup && !isGuest) {
+  //     (async () => {
+  //       try {
+  //         const result = await api.quests.markAttendance();
+  //         if (result && typeof result.xp_earned === "number") {
+  //           setAttendanceXp(result.xp_earned);
+  //         } else {
+  //           setAttendanceXp(100); // fallback default
+  //         }
+  //       } catch (e) {
+  //         console.error("Failed to mark attendance via API:", e);
+  //         setAttendanceXp(100); // fallback default
+  //       }
+  //     })();
+  //   }
+  // }, [showAttendancePopup, isGuest]);
 
   const [isDark, setIsDark] = useState(() => {
     if (typeof window !== 'undefined') {
