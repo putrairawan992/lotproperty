@@ -41,6 +41,8 @@ export default function BoardPage() {
   const [postsTodayCount, setPostsTodayCount] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | number | null>(null);
 
   const getInitials = (nameStr?: string) => {
     if (!nameStr) return "A";
@@ -83,13 +85,14 @@ export default function BoardPage() {
 
   const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!content.trim() || posting) return;
 
     if (postsTodayCount >= 3) {
       triggerToast("Batas harian tercapai! Maksimal 3 postingan per hari.");
       return;
     }
 
+    setPosting(true);
     try {
       const res = await api.board.createPost({
         category,
@@ -103,10 +106,14 @@ export default function BoardPage() {
       triggerToast("Postingan berhasil dikirim!");
     } catch (err: any) {
       triggerToast(err?.message || "Gagal mengirim postingan");
+    } finally {
+      setPosting(false);
     }
   };
 
   const handleDeletePost = async (id: string | number) => {
+    if (deletingId) return;
+    setDeletingId(id);
     try {
       await api.board.deletePost(id);
       const updated = posts.filter(p => p.id !== id);
@@ -118,6 +125,8 @@ export default function BoardPage() {
       triggerToast("Postingan dihapus!");
     } catch (err: any) {
       triggerToast(err?.message || "Gagal menghapus postingan");
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -287,20 +296,25 @@ export default function BoardPage() {
                     {/* Submit btn */}
                     <motion.button
                       type="submit"
-                      disabled={!content.trim() || postsTodayCount >= 3}
+                      disabled={!content.trim() || postsTodayCount >= 3 || posting}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
-                      className="px-3.5 py-1.5 text-[11px] font-bold rounded-xl flex items-center gap-1 text-white transition-all shadow-sm cursor-pointer"
+                      className="px-3.5 py-1.5 text-[11px] font-bold rounded-xl flex items-center gap-1 text-white transition-all shadow-sm"
                       style={{
-                        background: content.trim() && postsTodayCount < 3
+                        background: content.trim() && postsTodayCount < 3 && !posting
                           ? "linear-gradient(135deg, #E8A500, #C8922A)"
                           : "rgba(100,100,100,0.12)",
-                        color: content.trim() && postsTodayCount < 3 ? "white" : "var(--muted-foreground)",
-                        cursor: content.trim() && postsTodayCount < 3 ? "pointer" : "not-allowed",
+                        color: content.trim() && postsTodayCount < 3 && !posting ? "white" : "var(--muted-foreground)",
+                        cursor: content.trim() && postsTodayCount < 3 && !posting ? "pointer" : "not-allowed",
                         fontFamily: "'Rajdhani', sans-serif"
                       }}
                     >
-                      <Plus size={11} strokeWidth={2.5} /> Posting
+                      {posting ? (
+                        <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      ) : (
+                        <Plus size={11} strokeWidth={2.5} />
+                      )}
+                      {posting ? "Mengirim..." : "Posting"}
                     </motion.button>
                   </div>
                 </div>
@@ -384,10 +398,15 @@ export default function BoardPage() {
                           {post.isMe && (
                             <button
                               onClick={() => handleDeletePost(post.id)}
-                              className="text-red-500/60 hover:text-red-500 p-1 rounded transition-colors"
+                              disabled={deletingId === post.id}
+                              className="text-red-500/60 hover:text-red-500 p-1 rounded transition-colors disabled:opacity-50"
                               title="Hapus Postingan"
                             >
-                              <Trash2 size={12} />
+                              {deletingId === post.id ? (
+                                <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-500 rounded-full animate-spin" />
+                              ) : (
+                                <Trash2 size={12} />
+                              )}
                             </button>
                           )}
                         </div>

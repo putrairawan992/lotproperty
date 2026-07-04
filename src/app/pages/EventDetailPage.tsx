@@ -1,36 +1,74 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, Flame, Users, Calendar, Trophy, Check } from "lucide-react";
-import { motion } from "motion/react";
+import { ChevronRight, Flame, Users, Calendar, Trophy, Check, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import XPBar from "../components/XPBar";
 import { T, useTheme } from "../types";
 import { useLocation } from "../routes";
 import { api } from "../services/api";
-import { EVENT_DATA } from "../appData";
+import { formatEventPeriod } from "../appData";
 
 export default function EventDetailPage({ onBack }: { onBack: () => void }) {
   const [submitted, setSubmitted] = useState(false);
   const [url, setUrl] = useState("");
   const [urlFocused, setUrlFocused] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastError, setToastError] = useState(false);
   const { isDark } = useTheme();
   const { getQueryParam } = useLocation();
-  const [event, setEvent] = useState<any>(null);
+  const [eventDetail, setEventDetail] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadEventDetail = async () => {
+    try {
+      let eventId = getQueryParam("id");
+      // Strip "EV-" prefix if present (from HomePage slider)
+      if (eventId && eventId.toUpperCase().startsWith("EV-")) {
+        eventId = eventId.replace(/^EV-/i, "");
+      }
+      if (!eventId) {
+        const list = await api.events.getList();
+        if (Array.isArray(list)) {
+          const activeEvent = list.find((ev: any) => ev.status === "Active") || list[0];
+          if (activeEvent) {
+            eventId = String(activeEvent.id);
+          }
+        }
+      }
+      if (eventId) {
+        const detail = await api.events.getDetail(eventId);
+        if (detail) {
+          setEventDetail(detail);
+          setSubmitted(detail.my_submission?.submitted || false);
+          if (detail.my_submission?.submission_url) {
+            setUrl(detail.my_submission.submission_url);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load event detail", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const data = await api.events.getList();
-        if (Array.isArray(data)) {
-          const eid = getQueryParam("id");
-          const found = eid ? data.find((ev: any) => String(ev.id) === eid) : data.find((ev: any) => ev.status === "Active");
-          if (found) { setEvent({ id: found.id, title: found.title, desc: found.desc || "", start: found.start_date, end: found.end_date, xpPool: found.xp_pool || 0, badge: found.badge?.name || "Event Badge", status: found.status }); return; }
-        }
-      } catch {}
-      setEvent(EVENT_DATA[0]);
-    };
-    load();
+    loadEventDetail();
   }, []);
-  const ev = event || EVENT_DATA[0];
+
+  const ev = eventDetail?.event;
+  const myProgress = eventDetail?.my_progress || 0;
+  const mySubmission = eventDetail?.my_submission || { submitted: false, submission_url: "", submission_status: "Pending", reject_reason: "" };
+  const leaderboard = eventDetail?.leaderboard || [];
+
+  const getDaysRemaining = () => {
+    if (!ev.end_date) return "—";
+    const end = new Date(ev.end_date);
+    const diff = end.getTime() - new Date().getTime();
+    const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+    return days > 0 ? `${days} hari tersisa` : "Event berakhir";
+  };
 
   const hero = {
     bg: isDark
@@ -51,8 +89,63 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
   const successBg = isDark ? "rgba(22, 163, 74, 0.1)" : "#F0FDF4";
   const successIconBg = isDark ? "rgba(22, 163, 74, 0.2)" : "#DCFCE7";
 
+  const triggerToast = (msg: string, isError = false) => {
+    setToastMsg(msg);
+    setToastError(isError);
+    setTimeout(() => setToastMsg(""), 3000);
+  };
+
+  if (loading) {
+    return (
+      <div className="p-4 lg:p-6 max-w-3xl mx-auto space-y-5">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium" style={{ color: T.text3 }}>
+          <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Kembali
+        </button>
+        <div className="animate-pulse space-y-4">
+          <div className="h-48 rounded-2xl" style={{ backgroundColor: isDark ? "#1a1a1a" : "#f0f0f0" }} />
+          <div className="h-32 rounded-2xl" style={{ backgroundColor: isDark ? "#1a1a1a" : "#f0f0f0" }} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!ev) {
+    return (
+      <div className="p-4 lg:p-6 max-w-3xl mx-auto space-y-5">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm font-medium" style={{ color: T.text3 }}>
+          <ChevronRight size={16} style={{ transform: "rotate(180deg)" }} /> Kembali
+        </button>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <Trophy size={48} style={{ color: "#C8922A", opacity: 0.5 }} />
+          <p className="mt-4 font-semibold" style={{ color: T.text2, fontFamily: "'Rajdhani', sans-serif", fontSize: 18 }}>Event tidak ditemukan</p>
+          <p className="mt-2 text-sm" style={{ color: T.text3 }}>Event mungkin telah berakhir atau tidak tersedia saat ini.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 lg:p-6 max-w-3xl mx-auto space-y-5">
+
+      {/* Toast Notif */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-[80] px-5 py-3 rounded-xl shadow-lg flex items-center justify-center text-center gap-2 text-sm font-semibold border w-[80vw] max-w-md"
+            style={{
+              backgroundColor: toastError ? "#DC2626" : "#16A34A",
+              color: "white",
+              borderColor: toastError ? "rgba(220,38,38,0.3)" : "rgba(22,163,74,0.3)",
+            }}
+          >
+            {toastError ? <AlertCircle size={16} className="flex-shrink-0" /> : <Check size={16} className="flex-shrink-0" />}
+            <span className="text-xs sm:text-sm">{toastMsg}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <button
         onClick={onBack}
@@ -84,27 +177,29 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
                 className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full font-semibold mb-3 border"
                 style={{ backgroundColor: hero.badgeBg, color: hero.badgeColor, borderColor: isDark ? "rgba(232,165,0,0.25)" : "rgba(217,119,6,0.2)" }}
               >
-                <Flame size={12} /> EVENT AKTIF · 16 Jun – 16 Sep 2025
+                <Flame size={12} /> {ev.status === "Active" ? "EVENT AKTIF" : "UPCOMING"} · {ev.start_date && ev.end_date ? formatEventPeriod(ev.start_date, ev.end_date) : ""}
               </span>
 
               <h1
                 className="break-words"
                 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: "clamp(22px, 5vw, 28px)", color: hero.title, lineHeight: 1.2 }}
               >
-                Grand LOT Challenge 2025
+                {ev.title}
               </h1>
-              <p className="font-bold mt-1" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: "clamp(28px, 7vw, 40px)", color: "#E8A500", lineHeight: 1.1 }}>
-                Rp 150 Juta
-              </p>
+              {ev.xp_pool > 0 && (
+                <p className="font-bold mt-1" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: "clamp(28px, 7vw, 40px)", color: "#E8A500", lineHeight: 1.1 }}>
+                  {ev.xp_pool.toLocaleString("id-ID")} XP Pool
+                </p>
+              )}
               <p className="text-sm mt-2" style={{ color: hero.subtitle }}>
-                Raih 50 unit dalam 3 bulan dan menangkan hadiah eksklusif
+                {ev.desc}
               </p>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4">
                 <div className="flex items-center gap-1.5 text-xs" style={{ color: hero.subtitle }}>
-                  <Users size={13} /> 127 Peserta
+                  <Users size={13} /> {leaderboard.length} Peserta
                 </div>
                 <div className="flex items-center gap-1.5 text-xs" style={{ color: hero.subtitle }}>
-                  <Calendar size={13} /> 89 hari tersisa
+                  <Calendar size={13} /> {getDaysRemaining()}
                 </div>
               </div>
             </div>
@@ -127,12 +222,14 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
             <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: sectionLabel }}>Progress Kamu</p>
             <div className="flex items-end gap-2 mb-2">
               <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 36, color: "#E8A500", lineHeight: 1 }}>
-                24
+                {myProgress}
               </span>
               <span className="text-sm mb-1" style={{ color: T.text3 }}>/ 50 unit</span>
             </div>
-            <XPBar value={24} max={50} height={8} />
-            <p className="text-xs mt-1.5" style={{ color: T.text3 }}>26 unit lagi untuk menang</p>
+            <XPBar value={Number(myProgress)} max={50} height={8} />
+            <p className="text-xs mt-1.5" style={{ color: T.text3 }}>
+              {myProgress >= 50 ? "Target tercapai!" : `${50 - myProgress} unit lagi untuk menang`}
+            </p>
           </Card>
         </motion.div>
 
@@ -196,21 +293,70 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
 
           {submitted ? (
             <motion.div
-              className="py-6 text-center rounded-2xl border"
-              style={{ backgroundColor: successBg, borderColor: isDark ? "rgba(22,163,74,0.25)" : "#BBF7D0" }}
+              className="py-6 text-center rounded-2xl border px-4"
+              style={{
+                backgroundColor: mySubmission.submission_status === "Rejected"
+                  ? (isDark ? "rgba(220,38,38,0.1)" : "#FEF2F2")
+                  : mySubmission.submission_status === "Approved"
+                    ? (isDark ? "rgba(22,163,74,0.1)" : "#F0FDF4")
+                    : successBg,
+                borderColor: mySubmission.submission_status === "Rejected"
+                  ? (isDark ? "rgba(220,38,38,0.3)" : "#FCA5A5")
+                  : mySubmission.submission_status === "Approved"
+                    ? (isDark ? "rgba(22,163,74,0.3)" : "#86EFAC")
+                    : (isDark ? "rgba(22,163,74,0.25)" : "#BBF7D0")
+              }}
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
             >
               <div
                 className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
-                style={{ backgroundColor: successIconBg }}
+                style={{
+                  backgroundColor: mySubmission.submission_status === "Rejected"
+                    ? (isDark ? "rgba(220,38,38,0.2)" : "#FEE2E2")
+                    : mySubmission.submission_status === "Approved"
+                      ? (isDark ? "rgba(22,163,74,0.2)" : "#DCFCE7")
+                      : successIconBg
+                }}
               >
-                <Check size={28} style={{ color: "#16A34A" }} />
+                <Check size={28} style={{
+                  color: mySubmission.submission_status === "Rejected"
+                    ? "#DC2626"
+                    : mySubmission.submission_status === "Approved"
+                      ? "#16A34A"
+                      : "#16A34A"
+                }} />
               </div>
-              <p className="font-bold mb-1" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 18, color: "#16A34A" }}>
-                Submission Terkirim!
+              <p className="font-bold mb-1" style={{
+                fontFamily: "'Rajdhani', sans-serif",
+                fontSize: 18,
+                color: mySubmission.submission_status === "Rejected"
+                  ? "#DC2626"
+                  : mySubmission.submission_status === "Approved"
+                    ? "#16A34A"
+                    : "#16A34A"
+              }}>
+                {mySubmission.submission_status === "Rejected"
+                  ? "Submission Ditolak"
+                  : mySubmission.submission_status === "Approved"
+                    ? "Submission Disetujui!"
+                    : "Submission Terkirim!"}
               </p>
-              <p className="text-sm" style={{ color: T.text3 }}>Sedang diverifikasi oleh admin. Kamu akan dapat notifikasi hasilnya.</p>
+              <p className="text-sm" style={{ color: T.text3 }}>
+                {mySubmission.submission_status === "Rejected"
+                  ? `Alasan: ${mySubmission.reject_reason || "Tidak ada alasan spesifik."}`
+                  : mySubmission.submission_status === "Approved"
+                    ? "Selamat! Bonus XP Anda telah ditambahkan."
+                    : "Sedang diverifikasi oleh admin. Kamu akan dapat notifikasi hasilnya."}
+              </p>
+              {mySubmission.submission_status === "Rejected" && (
+                <button
+                  onClick={() => setSubmitted(false)}
+                  className="mt-3 text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors"
+                >
+                  Kirim Ulang Link Konten
+                </button>
+              )}
             </motion.div>
           ) : (
             <div className="space-y-3">
@@ -255,21 +401,41 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
                 </p>
               </div>
               <motion.button
-                onClick={() => { if (url.trim()) setSubmitted(true); }}
-                disabled={!url.trim()}
-                className="w-full py-3 rounded-xl font-bold transition-all"
+                onClick={async () => {
+                  if (!url.trim() || !ev.id || submitting) return;
+                  setSubmitting(true);
+                  try {
+                    await api.events.submit(ev.id, url);
+                    setSubmitted(true);
+                    triggerToast("Link konten berhasil dikirim! Menunggu verifikasi admin.");
+                    loadEventDetail();
+                  } catch (err: any) {
+                    triggerToast(err?.message || "Gagal mengirim submission", true);
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                disabled={!url.trim() || submitting}
+                className="w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: url.trim() ? "#E8A500" : T.muted,
-                  color: url.trim() ? "white" : T.text3,
+                  backgroundColor: url.trim() && !submitting ? "#E8A500" : T.muted,
+                  color: url.trim() && !submitting ? "white" : T.text3,
                   fontFamily: "'Rajdhani', sans-serif",
                   fontSize: 16,
                   letterSpacing: "0.05em",
-                  cursor: url.trim() ? "pointer" : "not-allowed",
+                  cursor: url.trim() && !submitting ? "pointer" : "not-allowed",
                 }}
-                whileHover={url.trim() ? { backgroundColor: "#CC9200" } : {}}
-                whileTap={url.trim() ? { scale: 0.98 } : {}}
+                whileHover={url.trim() && !submitting ? { backgroundColor: "#CC9200" } : {}}
+                whileTap={url.trim() && !submitting ? { scale: 0.98 } : {}}
               >
-                SUBMIT KONTEN
+                {submitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    MENGIRIM...
+                  </>
+                ) : (
+                  "SUBMIT KONTEN"
+                )}
               </motion.button>
             </div>
           )}
@@ -281,53 +447,50 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
         <Card className="p-5">
           <p className="text-xs font-semibold mb-4 uppercase tracking-wider" style={{ color: sectionLabel }}>Top Peserta Saat Ini</p>
           <div className="space-y-2.5">
-            {[
-              { rank: 1, name: "Rizki Pratama", units: 38, isMe: false },
-              { rank: 2, name: "Siti Fatimah", units: 31, isMe: false },
-              { rank: 3, name: "Budi Santoso", units: 27, isMe: false },
-              { rank: 4, name: "Ahmad Fadhil", units: 24, isMe: true },
-              { rank: 5, name: "Dewi Rahma", units: 21, isMe: false },
-            ].map((a, i) => (
-              <motion.div
-                key={a.rank}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl border"
-                style={{
-                  backgroundColor: a.isMe
-                    ? (isDark ? "rgba(232,165,0,0.08)" : "#FFFAED")
-                    : (isDark ? "rgba(255,255,255,0.03)" : T.card),
-                  borderColor: a.isMe ? "rgba(232,165,0,0.35)" : T.border,
-                }}
-                initial={{ opacity: 0, x: -12 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.35 + i * 0.06 }}
-              >
-                <div
-                  className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0"
+            {leaderboard.map((a: any, i: number) => {
+              const rankNum = i + 1;
+              return (
+                <motion.div
+                  key={a.agent_id || i}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl border"
                   style={{
-                    background: a.rank === 1
-                      ? "linear-gradient(135deg,#E8A500,#C8922A)"
-                      : a.rank === 2
-                        ? "#9CA3AF"
-                        : a.rank === 3
-                          ? "#B87333"
-                          : (isDark ? "rgba(255,255,255,0.08)" : "#F3F4F6"),
-                    color: a.rank <= 3 ? "white" : (isDark ? "#C8B89A" : "#6B7280"),
-                    fontFamily: "'Rajdhani', sans-serif",
+                    backgroundColor: a.is_me
+                      ? (isDark ? "rgba(232,165,0,0.08)" : "#FFFAED")
+                      : (isDark ? "rgba(255,255,255,0.03)" : T.card),
+                    borderColor: a.is_me ? "rgba(232,165,0,0.35)" : T.border,
                   }}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.35 + i * 0.06 }}
                 >
-                  {a.rank <= 3 ? (a.rank === 1 ? "🥇" : a.rank === 2 ? "🥈" : "🥉") : a.rank}
-                </div>
-                <span className="flex-1 text-sm font-semibold" style={{ color: T.text1 }}>{a.name}</span>
-                {a.isMe && (
-                  <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "#E8A500", color: "white", fontSize: 10 }}>
-                    Kamu
+                  <div
+                    className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0"
+                    style={{
+                      background: rankNum === 1
+                        ? "linear-gradient(135deg,#E8A500,#C8922A)"
+                        : rankNum === 2
+                          ? "#9CA3AF"
+                          : rankNum === 3
+                            ? "#B87333"
+                            : (isDark ? "rgba(255,255,255,0.08)" : "#F3F4F6"),
+                      color: rankNum <= 3 ? "white" : (isDark ? "#C8B89A" : "#6B7280"),
+                      fontFamily: "'Rajdhani', sans-serif",
+                    }}
+                  >
+                    {rankNum <= 3 ? (rankNum === 1 ? "🥇" : rankNum === 2 ? "🥈" : "🥉") : rankNum}
+                  </div>
+                  <span className="flex-1 text-sm font-semibold" style={{ color: T.text1 }}>{a.name}</span>
+                  {a.is_me && (
+                    <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "#E8A500", color: "white", fontSize: 10 }}>
+                      Kamu
+                    </span>
+                  )}
+                  <span className="font-bold text-sm flex-shrink-0" style={{ color: "#E8A500", fontFamily: "'Rajdhani', sans-serif" }}>
+                    {a.units} unit
                   </span>
-                )}
-                <span className="font-bold text-sm flex-shrink-0" style={{ color: "#E8A500", fontFamily: "'Rajdhani', sans-serif" }}>
-                  {a.units} unit
-                </span>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </Card>
       </motion.div>

@@ -11,7 +11,7 @@ import HofSection from "../components/HofSection";
 import HofFallingStars from "../components/HofFallingStars";
 import EventBannerSlider from "../components/EventBannerSlider";
 import { T, Page, useTheme } from "../types";
-import { useTabQuery } from "../routes";
+import { useTabQuery, useLocation } from "../routes";
 import { HOF_TABS, type EventItem } from "../appData";
 import { getLevelTierColor, LEVEL_TIERS } from "../badgeAssets";
 import EllipsisTooltip from "../components/EllipsisTooltip";
@@ -114,6 +114,7 @@ function mapEvent(item: EventResponse): EventItem {
 export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) => void; onShowLevelUp?: () => void }) {
   const loadingTime = useLoading(1400);
   const { isDark, isGuest, onLoginRequest, user } = useTheme();
+  const { navigate } = useLocation();
   const [dataLoading, setDataLoading] = useState(true);
   const [slideDir, setSlideDir] = useState(0);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
@@ -326,7 +327,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
               <img
                 src={activeAgent?.photo_url || "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=600"}
                 alt={activeAgent?.name || "Agent"}
-                className="w-full h-full object-cover object-top rounded-full"
+                className="w-full h-full object-contain object-center rounded-full"
               />
             </div>
           </div>
@@ -397,7 +398,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
 
       {/* Event Banner Slider placed below Hall of Fame and above Weekly Leaderboard */}
       <div className="my-2">
-        <EventBannerSlider isDark={isDark} onNav={onNav} events={eventData} />
+        <EventBannerSlider isDark={isDark} onNav={onNav} events={eventData} onEventDetail={(id) => navigate(`/event?id=${id}`)} />
       </div>
 
 

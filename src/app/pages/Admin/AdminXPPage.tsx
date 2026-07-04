@@ -8,6 +8,7 @@ interface AgentOption {
   name: string;
   level: string;
   status: string;
+  role: string;
 }
 
 interface XPHistoryItem {
@@ -32,12 +33,15 @@ export default function AdminXPPage() {
     try {
       const rows = await api.admin.getAgents();
       if (Array.isArray(rows)) {
-        setAgents(rows.map((a: any) => ({
-          id: Number(a.id),
-          name: String(a.name || ""),
-          level: String(a.title || "Rookie Agent"),
-          status: String(a.status || "Pending"),
-        })));
+        setAgents(rows
+          .filter((a: any) => String(a.role || "") === "Agent" && String(a.status || "") === "Active")
+          .map((a: any) => ({
+            id: Number(a.id),
+            name: String(a.name || ""),
+            level: String(a.title || "Rookie Agent"),
+            status: String(a.status || "Pending"),
+            role: String(a.role || ""),
+          })));
       }
     } catch {
       // Keep empty options on API failure.

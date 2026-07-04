@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext } from "react";
+import { useState, useEffect, useContext, useRef, useCallback } from "react";
 import { 
   Award, Play, CheckCircle, ArrowLeft, ChevronRight, Check, 
   BookOpen, Video, Info
@@ -27,58 +27,59 @@ const CAT_COLORS: Record<string, string> = {
 
 function getEmbedUrl(url: string): string {
   if (!url) return "";
-  
-  if (url.includes("/embed/")) {
-    return url;
-  }
 
-  if (url.includes("playlist?list=")) {
+  let embedUrl = "";
+
+  if (url.includes("/embed/")) {
+    embedUrl = url;
+  } else if (url.includes("playlist?list=")) {
     try {
       const urlObj = new URL(url);
       const listId = urlObj.searchParams.get("list");
       if (listId) {
-        return `https://www.youtube.com/embed/videoseries?list=${listId}`;
+        embedUrl = `https://www.youtube.com/embed/videoseries?list=${listId}`;
       }
     } catch (e) {
       const match = url.match(/[?&]list=([^#\&\?]+)/);
       if (match && match[1]) {
-        return `https://www.youtube.com/embed/videoseries?list=${match[1]}`;
+        embedUrl = `https://www.youtube.com/embed/videoseries?list=${match[1]}`;
       }
     }
-  }
-
-  if (url.includes("watch?v=")) {
+  } else if (url.includes("watch?v=")) {
     try {
       const urlObj = new URL(url);
       const videoId = urlObj.searchParams.get("v");
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
       }
     } catch (e) {
       const match = url.match(/[?&]v=([^#\&\?]+)/);
       if (match && match[1]) {
-        return `https://www.youtube.com/embed/${match[1]}`;
+        embedUrl = `https://www.youtube.com/embed/${match[1]}`;
       }
     }
-  }
-
-  if (url.includes("youtu.be/")) {
+  } else if (url.includes("youtu.be/")) {
     try {
       const urlObj = new URL(url);
       const videoId = urlObj.pathname.substring(1);
       if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
       }
     } catch (e) {
       const parts = url.split("youtu.be/");
       if (parts[1]) {
         const videoId = parts[1].split(/[?#]/)[0];
-        return `https://www.youtube.com/embed/${videoId}`;
+        embedUrl = `https://www.youtube.com/embed/${videoId}`;
       }
     }
   }
 
-  return url;
+  if (!embedUrl) return url;
+
+  // Add required params: enablejsapi for video-end detection, rel=0 to disable related videos, autoplay=0, origin for postMessage
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const sep = embedUrl.includes("?") ? "&" : "?";
+  return embedUrl + sep + `enablejsapi=1&rel=0&autoplay=0&origin=${encodeURIComponent(origin)}`;
 }
 
 export default function AcademyPage() {
@@ -123,6 +124,24 @@ export default function AcademyPage() {
 
   // Active module detailed state (null if listing view is active)
   const [activeModule, setActiveModule] = useState<any | null>(null);
+  const [videoWatched, setVideoWatched] = useState(false);
+  const [watchStartTime, setWatchStartTime] = useState<number | null>(null);
+  const MIN_WATCH_SECONDS = 120;
+  const [watchSecondsLeft, setWatchSecondsLeft] = useState(MIN_WATCH_SECONDS);
+
+  // Countdown timer for minimum watch time
+  useEffect(() => {
+    if (!watchStartTime || videoWatched) return;
+    const interval = setInterval(() => {
+      const elapsed = Math.floor((Date.now() - (watchStartTime || 0)) / 1000);
+      const left = Math.max(0, MIN_WATCH_SECONDS - elapsed);
+      setWatchSecondsLeft(left);
+      if (left <= 0) {
+        setVideoWatched(true);
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [watchStartTime, videoWatched]);
 
   // Feedback alerts
   const [toastMessage, setToastMessage] = useState("");
@@ -131,8 +150,33 @@ export default function AcademyPage() {
   const handleStartModule = (m: any) => {
     if (isGuest) { onLoginRequest(); return; }
     setActiveModule(m);
+    setVideoWatched(false);
+    setWatchStartTime(null);
+    setWatchSecondsLeft(MIN_WATCH_SECONDS);
     triggerToast(`Membuka modul: ${m.title}`);
   };
+
+  // Listen for YouTube video end event via postMessage
+  const handleVideoMessage = useCallback((e: MessageEvent) => {
+    try {
+      const data = JSON.parse(e.data);
+      // YouTube IFrame API: event 0 = ended → unlock immediately
+      if (data?.event === "onStateChange" && data?.info === 0) {
+        setVideoWatched(true);
+      }
+      // YouTube IFrame API: event 1 = playing → start timer
+      if (data?.event === "onStateChange" && data?.info === 1 && !watchStartTime) {
+        setWatchStartTime(Date.now());
+      }
+    } catch {
+      // Ignore non-JSON messages
+    }
+  }, [watchStartTime]);
+
+  useEffect(() => {
+    window.addEventListener("message", handleVideoMessage);
+    return () => window.removeEventListener("message", handleVideoMessage);
+  }, [handleVideoMessage]);
 
   if (loading) return <AcademyPageSkeleton />;
 
@@ -156,8 +200,6 @@ export default function AcademyPage() {
       return m;
     }));
     triggerToast(`Selamat! Modul diselesaikan: +${xpEarned} XP ditambahkan!`);
-    
-    setTimeout(() => { setActiveModule(null); }, 1500);
   };
 
   const completedCount = modules.filter(m => m.status === "done").length;
@@ -328,7 +370,7 @@ export default function AcademyPage() {
                   <iframe
                     src={getEmbedUrl(activeModule.video_url)}
                     className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                     title={activeModule.title}
                   />
@@ -348,18 +390,35 @@ export default function AcademyPage() {
                     <Check size={14} /> MODUL SELESAI
                   </div>
                 ) : (
-                  <button
-                    onClick={handleFinishModule}
-                    className="w-full py-3 rounded-xl text-sm font-bold border transition-all text-center flex items-center justify-center gap-2"
-                    style={{
-                      backgroundColor: isDark ? "rgba(34,197,94,0.15)" : "rgba(34,197,94,0.1)",
-                      borderColor: "rgba(34,197,94,0.45)",
-                      color: "#16A34A",
-                      fontFamily: "'Rajdhani', sans-serif"
-                    }}
-                  >
-                    <Award size={16} /> SELESAIKAN MODUL (+{activeModule.xp} XP)
-                  </button>
+                  <div className="space-y-2">
+                    <button
+                      onClick={handleFinishModule}
+                      disabled={!videoWatched}
+                      className="w-full py-3 rounded-xl text-sm font-bold border transition-all text-center flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                      style={{
+                        backgroundColor: videoWatched ? (isDark ? "rgba(34,197,94,0.15)" : "rgba(34,197,94,0.1)") : T.muted,
+                        borderColor: videoWatched ? "rgba(34,197,94,0.45)" : T.border,
+                        color: videoWatched ? "#16A34A" : T.text3,
+                        fontFamily: "'Rajdhani', sans-serif"
+                      }}
+                    >
+                      <Award size={16} /> SELESAIKAN MODUL (+{activeModule.xp} XP)
+                    </button>
+                    {!videoWatched && (
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs" style={{ color: T.text3 }}>
+                          ⏳ Tonton minimal {Math.ceil(watchSecondsLeft / 60)} menit — tersisa {watchSecondsLeft} detik
+                        </p>
+                        <button
+                          onClick={() => setVideoWatched(true)}
+                          className="text-xs font-bold underline flex-shrink-0"
+                          style={{ color: "#E8A500" }}
+                        >
+                          Lewati →
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </Card>

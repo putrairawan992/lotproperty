@@ -238,6 +238,7 @@ export const api = {
   // Events
   events: {
     getList: () => request<any[]>("/events"),
+    getDetail: (id: number | string) => request<any>(`/events/${id}/detail`),
     submit: (id: number | string, url: string) => {
       return request<any>(`/events/${id}/submit`, {
         method: "POST",
@@ -296,6 +297,12 @@ export const api = {
     },
     updateAgentStatus: (id: number | string, action: "approve" | "suspend" | "reactivate") => {
       return request<any>(`/admin/agents/${id}/status?action=${action}`, { method: "POST" });
+    },
+    updateAgent: (id: number | string, payload: { name?: string; email?: string; password?: string; role?: string }) => {
+      return request<any>(`/admin/agents/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+    },
+    deleteAgent: (id: number | string) => {
+      return request<any>(`/admin/agents/${id}`, { method: "DELETE" });
     },
     addRecruit: (payload: any) => {
       return request<any>("/admin/recruits", {

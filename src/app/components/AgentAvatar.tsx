@@ -6,8 +6,8 @@ export default function AgentAvatar({ initials, size, isMe = false, photo }: { i
       <img
         src={photo}
         alt={initials}
-        className="rounded-full object-cover object-top flex-shrink-0"
-        style={{ width: size, height: size, objectFit: "cover", objectPosition: "top center", transform: "translateZ(0)" }}
+        className="rounded-full object-contain object-center flex-shrink-0"
+        style={{ width: size, height: size, objectFit: "contain", objectPosition: "center center", transform: "translateZ(0)" }}
         onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
       />
     );

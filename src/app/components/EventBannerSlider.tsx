@@ -12,16 +12,19 @@ interface EventBannerSliderProps {
   isDark: boolean;
   onNav: (p: Page) => void;
   events?: EventItem[];
+  onEventDetail?: (eventId: string) => void;
 }
 
 function EventBannerSlide({
   event,
   isDark,
   onNav,
+  onEventDetail,
 }: {
   event: EventItem;
   isDark: boolean;
   onNav: (p: Page) => void;
+  onEventDetail?: (eventId: string) => void;
 }) {
   const period = formatEventPeriod(event.start, event.end);
   const xpFormatted = event.xpPool.toLocaleString("id-ID");
@@ -156,7 +159,7 @@ function EventBannerSlide({
           </div>
 
           <button
-            onClick={() => onNav("event")}
+            onClick={() => onEventDetail ? onEventDetail(event.id) : onNav("event")}
             className="w-full sm:w-auto mt-2 sm:mt-0 px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#E8A500] hover:bg-[#CC9200] text-black transition-all shadow-md active:scale-95"
             style={{ fontFamily: "var(--font-display)" }}
           >
@@ -168,7 +171,7 @@ function EventBannerSlide({
   );
 }
 
-export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }: EventBannerSliderProps) {
+export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA, onEventDetail }: EventBannerSliderProps) {
   const [current, setCurrent] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
@@ -325,7 +328,7 @@ export default function EventBannerSlider({ isDark, onNav, events = EVENT_DATA }
             exit={{ opacity: 0, x: -40 }}
             transition={{ duration: 0.4, ease: "easeInOut" }}
           >
-            <EventBannerSlide event={activeEvent} isDark={isDark} onNav={onNav} />
+            <EventBannerSlide event={activeEvent} isDark={isDark} onNav={onNav} onEventDetail={onEventDetail} />
           </motion.div>
         </AnimatePresence>
       </SwipeCarouselZone>

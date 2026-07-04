@@ -269,7 +269,7 @@ function PortraitCard({
             <img
               src={agent.photo}
               alt={agent.name}
-              className="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-105"
+              className="w-full h-full object-contain object-center transition-transform duration-500 hover:scale-105"
               style={{
                 filter: "brightness(1.05) contrast(1.02)",
               }}

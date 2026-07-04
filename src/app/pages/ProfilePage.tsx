@@ -1517,13 +1517,15 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         </p>
                       </div>
 
-                      {/* Main Metric: Career Commission */}
+                      {/* Main Metric: Career Commission — HIDDEN */}
+                      {/* HIDDEN
                       <div>
                         <p className="text-[8px] text-zinc-400 font-bold tracking-wider uppercase">{L.commission}</p>
                         <h2 className="font-black text-xl text-gradient-gold leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                           {profileCard.commission}
                         </h2>
                       </div>
+                      */}
 
                       {/* Smaller stats: LEVEL AGEN, TOTAL LISTING, TOTAL PROSPEK */}
                       <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2">

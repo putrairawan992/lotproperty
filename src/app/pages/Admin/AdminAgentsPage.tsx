@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail, MoreVertical, Trash2, Edit3 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import LevelBadge from "../../components/LevelBadge";
@@ -280,6 +280,18 @@ export default function AdminAgentsPage() {
   const [agents, setAgents] = useState<AgentItem[]>([]);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [recruitsModal, setRecruitsModal] = useState<TreeNodeData | null>(null);
+  const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
+  const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
+  const [editModal, setEditModal] = useState<AgentItem | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
+  const [editRole, setEditRole] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [toastMsg, setToastMsg] = useState("");
+  const [toastError, setToastError] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   const { isDark } = useTheme();
   const [treeRoot, setTreeRoot] = useState<TreeNodeData | null>(null);
   const stats = getTreeStats(treeRoot);
@@ -337,15 +349,82 @@ export default function AdminAgentsPage() {
     (a.name.toLowerCase().includes(search.toLowerCase()) || (a.email || "").toLowerCase().includes(search.toLowerCase()))
   );
 
+  const triggerToast = (msg: string, isErr = false) => {
+    setToastMsg(msg);
+    setToastError(isErr);
+    setTimeout(() => setToastMsg(""), 3000);
+  };
+
   const updateStatus = async (id: number, status: string) => {
     const action = status === "Active" ? "reactivate" : status === "Suspended" ? "suspend" : "approve";
     try {
       await api.admin.updateAgentStatus(id, action as "approve" | "suspend" | "reactivate");
       setAgents(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+      triggerToast(`Status agent berhasil diubah menjadi ${status}`);
     } catch {
-      // Ignore optimistic update when API fails.
+      triggerToast("Gagal mengubah status agent", true);
+    }
+    setOpenDropdownId(null);
+  };
+
+  const handleDeleteAgent = async (id: number) => {
+    if (!confirm("Yakin hapus agent ini? Data terkait (HOF, submission, badge, dll) juga akan dihapus.")) return;
+    setDeletingId(id);
+    try {
+      await api.admin.deleteAgent(id);
+      setAgents(prev => prev.filter(a => a.id !== id));
+      triggerToast("Agent berhasil dihapus");
+    } catch {
+      triggerToast("Gagal menghapus agent", true);
+    } finally {
+      setDeletingId(null);
+      setOpenDropdownId(null);
     }
   };
+
+  const openEditModal = (a: AgentItem) => {
+    setEditModal(a);
+    setEditName(a.name);
+    setEditEmail(a.email);
+    setEditPassword("");
+    setEditRole("");
+    setOpenDropdownId(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editModal) return;
+    setSavingEdit(true);
+    try {
+      const payload: any = {};
+      if (editName !== editModal.name) payload.name = editName;
+      if (editEmail !== editModal.email) payload.email = editEmail;
+      if (editPassword) payload.password = editPassword;
+      if (editRole) payload.role = editRole;
+      await api.admin.updateAgent(editModal.id, payload);
+      setAgents(prev => prev.map(a => a.id === editModal.id ? {
+        ...a,
+        name: editName || a.name,
+        email: editEmail || a.email,
+      } : a));
+      setEditModal(null);
+      triggerToast("Agent berhasil diperbarui");
+    } catch {
+      triggerToast("Gagal memperbarui agent", true);
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
   const StatusChip = ({ s }: { s: string }) => {
     const cfg = s === "Active" ? { bg: isDark ? "rgba(22, 163, 74, 0.15)" : "#DCFCE7", c: isDark ? "#34D399" : "#16A34A" }
@@ -356,6 +435,23 @@ export default function AdminAgentsPage() {
 
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-5">
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
+            className="fixed top-16 left-1/2 -translate-x-1/2 z-[90] px-5 py-3 rounded-xl shadow-lg text-sm font-semibold border flex items-center gap-2"
+            style={{
+              backgroundColor: toastError ? "#DC2626" : "#16A34A",
+              color: "white",
+              borderColor: toastError ? "rgba(220,38,38,0.3)" : "rgba(22,163,74,0.3)",
+            }}>
+            {toastError ? <AlertTriangle size={16} /> : <Check size={16} />}
+            {toastMsg}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col gap-3.5 items-start border-b pb-4" style={{ borderColor: T.border }}>
         <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>Agent Management</h1>
 
@@ -416,17 +512,17 @@ export default function AdminAgentsPage() {
               </div>
 
               {/* Desktop Table View (hidden on mobile) */}
-              <div className="overflow-x-auto hidden sm:block">
+              <div className="overflow-x-visible hidden sm:block" style={{ overflowX: "visible" }}>
                 <table className="w-full">
                   <thead><tr className="border-b" style={{ borderColor: T.border }}>
-                    {["AGENT", "KANTOR", "LEVEL", "STATUS", "BERGABUNG", "AKSI"].map(h => (
+                    {["AGENT", "LEVEL", "STATUS", "BERGABUNG", "AKSI"].map(h => (
                       <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: T.text3 }}>{h}</th>
                     ))}
                   </tr></thead>
                   <tbody>
                     {loadingAgents && (
                       <tr>
-                        <td colSpan={6} className="px-4 py-8 text-center text-sm" style={{ color: T.text3 }}>
+                        <td colSpan={5} className="px-4 py-8 text-center text-sm" style={{ color: T.text3 }}>
                           Memuat data agent...
                         </td>
                       </tr>
@@ -444,25 +540,67 @@ export default function AdminAgentsPage() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-left" style={{ color: T.text2 }}>{a.office}</td>
                         <td className="px-4 py-3 text-sm text-left" style={{ color: T.text2 }}>{a.level}</td>
                         <td className="px-4 py-3 text-left"><StatusChip s={a.status} /></td>
                         <td className="px-4 py-3 text-sm text-left" style={{ color: T.text3 }}>{a.joined}</td>
-                        <td className="px-4 py-3 text-left">
-                          <div className="flex gap-1.5">
-                            {a.status === "Pending" && (
-                              <button onClick={() => updateStatus(a.id, "Active")}
-                                className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all bg-[#DCFCE7] text-[#16A34A] hover:bg-[#DCFCE7]/80">Approve</button>
-                            )}
-                            {a.status === "Active" && (
-                              <button onClick={() => updateStatus(a.id, "Suspended")}
-                                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2]/80">Suspend</button>
-                            )}
-                            {a.status === "Suspended" && (
-                              <button onClick={() => updateStatus(a.id, "Active")}
-                                className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#EEF5FC] text-[#1A6FC4] hover:bg-[#EEF5FC]/80">Aktifkan</button>
-                            )}
-                          </div>
+                        <td className="px-4 py-3 text-left relative">
+                          <button
+                            onClick={(e) => {
+                              const btn = e.currentTarget;
+                              const rect = btn.getBoundingClientRect();
+                              const spaceBelow = window.innerHeight - rect.bottom;
+                              setDropdownDir(spaceBelow < 260 ? "up" : "down");
+                              setOpenDropdownId(openDropdownId === a.id ? null : a.id);
+                            }}
+                            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
+                          >
+                            <MoreVertical size={16} style={{ color: T.text3 }} />
+                          </button>
+                          {openDropdownId === a.id && (
+                            <div ref={dropdownRef}
+                              className={`absolute right-2 z-50 w-44 rounded-xl border shadow-xl py-1 ${dropdownDir === "up" ? "bottom-full mb-1" : "top-full mt-1"}`}
+                              style={{ backgroundColor: "var(--card)", borderColor: T.border }}
+                            >
+                              <button onClick={() => openEditModal(a)}
+                                className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-muted flex items-center gap-2 transition-colors"
+                                style={{ color: T.text1 }}>
+                                <Edit3 size={13} /> Edit Agent
+                              </button>
+                              {a.status === "Pending" && (
+                                <button onClick={() => updateStatus(a.id, "Active")}
+                                  className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-muted flex items-center gap-2 transition-colors"
+                                  style={{ color: "#16A34A" }}>
+                                  <Check size={13} /> Approve
+                                </button>
+                              )}
+                              {a.status === "Active" && (
+                                <button onClick={() => updateStatus(a.id, "Suspended")}
+                                  className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-muted flex items-center gap-2 transition-colors"
+                                  style={{ color: "#DC2626" }}>
+                                  <ShieldAlert size={13} /> Suspend
+                                </button>
+                              )}
+                              {a.status === "Suspended" && (
+                                <button onClick={() => updateStatus(a.id, "Active")}
+                                  className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-muted flex items-center gap-2 transition-colors"
+                                  style={{ color: "#1A6FC4" }}>
+                                  <Check size={13} /> Aktifkan
+                                </button>
+                              )}
+                              <div className="border-t my-1" style={{ borderColor: T.border }} />
+                              <button onClick={() => handleDeleteAgent(a.id)}
+                                disabled={deletingId === a.id}
+                                className="w-full text-left px-4 py-2.5 text-xs font-medium hover:bg-red-500/10 flex items-center gap-2 transition-colors disabled:opacity-50"
+                                style={{ color: "#DC2626" }}>
+                                {deletingId === a.id ? (
+                                  <div className="w-3 h-3 border-2 border-red-400/30 border-t-red-500 rounded-full animate-spin" />
+                                ) : (
+                                  <Trash2 size={13} />
+                                )}
+                                Hapus Agent
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}
@@ -543,19 +681,8 @@ export default function AdminAgentsPage() {
                             </div>
                           </div>
 
-                          {/* Office & Joined metadata with micro-icons */}
-                          <div className="grid grid-cols-2 gap-3 pt-3 text-xs border-t" style={{ borderColor: T.border }}>
-                            <div className="text-left flex items-start gap-1.5">
-                              <MapPin size={13} className="mt-0.5 text-muted-foreground flex-shrink-0" style={{ color: T.text3 }} />
-                              <div className="min-w-0">
-                                <p className="text-[9px] font-extrabold uppercase tracking-wider text-muted-foreground" style={{ color: T.text3 }}>KANTOR</p>
-                                <EllipsisTooltip
-                                  text={a.office}
-                                  className="font-semibold text-foreground truncate mt-0.5 block"
-                                  style={{ color: T.text2 }}
-                                />
-                              </div>
-                            </div>
+                          {/* Joined metadata */}
+                          <div className="pt-3 text-xs border-t" style={{ borderColor: T.border }}>
                             <div className="text-left flex items-start gap-1.5">
                               <Calendar size={13} className="mt-0.5 text-muted-foreground flex-shrink-0" style={{ color: T.text3 }} />
                               <div>
@@ -568,30 +695,16 @@ export default function AdminAgentsPage() {
 
                         {/* Action buttons panel */}
                         <div className="px-4 pb-3 flex gap-2">
-                          {a.status === "Pending" && (
-                            <button
-                              onClick={() => updateStatus(a.id, "Active")}
-                              className="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#DCFCE7] text-[#16A34A] hover:bg-[#DCFCE7]/80 dark:bg-[#16A34A]/15 dark:text-[#34D399] dark:hover:bg-[#16A34A]/25"
-                            >
-                              <Check size={13} /> Approve
-                            </button>
-                          )}
-                          {a.status === "Active" && (
-                            <button
-                              onClick={() => updateStatus(a.id, "Suspended")}
-                              className="flex-1 py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2]/80 dark:bg-[#DC2626]/15 dark:text-[#F87171] dark:hover:bg-[#DC2626]/25"
-                            >
-                              <ShieldAlert size={13} /> Suspend
-                            </button>
-                          )}
-                          {a.status === "Suspended" && (
-                            <button
-                              onClick={() => updateStatus(a.id, "Active")}
-                              className="flex-1 py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#EEF5FC] text-[#1A6FC4] hover:bg-[#EEF5FC]/80 dark:bg-[#1A6FC4]/15 dark:text-[#60A5FA] dark:hover:bg-[#1A6FC4]/25"
-                            >
-                              <Check size={13} /> Aktifkan
-                            </button>
-                          )}
+                          <button onClick={() => openEditModal(a)}
+                            className="flex-1 py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer border transition-colors"
+                            style={{ borderColor: T.border, color: T.text2 }}>
+                            <Edit3 size={13} /> Edit
+                          </button>
+                          <button onClick={() => handleDeleteAgent(a.id)}
+                            disabled={deletingId === a.id}
+                            className="flex-1 py-2 rounded-xl text-xs font-bold text-center flex items-center justify-center gap-1.5 cursor-pointer bg-[#FEE2E2] text-[#DC2626] hover:bg-[#FEE2E2]/80 disabled:opacity-50 transition-all">
+                            <Trash2 size={13} /> Hapus
+                          </button>
                         </div>
                       </motion.div>
                     );
@@ -755,6 +868,62 @@ export default function AdminAgentsPage() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* EDIT AGENT MODAL */}
+      <AnimatePresence>
+        {editModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setEditModal(null)} className="absolute inset-0 bg-black/60" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden relative z-10" style={{ borderColor: T.border }}>
+              
+              <div className="px-6 py-4 border-b flex justify-between items-center" style={{ borderColor: T.border }}>
+                <h3 className="font-bold font-display text-lg" style={{ color: T.text1 }}>Edit Agent</h3>
+                <button onClick={() => setEditModal(null)} style={{ color: T.text3 }}><X size={20} /></button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Nama</label>
+                  <input value={editName} onChange={e => setEditName(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Email</label>
+                  <input value={editEmail} onChange={e => setEditEmail(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Password (kosongkan jika tidak diubah)</label>
+                  <input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="••••••••"
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Role (kosongkan jika tidak diubah)</label>
+                  <select value={editRole} onChange={e => setEditRole(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }}>
+                    <option value="">-- Tidak diubah --</option>
+                    <option value="Agent">Agent</option>
+                    <option value="Office Manager">Office Manager</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Super Admin">Super Admin</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t flex justify-end gap-3 bg-muted/10" style={{ borderColor: T.border }}>
+                <button onClick={() => setEditModal(null)}
+                  className="px-5 py-2.5 rounded-xl text-xs font-semibold border transition-all"
+                  style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
+                <button onClick={handleSaveEdit} disabled={savingEdit}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#E8A500] text-white transition-all hover:bg-[#CC9200] disabled:opacity-60 disabled:cursor-not-allowed">
+                  {savingEdit ? "MENYIMPAN..." : "SIMPAN"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>

@@ -12,7 +12,7 @@ export default function AdminHoFPage() {
   const [period, setPeriod] = useState("Juni 2025");
   const [toastMsg, setToastMsg] = useState("");
   const [savingCategory, setSavingCategory] = useState<string | null>(null);
-  const [serverAgents, setServerAgents] = useState<Array<{ id: number; name: string; status: string }>>([]);
+  const [serverAgents, setServerAgents] = useState<Array<{ id: number; name: string; status: string; role: string }>>([]);
   const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { name?: string }; period: string }>>([]);
   
   const [entries, setEntries] = useState([
@@ -29,7 +29,7 @@ export default function AdminHoFPage() {
   const AGENT_DATA = AGENT_DATA_LIST;
 
   const activeAgents = (serverAgents.length > 0
-    ? serverAgents.filter(a => a.status === "Active")
+    ? serverAgents.filter(a => a.status === "Active" && a.role === "Agent")
     : AGENT_DATA.filter(a => a.status === "Active").map(a => ({
         id: Number(String(a.id).replace(/[^0-9]/g, "") || "0"),
         name: a.name,
@@ -45,6 +45,7 @@ export default function AdminHoFPage() {
             id: Number(r.id),
             name: String(r.name || ""),
             status: String(r.status || ""),
+            role: String(r.role || ""),
           })));
         }
       } catch {
