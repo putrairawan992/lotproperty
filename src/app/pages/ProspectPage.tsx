@@ -142,6 +142,7 @@ export default function ProspectPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [successToast, setSuccessToast] = useState("");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
+  const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [prospects, setProspects] = useState<Prospect[]>([]);
@@ -362,11 +363,18 @@ export default function ProspectPage() {
     </AnimatePresence>
   );
 
-  const ActionMenu = ({ prospect, alignUp }: { prospect: Prospect; alignUp?: boolean }) => (
+  const ActionMenu = ({ prospect }: { prospect: Prospect }) => (
     <div className="relative" ref={openMenuId === prospect.id ? menuRef : undefined}>
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === prospect.id ? null : prospect.id); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (openMenuId === prospect.id) { setOpenMenuId(null); return; }
+          const btn = e.currentTarget;
+          const rect = btn.getBoundingClientRect();
+          setDropdownDir(window.innerHeight - rect.bottom < 220 ? "up" : "down");
+          setOpenMenuId(prospect.id);
+        }}
         className="p-1.5 rounded-lg hover:bg-muted transition-colors"
         style={{ color: T.text3 }}
       >
@@ -375,11 +383,11 @@ export default function ProspectPage() {
       <AnimatePresence>
         {openMenuId === prospect.id && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
+            initial={{ opacity: 0, scale: 0.95, y: dropdownDir === "up" ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
+            exit={{ opacity: 0, scale: 0.95, y: dropdownDir === "up" ? 4 : -4 }}
             className={`absolute right-0 w-40 rounded-xl border shadow-xl z-50 overflow-hidden ${
-              alignUp ? "bottom-full mb-1" : "top-full mt-1"
+              dropdownDir === "up" ? "bottom-full mb-1" : "top-full mt-1"
             }`}
             style={{ backgroundColor: T.card, borderColor: T.border }}
             onPointerDown={(e) => e.stopPropagation()}
@@ -571,7 +579,7 @@ export default function ProspectPage() {
                   return (
                     <div key={p.id} className="p-4 cursor-pointer transition-all hover:bg-muted/10 relative" onClick={() => openDetail(p.id)}>
                       <div className="absolute top-3 right-3" onClick={e => e.stopPropagation()}>
-                        <ActionMenu prospect={p} alignUp={index === filtered.length - 1} />
+                        <ActionMenu prospect={p} />
                       </div>
                       <div className="flex items-start gap-3 mb-3 pr-8">
                         <div className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0"
@@ -663,7 +671,7 @@ export default function ProspectPage() {
                           </td>
                           <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text3 }}>{p.date}</td>
                           <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                            <ActionMenu prospect={p} alignUp={index === filtered.length - 1 && filtered.length > 2} />
+                            <ActionMenu prospect={p} />
                           </td>
                         </tr>
                       );

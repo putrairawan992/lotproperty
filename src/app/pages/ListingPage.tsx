@@ -151,6 +151,7 @@ export default function ListingPage() {
   const [showPanel, setShowPanel] = useState(false);
   const [successToast, setSuccessToast] = useState("");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [listings, setListings] = useState<Listing[]>([]);
@@ -308,11 +309,18 @@ export default function ListingPage() {
     return <span className="text-xs font-semibold" style={{ color: "#DC2626" }}>⚡ Rekomendasi Inactive</span>;
   };
 
-  const ActionMenu = ({ listing, alignUp }: { listing: Listing; alignUp?: boolean }) => (
+  const ActionMenu = ({ listing }: { listing: Listing }) => (
     <div className="relative" ref={openMenuId === listing.id ? menuRef : undefined}>
       <button
         type="button"
-        onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === listing.id ? null : listing.id); }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (openMenuId === listing.id) { setOpenMenuId(null); return; }
+          const btn = e.currentTarget;
+          const rect = btn.getBoundingClientRect();
+          setDropdownDir(window.innerHeight - rect.bottom < 260 ? "up" : "down");
+          setOpenMenuId(listing.id);
+        }}
         className="p-1.5 rounded-lg hover:bg-muted transition-colors"
         style={{ color: T.text3 }}
       >
@@ -321,11 +329,11 @@ export default function ListingPage() {
       <AnimatePresence>
         {openMenuId === listing.id && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
+            initial={{ opacity: 0, scale: 0.95, y: dropdownDir === "up" ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: alignUp ? 4 : -4 }}
+            exit={{ opacity: 0, scale: 0.95, y: dropdownDir === "up" ? 4 : -4 }}
             className={`absolute right-0 w-44 rounded-xl border shadow-xl z-50 overflow-hidden ${
-              alignUp ? "bottom-full mb-1" : "top-full mt-1"
+              dropdownDir === "up" ? "bottom-full mb-1" : "top-full mt-1"
             }`}
             style={{ backgroundColor: T.card, borderColor: T.border }}
             onPointerDown={(e) => e.stopPropagation()}
@@ -449,7 +457,7 @@ export default function ListingPage() {
                   >
                     <div className="absolute top-3 right-3 flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                       <StatusChip s={l.status} />
-                      <ActionMenu listing={l} alignUp={index === filtered.length - 1} />
+                      <ActionMenu listing={l} />
                     </div>
 
                     <div className="flex items-start justify-between gap-3 mb-2 pr-24">
@@ -525,7 +533,7 @@ export default function ListingPage() {
                         <td className="px-4 py-3"><StatusChip s={l.status} /></td>
                         <td className="px-4 py-3 whitespace-nowrap"><RemindBadge r={l.remind} d={l.days} /></td>
                         <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                          <ActionMenu listing={l} alignUp={index === filtered.length - 1 && filtered.length > 2} />
+                          <ActionMenu listing={l} />
                         </td>
                       </tr>
                     ))}
