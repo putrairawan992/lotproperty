@@ -178,14 +178,26 @@ export default function ListingPage() {
   };
 
   useEffect(() => {
+    const close = () => setOpenMenuId(null);
     const handleClickOutside = (e: PointerEvent) => {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
         setOpenMenuId(null);
       }
     };
     document.addEventListener("pointerdown", handleClickOutside);
-    return () => document.removeEventListener("pointerdown", handleClickOutside);
+    // Absolute menu can't follow scroll — close it so it never lingers mispositioned.
+    // Capture phase catches scrolling in inner containers too.
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      document.removeEventListener("pointerdown", handleClickOutside);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
   }, []);
+
+  // Close the menu when switching tabs
+  useEffect(() => { setOpenMenuId(null); }, [tab]);
 
   useEffect(() => {
     if (getQueryParam("create") === "1") {
