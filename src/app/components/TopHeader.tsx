@@ -3,7 +3,7 @@ import { Page, T, useTheme } from "../types";
 import { PAGE_TITLE } from "../routes";
 import Logo from "./Logo";
 import AgentAvatar from "./AgentAvatar";
-import { Bell, ChevronRight, GraduationCap, HelpCircle, MessageSquare, LogIn } from "lucide-react";
+import { Bell, ChevronRight, HelpCircle, MessageSquare, LogIn } from "lucide-react";
 
 export default function TopHeader({ page, onNav, onLogout }: {
   page: Page;
@@ -70,6 +70,7 @@ export default function TopHeader({ page, onNav, onLogout }: {
                 initials={isGuest ? "G" : getInitials(user?.name)}
                 size={32}
                 isMe={true}
+                photo={isGuest ? undefined : (user?.photo_url)}
               />
               <div className="hidden sm:block text-left">
                 <p className="text-xs font-bold leading-none" style={{ color: T.text1 }}>

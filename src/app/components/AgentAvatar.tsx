@@ -1,14 +1,17 @@
+import { useState } from "react";
+
 export default function AgentAvatar({ initials, size, isMe = false, photo }: { initials: string; size: number; isMe?: boolean; photo?: string }) {
+  const [imgError, setImgError] = useState(false);
   const gradientBg = "linear-gradient(135deg, #E8A500, #C8922A)";
   const defaultBg = "linear-gradient(135deg, var(--muted), var(--muted-foreground))";
-  if (photo) {
+  if (photo && !imgError) {
     return (
       <img
         src={photo}
         alt={initials}
         className="rounded-full object-contain object-center flex-shrink-0"
         style={{ width: size, height: size, objectFit: "contain", objectPosition: "center center", transform: "translateZ(0)" }}
-        onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+        onError={() => setImgError(true)}
       />
     );
   }
