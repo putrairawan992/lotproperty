@@ -1,4 +1,4 @@
-import { useState, useEffect, useContext, useRef, useCallback } from "react";
+import { useState, useEffect, useContext, useRef } from "react";
 import { 
   Award, Play, CheckCircle, ArrowLeft, ChevronRight, Check, 
   BookOpen, Video, Info
@@ -25,30 +25,35 @@ const CAT_COLORS: Record<string, string> = {
   "Product Knowledge": "#1A6FC4",
 };
 
-function getEmbedUrl(url: string): string {
-  if (!url) return "";
+// Pull a single video ID (any URL form) or a playlist ID from a YouTube URL.
+function parseYouTube(url: string): { videoId?: string; list?: string } {
+  if (!url) return {};
+  const id = url.match(/(?:\/embed\/|[?&]v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (id) return { videoId: id[1] };
+  const l = url.match(/[?&]list=([^#&?]+)/);
+  return l ? { list: l[1] } : {};
+}
 
-  // Extract the 11-char video ID from any YouTube URL form
-  // (/embed/ID, watch?v=ID, youtu.be/ID, ...&v=ID)
-  const idMatch = url.match(/(?:\/embed\/|[?&]v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
-  let embedUrl = "";
-  if (idMatch) {
-    // Single video, no list param → no prev/next skip buttons
-    embedUrl = `https://www.youtube.com/embed/${idMatch[1]}`;
-  } else {
-    // No single video — fall back to a framable playlist embed
-    const listMatch = url.match(/[?&]list=([^#&?]+)/);
-    if (listMatch) {
-      embedUrl = `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}`;
+// Load the YouTube IFrame Player API once; resolves with window.YT.
+let ytApiPromise: Promise<any> | null = null;
+function loadYouTubeAPI(): Promise<any> {
+  const w = window as any;
+  if (w.YT && w.YT.Player) return Promise.resolve(w.YT);
+  if (ytApiPromise) return ytApiPromise;
+  ytApiPromise = new Promise((resolve) => {
+    const prev = w.onYouTubeIframeAPIReady;
+    w.onYouTubeIframeAPIReady = () => {
+      if (typeof prev === "function") prev();
+      resolve(w.YT);
+    };
+    if (!document.getElementById("yt-iframe-api")) {
+      const s = document.createElement("script");
+      s.id = "yt-iframe-api";
+      s.src = "https://www.youtube.com/iframe_api";
+      document.head.appendChild(s);
     }
-  }
-
-  if (!embedUrl) return url;
-
-  // controls=0 disables all player controls (no next/prev/related videos)
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const sep = embedUrl.includes("?") ? "&" : "?";
-  return embedUrl + sep + `controls=0&enablejsapi=1&rel=0&autoplay=0&modestbranding=1&showinfo=0&origin=${encodeURIComponent(origin)}`;
+  });
+  return ytApiPromise;
 }
 
 export default function AcademyPage() {
@@ -95,58 +100,80 @@ export default function AcademyPage() {
   const [activeModule, setActiveModule] = useState<any | null>(null);
   const [videoWatched, setVideoWatched] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
-  // Register for YouTube player events (required to receive onStateChange)
-  const handleIframeLoad = () => {
-    iframeRef.current?.contentWindow?.postMessage('{"event":"listening"}', '*');
-  };
+  const playerHostRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+  const firstVideoIdRef = useRef<string | null>(null);
 
   // Overlay click toggles play/pause — blocks native prev/next/logo clicks
   const togglePlay = () => {
-    const func = isPlaying ? "pauseVideo" : "playVideo";
-    iframeRef.current?.contentWindow?.postMessage(`{"event":"command","func":"${func}","args":[]}`, "*");
+    const p = playerRef.current;
+    if (!p) return;
+    if (isPlaying) p.pauseVideo(); else p.playVideo();
   };
 
   // Feedback alerts
   const [toastMessage, setToastMessage] = useState("");
 
-  // Start course player — timer starts immediately as fallback
+  // Start course player
   const handleStartModule = (m: any) => {
     if (isGuest) { onLoginRequest(); return; }
     setActiveModule(m);
     setVideoWatched(false);
+    setIsPlaying(false);
     triggerToast(`Membuka modul: ${m.title}`);
   };
 
-  // Listen for YouTube video end event via postMessage
-  const handleVideoMessage = useCallback((e: MessageEvent) => {
-    try {
-      const data = JSON.parse(e.data);
-      // Track play state for the overlay toggle (1 = playing)
-      if (data?.event === "onStateChange") {
-        setIsPlaying(data.info === 1);
-      }
-      // YouTube IFrame API: event 0 = ended → unlock + stop video to prevent next/related
-      if (data?.event === "onStateChange" && data?.info === 0) {
-        setVideoWatched(true);
-        // Seek to beginning and pause to prevent related videos / auto-next
-        if (iframeRef.current?.contentWindow) {
-          iframeRef.current.contentWindow.postMessage('{"event":"command","func":"seekTo","args":[0]}', '*');
-          setTimeout(() => {
-            iframeRef.current?.contentWindow?.postMessage('{"event":"command","func":"pauseVideo","args":[]}', '*');
-          }, 200);
-        }
-      }
-    } catch {
-      // Ignore non-JSON messages
-    }
-  }, []);
-
+  // Build the player via the official IFrame API — reliable end-detection,
+  // and stopVideo() on end prevents the playlist from auto-advancing.
   useEffect(() => {
-    window.addEventListener("message", handleVideoMessage);
-    return () => window.removeEventListener("message", handleVideoMessage);
-  }, [handleVideoMessage]);
+    const url = activeModule?.video_url;
+    if (!url) return;
+    let cancelled = false;
+    firstVideoIdRef.current = null;
+
+    loadYouTubeAPI().then((YT: any) => {
+      if (cancelled || !playerHostRef.current) return;
+      const { videoId, list } = parseYouTube(url);
+      const host = document.createElement("div");
+      host.className = "w-full h-full";
+      playerHostRef.current.appendChild(host);
+
+      const playerVars: any = { controls: 0, rel: 0, modestbranding: 1, fs: 0, disablekb: 1, playsinline: 1 };
+      if (!videoId && list) { playerVars.list = list; playerVars.listType = "playlist"; }
+
+      const config: any = {
+        width: "100%",
+        height: "100%",
+        playerVars,
+        events: {
+          onStateChange: (e: any) => {
+            const PS = YT.PlayerState;
+            setIsPlaying(e.data === PS.PLAYING);
+            const curId = e.target.getVideoData?.().video_id;
+            if (!firstVideoIdRef.current && e.data === PS.PLAYING && curId) {
+              firstVideoIdRef.current = curId; // remember the intended (first) video
+            }
+            // Ended, or the playlist silently jumped to a different video → stop + unlock
+            const advanced = firstVideoIdRef.current && curId && curId !== firstVideoIdRef.current;
+            if (e.data === PS.ENDED || advanced) {
+              setVideoWatched(true);
+              e.target.stopVideo(); // never play beyond the intended video
+            }
+          },
+        },
+      };
+      if (videoId) config.videoId = videoId; // omit entirely for playlists — undefined = "Invalid video id"
+
+      playerRef.current = new YT.Player(host, config);
+    });
+
+    return () => {
+      cancelled = true;
+      try { playerRef.current?.destroy(); } catch {}
+      playerRef.current = null;
+      if (playerHostRef.current) playerHostRef.current.innerHTML = "";
+    };
+  }, [activeModule?.video_url]);
 
   if (loading) return <AcademyPageSkeleton />;
 
@@ -337,15 +364,7 @@ export default function AcademyPage() {
 
               {activeModule.video_url ? (
                 <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
-                  <iframe
-                    ref={iframeRef}
-                    onLoad={handleIframeLoad}
-                    src={getEmbedUrl(activeModule.video_url)}
-                    className="w-full h-full"
-                    allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                    title={activeModule.title}
-                  />
+                  <div ref={playerHostRef} className="w-full h-full" />
                   {/* Click-catcher: blocks native prev/next/logo, toggles play/pause */}
                   <div
                     className="absolute inset-0 cursor-pointer"
