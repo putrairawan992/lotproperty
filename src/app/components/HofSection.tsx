@@ -584,11 +584,15 @@ function PortraitPodium({ agents, isMobile, category }: { agents: any[]; isMobil
 export default function HofSection({
   hofCat, hofAgents, hofTab, hofIdx, slideDir, isMobile, isDark,
   onSwitchCat, onGoTab, onPrev, onNext,
+  selectedPeriod, availablePeriods = [], onPeriodChange,
 }: {
   hofCat: string; hofAgents: any[]; hofTab: string; hofIdx: number;
   slideDir: number; isMobile: boolean; isDark: boolean;
   onSwitchCat: (cat: string) => void; onGoTab: (cat: string) => void;
   onPrev: () => void; onNext: () => void;
+  selectedPeriod?: string;
+  availablePeriods?: string[];
+  onPeriodChange?: (p: string) => void;
 }) {
   const catTheme = getCategoryTheme(hofCat);
 
@@ -643,10 +647,10 @@ export default function HofSection({
         style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E\")" }} />
 
       {/* Header */}
-      <div className="relative z-[1] px-4 pt-5 pb-0 flex items-start justify-between gap-2">
+      <div className="relative z-[1] px-4 pt-5 pb-0 flex items-center justify-between gap-3">
         <div>
           <p className="text-[9px] tracking-[0.42em] uppercase font-semibold mb-1.5" style={{ color: "rgba(255,255,255,0.32)", fontFamily: "'Inter', sans-serif" }}>
-            Official Selection · July 2026
+            Official Selection · {selectedPeriod || "July 2026"}
           </p>
           <motion.h2
             className="font-normal uppercase leading-none m-0"
@@ -666,6 +670,18 @@ export default function HofSection({
             Hall of Fame
           </motion.h2>
         </div>
+        {availablePeriods.length > 0 && onPeriodChange && (
+          <select
+            value={selectedPeriod}
+            onChange={(e) => onPeriodChange(e.target.value)}
+            className="px-2.5 py-1.5 rounded-xl border outline-none bg-black/40 text-white border-white/10 hover:border-white/25 transition-all text-xs font-bold cursor-pointer"
+            style={{ fontFamily: "'Inter', sans-serif" }}
+          >
+            {availablePeriods.map(p => (
+              <option key={p} value={p} className="bg-[#0c0c0e] text-white">{p}</option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Tabs */}

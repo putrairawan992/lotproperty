@@ -491,7 +491,7 @@ export default function ListingPage() {
               </div>
 
               {/* Desktop: table layout */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="hidden md:block overflow-x-auto pb-28 min-h-[300px]">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b" style={{ borderColor: T.border }}>
@@ -525,7 +525,7 @@ export default function ListingPage() {
                         <td className="px-4 py-3"><StatusChip s={l.status} /></td>
                         <td className="px-4 py-3 whitespace-nowrap"><RemindBadge r={l.remind} d={l.days} /></td>
                         <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                          <ActionMenu listing={l} alignUp={index === filtered.length - 1} />
+                          <ActionMenu listing={l} alignUp={index === filtered.length - 1 && filtered.length > 2} />
                         </td>
                       </tr>
                     ))}

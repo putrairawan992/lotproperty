@@ -1,5 +1,5 @@
-import { useState, useContext, useEffect, useMemo } from "react";
-import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, X, Check, Download, AlertCircle, Globe, ChevronRight } from "lucide-react";
+import { useState, useContext, useEffect, useMemo, useRef } from "react";
+import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, X, Check, Download, AlertCircle, Globe, ChevronRight, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
@@ -16,7 +16,38 @@ import HofFallingStars from "../components/HofFallingStars";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import EmptyState from "../components/EmptyState";
 
-export const ALL_BADGES: { name: string; rarity: RarityKey; locked: boolean; req: string }[] = [];
+export const ALL_BADGES: { name: string; rarity: RarityKey; locked: boolean; req: string; code: string }[] = [
+  // Mythic
+  { code: "billionaire_club", name: "Billionaire Club", rarity: "mythic", locked: true, req: "Total Commission ≥ Rp 1.000.000.000" },
+  { code: "perfectionist_agent", name: "Perfectionist Agent", rarity: "mythic", locked: true, req: "Selesaikan Daily Quest 100 hari berturut-turut" },
+  // Legendary
+  { code: "listing_factory", name: "Listing Factory", rarity: "legendary", locked: true, req: "100 Listing" },
+  { code: "the_consultant", name: "The Consultant", rarity: "legendary", locked: true, req: "100 Prospek" },
+  { code: "the_leader", name: "The Leader", rarity: "legendary", locked: true, req: "10 Rekrutan" },
+  { code: "the_professor", name: "The Professor", rarity: "legendary", locked: true, req: "Menyelesaikan 50 modul Akademi" },
+  { code: "deal_maker", name: "Deal Maker", rarity: "legendary", locked: true, req: "100 transaksi closed" },
+  { code: "500m_club", name: "500 Million Club", rarity: "legendary", locked: true, req: "Total Commission ≥ Rp 500.000.000" },
+  { code: "100m_club", name: "100 Million Club", rarity: "legendary", locked: true, req: "Total Commission ≥ Rp 100.000.000" },
+  { code: "the_influencer", name: "The Influencer", rarity: "legendary", locked: true, req: "100 konten properti disubmit" },
+  { code: "exceptional_agent", name: "Exceptional Agent", rarity: "legendary", locked: true, req: "Selesaikan Daily Quest 30 hari berturut-turut" },
+  // Epic
+  { code: "listing_distributor", name: "Listing Distributor", rarity: "epic", locked: true, req: "50 Listing" },
+  { code: "prospect_tycoon", name: "Prospect Tycoon", rarity: "epic", locked: true, req: "50 Prospek" },
+  { code: "team_builder", name: "Team Builder", rarity: "epic", locked: true, req: "5 Rekrutan" },
+  { code: "content_creator", name: "Content Creator", rarity: "epic", locked: true, req: "25 konten properti disubmit" },
+  { code: "dedicated_agent", name: "Dedicated Agent", rarity: "epic", locked: true, req: "Selesaikan Daily Quest 7 hari berturut-turut" },
+  { code: "certified_agent", name: "Certified Agent", rarity: "epic", locked: true, req: "Menyelesaikan 10 modul Akademi" },
+  // Rare
+  { code: "listing_supplier", name: "Listing Supplier", rarity: "rare", locked: true, req: "25 Listing" },
+  { code: "prospect_hunter", name: "Prospect Hunter", rarity: "rare", locked: true, req: "25 Prospek" },
+  { code: "talent_scout", name: "Talent Scout", rarity: "rare", locked: true, req: "3 Rekrutan" },
+  { code: "the_loyalist", name: "The Loyalist", rarity: "rare", locked: true, req: "Login 30 hari berturut-turut" },
+  // Common
+  { code: "first_listing", name: "First Listing", rarity: "common", locked: true, req: "1 Listing" },
+  { code: "first_prospect", name: "First Prospect", rarity: "common", locked: true, req: "1 Prospek" },
+  { code: "first_recruit", name: "First Recruit", rarity: "common", locked: true, req: "1 Rekrutan" },
+  { code: "first_deal", name: "First Deal", rarity: "common", locked: true, req: "1 transaksi closed" }
+];
 
 type RarityKey = keyof typeof RARITY_CFG;
 
@@ -292,6 +323,8 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const [errorAlert, setErrorAlert] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
   const [savingFeatured, setSavingFeatured] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(search);
@@ -344,12 +377,6 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       photo: (() => {
         const raw = profile?.photo_url && String(profile.photo_url).trim();
         if (!raw) return fallbackPhoto;
-        try {
-          const u = new URL(raw);
-          if (u.protocol === "http:" || u.protocol === "https:") {
-            return `${window.location.origin}${u.pathname}`;
-          }
-        } catch { /* data URI or relative path */ }
         return raw;
       })(),
     };
@@ -700,7 +727,17 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       ctx.save();
       drawRoundedRectPath(ctx, px, py, pw, ph, 28);
       ctx.clip();
-      ctx.drawImage(photo, px, py, pw, ph);
+      ctx.fillStyle = "#09090b"; // match bg-zinc-950/bg-black
+      ctx.fillRect(px, py, pw, ph);
+
+      const imgWidth = photo.naturalWidth || photo.width || pw;
+      const imgHeight = photo.naturalHeight || photo.height || ph;
+      const ratio = Math.min(pw / imgWidth, ph / imgHeight);
+      const cx = px + (pw - imgWidth * ratio) / 2;
+      const cy = py + (ph - imgHeight * ratio) / 2;
+      const cw = imgWidth * ratio;
+      const ch = imgHeight * ratio;
+      ctx.drawImage(photo, cx, cy, cw, ch);
 
       const photoShade = ctx.createLinearGradient(0, py + ph * 0.55, 0, py + ph);
       photoShade.addColorStop(0, "rgba(0,0,0,0)");
@@ -834,6 +871,40 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     if (getQueryParam("shareCard")) navigate("/profile");
   };
 
+  const handlePhotoEdit = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      triggerError("Hanya file gambar yang diperbolehkan.");
+      return;
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      triggerError("Ukuran file terlalu besar. Maksimal 5MB.");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const result = await api.profile.updatePhoto(file);
+      setProfile((prev: any) => ({ ...prev, photo_url: result.photo_url }));
+      triggerToast("Foto profil berhasil diperbarui!");
+    } catch (err) {
+      triggerError(err instanceof Error ? err.message : "Gagal mengupload foto.");
+    } finally {
+      setIsUploadingPhoto(false);
+      // Reset file input so same file can be selected again
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const L = SHARE_LANG[activeLang];
 
   return (
@@ -882,7 +953,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 <img
                   src={profileCard.photo}
                   alt={profileCard.name}
-                  className="w-full h-full object-cover object-top"
+                  className="w-full h-full object-contain object-center"
                   draggable={false}
                 />
                 {/* Cinematic Vignette Overlay */}
@@ -910,7 +981,32 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   <div className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-[#C8922A] opacity-75" />
                   <div className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-[#C8922A] opacity-75" />
                 </div>
+
+                {/* Edit Photo Button — only show on own profile */}
+                {!getQueryParam("id") && (
+                  <button
+                    onClick={handlePhotoEdit}
+                    disabled={isUploadingPhoto}
+                    className="absolute bottom-2 right-2 z-30 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/80 hover:border-[#C8922A]/50 disabled:opacity-50 disabled:cursor-wait"
+                    title="Ganti foto profil"
+                  >
+                    {isUploadingPhoto ? (
+                      <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <Camera size={14} className="text-white" />
+                    )}
+                  </button>
+                )}
               </div>
+
+              {/* Hidden file input for photo upload */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoChange}
+              />
 
               {/* Name & Tier */}
               <h2 className="font-extrabold text-2xl tracking-wide text-gradient-gold" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
@@ -1514,7 +1610,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     {/* Right: Picture Card */}
                     <div className="flex-shrink-0 relative">
                       <div className="w-[104px] h-[135px] rounded-xl overflow-hidden border border-[#C8922A] shadow-md bg-zinc-950">
-                        <img src={profileCard.photo} alt={profileCard.name} className="w-full h-full object-cover object-top" />
+                        <img src={profileCard.photo} alt={profileCard.name} className="w-full h-full object-contain object-center" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
                       </div>
                       {/* Floating level badge graphic */}

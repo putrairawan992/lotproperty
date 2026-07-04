@@ -36,16 +36,38 @@ function EventBannerSlide({
           : "linear-gradient(135deg, #FFF9F2 0%, #F5F7FA 100%)",
       }}
     >
+      {/* Uploaded Banner Image Background */}
+      {event.banner && (
+        <img 
+          src={event.banner} 
+          alt={event.title} 
+          className="absolute inset-0 w-full h-full object-cover z-0 opacity-80" 
+        />
+      )}
+      {/* Gradient overlay for readability when image is present */}
+      {event.banner && (
+        <div 
+          className="absolute inset-0 z-10" 
+          style={{
+            background: isDark
+              ? "linear-gradient(90deg, rgba(23,14,8,0.95) 0%, rgba(23,14,8,0.85) 40%, rgba(16,12,22,0.5) 100%)"
+              : "linear-gradient(90deg, rgba(255,249,242,0.95) 0%, rgba(255,249,242,0.85) 40%, rgba(245,247,250,0.5) 100%)"
+          }}
+        />
+      )}
+
       <div className="absolute top-2 left-2 bg-[#E53E3E] text-white px-2.5 py-0.5 text-[9px] font-extrabold uppercase rounded-lg -rotate-6 transform shadow-md z-20 tracking-wider">
         SPESIAL EVENT
       </div>
 
-      <div className="absolute left-0 top-0 bottom-0 w-1/3 pointer-events-none opacity-10 md:opacity-20 z-0">
-        <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M0 0 C30 10, 60 -10, 100 0 L100 30 C60 20, 30 40, 0 30 Z" fill={event.accentColor} />
-          <path d="M0 30 C30 40, 60 20, 100 30 L100 60 C60 50, 30 70, 0 60 Z" fill="#FFFFFF" opacity="0.8" />
-        </svg>
-      </div>
+      {!event.banner && (
+        <div className="absolute left-0 top-0 bottom-0 w-1/3 pointer-events-none opacity-10 md:opacity-20 z-0">
+          <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 0 C30 10, 60 -10, 100 0 L100 30 C60 20, 30 40, 0 30 Z" fill={event.accentColor} />
+            <path d="M0 30 C30 40, 60 20, 100 30 L100 60 C60 50, 30 70, 0 60 Z" fill="#FFFFFF" opacity="0.8" />
+          </svg>
+        </div>
+      )}
 
       <div className="absolute right-4 bottom-0 top-4 w-1/2 hidden sm:flex items-center justify-end gap-6 z-10 pointer-events-none">
         <div className="flex flex-col items-center flex-shrink-0 text-center">

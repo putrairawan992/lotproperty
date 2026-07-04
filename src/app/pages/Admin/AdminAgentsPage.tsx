@@ -47,7 +47,8 @@ function getTreeStats(node: TreeNodeData | null): { total: number; byLevel: Reco
   const byLevel: Record<string, number> = { [node.level]: 1 };
 
   function recurse(n: TreeNodeData) {
-    n.children.forEach(child => {
+    const children = n.children || [];
+    children.forEach(child => {
       total++;
       byLevel[child.level] = (byLevel[child.level] || 0) + 1;
       recurse(child);
@@ -715,7 +716,7 @@ export default function AdminAgentsPage() {
                 <p className="text-xs mb-3 text-left" style={{ color: T.text3 }}>
                   {recruitsModal.recruitsCount} agen direkrut oleh {recruitsModal.name.split(" ")[0]}:
                 </p>
-                {recruitsModal.children.map((recruit, i) => (
+                {(recruitsModal.children || []).map((recruit, i) => (
                   <div
                     key={recruit.name}
                     className="flex items-center gap-3 p-3 rounded-xl border transition-colors hover:bg-muted/40"

@@ -606,7 +606,7 @@ export default function ProspectPage() {
               </div>
 
               {/* Desktop: table layout */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="hidden md:block overflow-x-auto pb-28 min-h-[300px]">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b" style={{ borderColor: T.border }}>
@@ -663,7 +663,7 @@ export default function ProspectPage() {
                           </td>
                           <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text3 }}>{p.date}</td>
                           <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                            <ActionMenu prospect={p} alignUp={index === filtered.length - 1} />
+                            <ActionMenu prospect={p} alignUp={index === filtered.length - 1 && filtered.length > 2} />
                           </td>
                         </tr>
                       );

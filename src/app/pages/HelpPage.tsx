@@ -17,7 +17,7 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
   const [guideTab, setGuideTab] = useTabQuery("sub", "level");
   const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [search, setSearch]   = useState("");
-  const { isDark } = useTheme();
+  const { isDark, isGuest, user } = useTheme();
 
   // Interactive Form States
   const [formType, setFormType] = useState<"feedback" | "pindah_dp">("feedback");
@@ -331,16 +331,21 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                                 {b.req}
                               </p>
                             </div>
-                            <div className="justify-self-end self-center">
-                              {b.locked ? (
-                                <span className="inline-flex h-8 items-center text-xs px-3 rounded-xl font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                                  Locked
-                                </span>
-                              ) : (
-                                <span className="inline-flex h-8 items-center text-xs px-3.5 rounded-xl font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                                  ✓ Dimiliki
-                                </span>
-                              )}
+                             <div className="justify-self-end self-center">
+                              {(() => {
+                                const isLocked = isGuest
+                                  ? (b.name !== "Listing Factory" && b.name !== "The Consultant" && b.name !== "First Listing")
+                                  : !user?.AgentBadges?.some((ab: any) => ab.Badge?.Code === b.code || ab.Badge?.Name === b.name);
+                                return isLocked ? (
+                                  <span className="inline-flex h-8 items-center text-xs px-3 rounded-xl font-bold uppercase tracking-wider bg-zinc-800 text-zinc-400 border border-zinc-700/50" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                    Locked
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex h-8 items-center text-xs px-3.5 rounded-xl font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-500 border border-emerald-500/20" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                    ✓ Dimiliki
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
                         ))}
@@ -538,6 +543,39 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
         {/* ── INTERACTIVE FORMULIR ── */}
         {tab === "forms" && (
           <motion.div key="forms" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
+            {/* Google Forms Quick Links */}
+            <Card className="p-4 bg-gradient-to-r from-amber-500/5 to-emerald-500/5 border border-amber-500/10">
+              <p className="text-xs font-bold text-[#E8A500] uppercase tracking-wider mb-2.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                📋 GOOGLE FORM RESMI LOT PROPERTY
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <a 
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdaoeYPZSUskh8pS40gmgCRlvXDu3wdbsJ4OBoMQgGZqvd2pw/viewform" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="flex items-center justify-between p-3 rounded-xl border border-white/5 hover:border-amber-500/30 bg-muted/20 transition-all text-left no-underline group cursor-pointer"
+                >
+                  <div>
+                    <p className="text-xs font-bold text-foreground group-hover:text-[#E8A500] transition-colors">Formulir Pindah DP</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Pengajuan pemindahan DP client resmi</p>
+                  </div>
+                  <ChevronRight size={14} className="text-muted-foreground group-hover:text-[#E8A500] transition-colors" />
+                </a>
+                <a 
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSfsKTexewfq7xTkkQTkaaAuvUNfhbqXK4dv_dLO8DtaAfWULQ/viewform" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="flex items-center justify-between p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 bg-muted/20 transition-all text-left no-underline group cursor-pointer"
+                >
+                  <div>
+                    <p className="text-xs font-bold text-foreground group-hover:text-emerald-500 transition-colors">Formulir Klaim Komisi</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Pengajuan klaim komisi transaksi resmi</p>
+                  </div>
+                  <ChevronRight size={14} className="text-muted-foreground group-hover:text-emerald-500 transition-colors" />
+                </a>
+              </div>
+            </Card>
+
             {/* Form Selection Buttons */}
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => setFormType("feedback")}

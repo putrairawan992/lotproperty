@@ -643,7 +643,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => {
-              window.open("https://docs.google.com/forms/d/e/1FAIpQLSfDCE255_yY7oQ4uO2X3jW9h38bH5jY8KjYtL7_Zg/viewform", "_blank");
+              window.open("https://docs.google.com/forms/d/e/1FAIpQLSfsKTexewfq7xTkkQTkaaAuvUNfhbqXK4dv_dLO8DtaAfWULQ/viewform", "_blank");
             }}
             className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold transition-all text-xs tracking-wider uppercase whitespace-nowrap border"
             style={{

@@ -214,7 +214,10 @@ export default function AdminHoFPage() {
         <select value={period} onChange={e => setPeriod(e.target.value)}
           className="px-3 py-2 rounded-xl border outline-none bg-card text-sm cursor-pointer"
           style={{ borderColor: T.border }}>
-          {["Juni 2025","Mei 2025","April 2025"].map(p => <option key={p}>{p}</option>)}
+          {[
+            "Desember 2026", "November 2026", "Oktober 2026", "September 2026", "Agustus 2026", "Juli 2026", "Juni 2026", "Mei 2026", "April 2026", "Maret 2026", "Februari 2026", "Januari 2026",
+            "Desember 2025", "November 2025", "Oktober 2025", "September 2025", "Agustus 2025", "Juli 2025", "Juni 2025", "Mei 2025", "April 2025", "Maret 2025", "Februari 2025", "Januari 2025"
+          ].map(p => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
 

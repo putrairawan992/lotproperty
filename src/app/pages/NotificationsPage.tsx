@@ -18,26 +18,17 @@ interface NotifItem {
   pinned?: boolean;
 }
 
-const FALLBACK_NOTIFS: NotifItem[] = [
-  { id: 0, type: "achievement", title: "Badge Unlocked: Dedicated Agent", body: "Selamat! Kamu berhasil menyelesaikan Daily Quest 7 hari berturut-turut.", time: "2 jam lalu", unread: true },
-  { id: 1, type: "system", title: "Listing Hampir Kadaluarsa", body: "The Spring Studio akan kadaluarsa dalam 14 hari. Perbarui sekarang.", time: "5 jam lalu", unread: true, pinned: true },
-  { id: 2, type: "leaderboard", title: "Kamu Naik ke Ranking #7!", body: "Ahmad Fadhil sekarang di posisi #7 Weekly Leaderboard. Terus semangat!", time: "1 hari lalu", unread: false },
-  { id: 3, type: "commission", title: "Commission Claim Disetujui", body: "Komisi Rumah 3BR Bintaro disetujui. +7.500 XP ditambahkan.", time: "2 hari lalu", unread: false },
-  { id: 4, type: "achievement", title: "Level Up! Level 12 — Senior Agent", body: "Selamat! Kamu mencapai Level 12. Lanjutkan perjalananmu menuju Elite!", time: "3 hari lalu", unread: false },
-  { id: 5, type: "system", title: "Prospect Reminder", body: "Follow Up Budi Hartono dijadwalkan hari ini. Jangan lupa!", time: "3 hari lalu", unread: false, pinned: true },
-];
-
 export default function NotificationsPage() {
   const loading = useLoading(900);
   const { isDark } = useTheme();
   const [tab, setTab] = useTabQuery("tab", "All");
-  const [notifs, setNotifs] = useState<NotifItem[]>(FALLBACK_NOTIFS);
+  const [notifs, setNotifs] = useState<NotifItem[]>([]);
 
   useEffect(() => {
     const loadNotifs = async () => {
       try {
         const data = await api.notifications.getList();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           setNotifs(data.map((n: any) => ({
             id: Number(n.id),
             type: n.category || "system",
@@ -49,7 +40,7 @@ export default function NotificationsPage() {
           })));
         }
       } catch {
-        // Keep fallback
+        // Keep empty list
       }
     };
     loadNotifs();

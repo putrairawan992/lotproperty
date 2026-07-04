@@ -120,7 +120,15 @@ export const api = {
         method: "PUT",
         body: JSON.stringify({ badges: badgeCodes }),
       });
-    }
+    },
+    updatePhoto: async (file: File) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      return request<{ message: string; photo_url: string }>("/profile/photo", {
+        method: "PUT",
+        body: formData,
+      });
+    },
   },
 
   // Quests

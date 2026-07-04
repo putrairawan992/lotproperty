@@ -33,7 +33,7 @@ const mapApiPost = (item: any): Post => ({
 
 
 export default function BoardPage() {
-  const { isDark, isGuest, onLoginRequest } = useTheme();
+  const { isDark, isGuest, user, onLoginRequest } = useTheme();
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<"WTB" | "WTR" | "INFO">("WTB");
@@ -41,6 +41,13 @@ export default function BoardPage() {
   const [postsTodayCount, setPostsTodayCount] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const getInitials = (nameStr?: string) => {
+    if (!nameStr) return "A";
+    const parts = nameStr.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+  };
 
   // Load board posts from API.
   useEffect(() => {
@@ -204,21 +211,21 @@ export default function BoardPage() {
             {/* My User Avatar */}
             <div className="flex-shrink-0">
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold animate-fade-in"
                 style={{
                   background: "linear-gradient(135deg, #E8A500, #C8922A)",
                   fontSize: 11,
                   fontFamily: "'Rajdhani', sans-serif"
                 }}
               >
-                AF
+                {getInitials(user?.name)}
               </div>
             </div>
 
             {/* Input field */}
             <div className="flex-1 min-w-0">
               <p className="text-xs font-bold" style={{ color: T.text1 }}>
-                Ahmad Fadhil <span className="text-[9px] text-muted-foreground font-normal">· Senior Agent</span>
+                {user?.name || "Agent"} <span className="text-[9px] text-muted-foreground font-normal">· {user?.title || "Rookie Agent"}</span>
               </p>
               <textarea
                 value={content}

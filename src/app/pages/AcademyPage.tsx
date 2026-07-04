@@ -25,6 +25,62 @@ const CAT_COLORS: Record<string, string> = {
   "Product Knowledge": "#1A6FC4",
 };
 
+function getEmbedUrl(url: string): string {
+  if (!url) return "";
+  
+  if (url.includes("/embed/")) {
+    return url;
+  }
+
+  if (url.includes("playlist?list=")) {
+    try {
+      const urlObj = new URL(url);
+      const listId = urlObj.searchParams.get("list");
+      if (listId) {
+        return `https://www.youtube.com/embed/videoseries?list=${listId}`;
+      }
+    } catch (e) {
+      const match = url.match(/[?&]list=([^#\&\?]+)/);
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/videoseries?list=${match[1]}`;
+      }
+    }
+  }
+
+  if (url.includes("watch?v=")) {
+    try {
+      const urlObj = new URL(url);
+      const videoId = urlObj.searchParams.get("v");
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    } catch (e) {
+      const match = url.match(/[?&]v=([^#\&\?]+)/);
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}`;
+      }
+    }
+  }
+
+  if (url.includes("youtu.be/")) {
+    try {
+      const urlObj = new URL(url);
+      const videoId = urlObj.pathname.substring(1);
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    } catch (e) {
+      const parts = url.split("youtu.be/");
+      if (parts[1]) {
+        const videoId = parts[1].split(/[?#]/)[0];
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+    }
+  }
+
+  return url;
+}
+
 export default function AcademyPage() {
   const { isDark, isGuest, onLoginRequest } = useTheme();
   const [cat, setCat] = useTabQuery("cat", "Semua");
@@ -270,7 +326,7 @@ export default function AcademyPage() {
               {activeModule.video_url ? (
                 <div className="aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
                   <iframe
-                    src={activeModule.video_url}
+                    src={getEmbedUrl(activeModule.video_url)}
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen

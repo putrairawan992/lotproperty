@@ -70,6 +70,7 @@ type EventResponse = {
   subtitle?: string;
   heading?: string;
   tagline?: string;
+  banner?: string;
   tagline_highlight?: string;
   accent_color?: string;
   badge?: { name?: string };
@@ -106,6 +107,7 @@ function mapEvent(item: EventResponse): EventItem {
     tagline: item.tagline || "",
     taglineHighlight: item.tagline_highlight || "",
     accentColor: item.accent_color || "#E53E3E",
+    banner: item.banner || "",
   };
 }
 
@@ -118,6 +120,57 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const [weeklyData, setWeeklyData] = useState<any[]>([]);
   const [hofData, setHofData] = useState<Record<string, any[]>>({});
   const [eventData, setEventData] = useState<EventItem[]>([]);
+  const [hofRawData, setHofRawData] = useState<any[]>([]);
+  const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+
+  useEffect(() => {
+    if (hofRawData.length > 0) {
+      const periods = Array.from(new Set(hofRawData.map(r => r.period).filter(Boolean)));
+      setAvailablePeriods(periods);
+      if (periods.length > 0) {
+        setSelectedPeriod((prev) => prev || periods[0]);
+      }
+    } else {
+      setAvailablePeriods([]);
+      setSelectedPeriod("");
+    }
+  }, [hofRawData]);
+
+  useEffect(() => {
+    const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
+    const filtered = selectedPeriod 
+      ? hofRawData.filter(r => String(r.period).toLowerCase() === selectedPeriod.toLowerCase())
+      : hofRawData;
+      
+    for (const rec of filtered) {
+      const mappedCat = normalizeHofCategory(rec.category || "", HOF_TABS);
+      if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
+
+      grouped[mappedCat].push({
+        rank: rec.rank,
+        name: rec.agent?.name || "Unknown Agent",
+        initials: (rec.agent?.name || "A")
+          .split(" ")
+          .map((word: unknown) => (word as string)[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase(),
+        photo: rec.agent?.photo_url,
+        level: rec.agent?.level || "Agent",
+        subtitle: rec.agent?.title || "",
+        value: rec.notes || "HOF",
+      });
+    }
+
+    const merged: Record<string, any[]> = Object.fromEntries(HOF_TABS.map(tab => [tab, []])) as Record<string, any[]>;
+    HOF_TABS.forEach((tab) => {
+      if (grouped[tab]?.length) {
+        merged[tab] = [...grouped[tab]].sort((a, b) => a.rank - b.rank).slice(0, 8);
+      }
+    });
+    setHofData(merged);
+  }, [selectedPeriod, hofRawData]);
 
   const loading = loadingTime || (isGuest ? false : dataLoading);
 
@@ -170,17 +223,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             }
             
             const hofPayload = Array.isArray(hofRes) ? hofRes : [];
-            if (hofPayload.length > 0) {
-              const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
-              for (const rec of hofPayload) {
-                const mappedCat = normalizeHofCategory(rec.category || "", HOF_TABS);
-                if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
-                grouped[mappedCat].push({ rank: rec.rank, name: rec.agent?.name || "Unknown Agent", initials: (rec.agent?.name || "A").split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase(), photo: rec.agent?.photo_url, level: rec.agent?.level || "Agent", subtitle: rec.agent?.title || "", value: rec.notes || "HOF" });
-              }
-              const merged: Record<string, any[]> = Object.fromEntries(HOF_TABS.map(tab => [tab, []])) as Record<string, any[]>;
-              HOF_TABS.forEach((tab) => { if (grouped[tab]?.length) merged[tab] = [...grouped[tab]].sort((a, b) => a.rank - b.rank).slice(0, 8); });
-              setHofData(merged);
-            }
+            setHofRawData(hofPayload);
             
             if (Array.isArray(eventsRes) && eventsRes.length > 0) {
               setEventData(eventsRes.map(mapEvent));
@@ -208,36 +251,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         }
 
         const hofPayload = Array.isArray(hofRes) ? (hofRes as HofRecordResponse[]) : [];
-        if (hofPayload.length > 0) {
-          const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;
-          for (const rec of hofPayload) {
-            const mappedCat = normalizeHofCategory(rec.category || "", HOF_TABS);
-            if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
-
-            grouped[mappedCat].push({
-              rank: rec.rank,
-              name: rec.agent?.name || "Unknown Agent",
-              initials: (rec.agent?.name || "A")
-                .split(" ")
-                .map((word) => word[0])
-                .join("")
-                .slice(0, 2)
-                .toUpperCase(),
-              photo: rec.agent?.photo_url,
-              level: rec.agent?.level || "Agent",
-              subtitle: rec.agent?.title || "",
-              value: rec.notes || "HOF",
-            });
-          }
-
-          const merged: Record<string, any[]> = Object.fromEntries(HOF_TABS.map(tab => [tab, []])) as Record<string, any[]>;
-          HOF_TABS.forEach((tab) => {
-            if (grouped[tab]?.length) {
-              merged[tab] = [...grouped[tab]].sort((a, b) => a.rank - b.rank).slice(0, 8);
-            }
-          });
-          setHofData(merged);
-        }
+        setHofRawData(hofPayload);
 
         const eventsPayload = Array.isArray(eventsRes) ? (eventsRes as EventResponse[]) : [];
         if (eventsPayload.length > 0) {
@@ -376,6 +390,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         onGoTab={goHofTab}
         onPrev={hofPrev}
         onNext={hofNext}
+        selectedPeriod={selectedPeriod}
+        availablePeriods={availablePeriods}
+        onPeriodChange={setSelectedPeriod}
       />
 
       {/* Event Banner Slider placed below Hall of Fame and above Weekly Leaderboard */}

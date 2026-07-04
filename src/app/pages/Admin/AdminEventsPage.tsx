@@ -6,7 +6,7 @@ import { DateInput } from "../../components/DateTimeInput";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T } from "../../types";
 import { api } from "../../services/api";
-
+import { ALL_BADGES } from "../ProfilePage";
 export default function AdminEventsPage() {
   const [events, setEvents] = useState<any[]>([]);
 
@@ -28,7 +28,7 @@ export default function AdminEventsPage() {
             end: ev.end_date ? ev.end_date.slice(0, 10) : "",
             xpPool: Number(ev.xp_pool || 0),
             badge: ev.badge?.name || "Event Badge",
-            banner: "",
+            banner: ev.banner || "",
             status: ev.status || "Upcoming",
           })));
         } else {
@@ -89,22 +89,11 @@ export default function AdminEventsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size via FileReader + Image load
     const reader = new FileReader();
     reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        if (img.width === 1200 && img.height === 500) {
-          setBannerFile(file);
-          setBannerError("");
-          setBannerPreview(event.target?.result as string);
-        } else {
-          setBannerFile(null);
-          setBannerPreview("");
-          setToastMsg(`Ukuran gambar tidak valid: ${img.width} x ${img.height} px. Gambar banner event WAJIB berukuran tepat 1200 x 500 pixel.`);
-        }
-      };
-      img.src = event.target?.result as string;
+      setBannerFile(file);
+      setBannerError("");
+      setBannerPreview(event.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -132,6 +121,7 @@ export default function AdminEventsPage() {
           tagline: "Ikuti event dan raih",
           tagline_highlight: "hadiah eksklusif!",
           accent_color: "#E53E3E",
+          banner: bannerPreview,
         });
         setToastMsg("Event Berhasil Diperbarui!");
       } else {
@@ -146,6 +136,7 @@ export default function AdminEventsPage() {
           tagline: "Ikuti event dan raih",
           tagline_highlight: "hadiah eksklusif!",
           accent_color: "#E53E3E",
+          banner: bannerPreview,
         });
         setToastMsg("Event Baru Berhasil Dibuat dan Dipublikasikan!");
       }
@@ -172,7 +163,7 @@ export default function AdminEventsPage() {
           end: ev.end_date ? ev.end_date.slice(0, 10) : "",
           xpPool: Number(ev.xp_pool || 0),
           badge: ev.badge?.name || "Event Badge",
-          banner: "",
+          banner: ev.banner || "",
           status: ev.status || "Upcoming",
         })));
       }
@@ -261,7 +252,7 @@ export default function AdminEventsPage() {
                     style={{ borderColor: T.border }} />
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Tanggal Mulai</label>
                     <DateInput value={start} onChange={e => setStart(e.target.value)}
@@ -274,7 +265,7 @@ export default function AdminEventsPage() {
                       className="cursor-pointer"
                       style={{ borderColor: T.border }} />
                   </div>
-                  <div>
+                  <div className="sm:col-span-2 lg:col-span-1">
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Total XP Pool</label>
                     <input type="number" value={xpPool} onChange={e => setXpPool(e.target.value)}
                       placeholder="Contoh: 100000"
@@ -287,12 +278,11 @@ export default function AdminEventsPage() {
                   <div>
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Badge Reward Utama</label>
                     <select value={badge} onChange={e => setBadge(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none cursor-pointer"
+                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none cursor-pointer animate-fade-in"
                       style={{ borderColor: T.border }}>
-                      <option value="Merdeka Creator">Merdeka Creator</option>
-                      <option value="Listing Factory">Listing Factory</option>
-                      <option value="Deal Maker">Deal Maker</option>
-                      <option value="Billionaire Club">Billionaire Club</option>
+                      {ALL_BADGES.map(b => (
+                        <option key={b.name} value={b.name}>{b.name}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
@@ -370,18 +360,18 @@ export default function AdminEventsPage() {
                     
                     <EllipsisTooltip text={ev.desc} className="text-xs text-muted-foreground leading-relaxed line-clamp-3 text-left w-full" />
                     
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 text-xs border-t border-border/40" style={{ borderColor: T.border }}>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Calendar size={13} className="text-[#E8A500]" />
-                        <span>{ev.start} s/d {ev.end}</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-2.5 gap-x-4 pt-3 text-xs border-t" style={{ borderColor: T.border }}>
+                      <div className="flex items-center gap-2 text-muted-foreground sm:col-span-2 lg:col-span-1">
+                        <Calendar size={13} className="text-[#E8A500] flex-shrink-0" />
+                        <span className="truncate">Periode: <strong className="text-foreground">{ev.start}</strong> s/d <strong className="text-foreground">{ev.end}</strong></span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground font-semibold">
-                        <span className="w-4 h-4 rounded bg-[#E8A500]/10 border border-[#E8A500]/20 text-[#E8A500] text-[8px] flex items-center justify-center font-bold">XP</span>
-                        <span className="text-[#E8A500]">{ev.xpPool.toLocaleString("id-ID")} XP</span>
+                      <div className="flex items-center gap-2 text-muted-foreground font-semibold">
+                        <span className="w-4 h-4 rounded bg-[#E8A500]/10 border border-[#E8A500]/20 text-[#E8A500] text-[8px] flex items-center justify-center font-bold flex-shrink-0">XP</span>
+                        <span>Pool: <strong className="text-[#E8A500]">{ev.xpPool.toLocaleString("id-ID")} XP</strong></span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-muted-foreground min-w-0">
+                      <div className="flex items-center gap-2 text-muted-foreground min-w-0">
                         <Award size={13} className="text-[#7040D0] flex-shrink-0" />
-                        <EllipsisTooltip text={ev.badge} className="truncate max-w-[120px] text-left" />
+                        <span className="truncate">Reward: <strong className="text-foreground">{ev.badge}</strong></span>
                       </div>
                     </div>
                   </div>
