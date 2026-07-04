@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Plus, User, Phone, X, AlertCircle, Calendar, ChevronRight,
@@ -142,7 +143,7 @@ export default function ProspectPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [successToast, setSuccessToast] = useState("");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
-  const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
+  const [menuAnchor, setMenuAnchor] = useState<{ left: number; top?: number; bottom?: number; openUp: boolean } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const [prospects, setProspects] = useState<Prospect[]>([]);
@@ -157,7 +158,11 @@ export default function ProspectPage() {
   useEffect(() => {
     const close = () => setOpenMenuId(null);
     const handleClickOutside = (e: PointerEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpenMenuId(null);
+      const target = e.target as Element;
+      // Menu is portaled to body; ignore clicks inside it or on any trigger button.
+      if (menuRef.current?.contains(target)) return;
+      if (target?.closest?.("[data-action-menu-trigger]")) return;
+      setOpenMenuId(null);
     };
     document.addEventListener("pointerdown", handleClickOutside);
     // Absolute menu can't follow scroll — close it so it never lingers mispositioned.
@@ -375,15 +380,24 @@ export default function ProspectPage() {
   );
 
   const ActionMenu = ({ prospect }: { prospect: Prospect }) => (
-    <div className="relative" ref={openMenuId === prospect.id ? menuRef : undefined}>
+    <div className="relative">
       <button
         type="button"
+        data-action-menu-trigger
         onClick={(e) => {
           e.stopPropagation();
           if (openMenuId === prospect.id) { setOpenMenuId(null); return; }
-          const btn = e.currentTarget;
-          const rect = btn.getBoundingClientRect();
-          setDropdownDir(window.innerHeight - rect.bottom < 220 ? "up" : "down");
+          const rect = e.currentTarget.getBoundingClientRect();
+          const openUp = window.innerHeight - rect.bottom < 220;
+          // Fixed-position anchor (viewport coords) so the menu escapes the
+          // table's overflow-clipping container. Position via top/left/bottom only —
+          // NOT transform, which framer-motion controls for its animation.
+          setMenuAnchor({
+            left: Math.max(8, rect.right - 160), // w-40, right-aligned to the button
+            top: openUp ? undefined : rect.bottom + 4,
+            bottom: openUp ? window.innerHeight - rect.top + 4 : undefined,
+            openUp,
+          });
           setOpenMenuId(prospect.id);
         }}
         className="p-1.5 rounded-lg hover:bg-muted transition-colors"
@@ -391,17 +405,18 @@ export default function ProspectPage() {
       >
         <MoreHorizontal size={16} />
       </button>
-      <AnimatePresence>
-        {openMenuId === prospect.id && (
+      {openMenuId === prospect.id && menuAnchor && createPortal(
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: dropdownDir === "up" ? 4 : -4 }}
+            ref={menuRef}
+            initial={{ opacity: 0, scale: 0.95, y: menuAnchor.openUp ? 4 : -4 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: dropdownDir === "up" ? 4 : -4 }}
-            className={`absolute right-0 w-40 rounded-xl border shadow-xl z-50 overflow-hidden ${
-              dropdownDir === "up" ? "bottom-full mb-1" : "top-full mt-1"
-            }`}
-            style={{ backgroundColor: T.card, borderColor: T.border }}
-            onPointerDown={(e) => e.stopPropagation()}
+            className="fixed w-40 rounded-xl border shadow-xl z-[100] overflow-hidden"
+            style={{
+              left: menuAnchor.left,
+              ...(menuAnchor.top != null ? { top: menuAnchor.top } : { bottom: menuAnchor.bottom }),
+              backgroundColor: T.card,
+              borderColor: T.border,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {[
@@ -422,9 +437,9 @@ export default function ProspectPage() {
                 <item.icon size={14} /> {item.label}
               </button>
             ))}
-          </motion.div>
+          </motion.div>,
+          document.body
         )}
-      </AnimatePresence>
     </div>
   );
 
