@@ -653,8 +653,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.stroke();
 
     // Career commission intentionally omitted here to match the share modal (hidden there).
+    // Sections are spread vertically to fill the card height (aligns with the photo).
 
-    const statYTop = 380;
+    const statYTop = 440;
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -673,22 +674,22 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       const x = leftX + i * statBlockW;
       ctx.fillStyle = "#8a8a8a";
       ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.label, x, 440);
+      ctx.fillText(s.label, x, 500);
       ctx.fillStyle = "#ffffff";
       ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.value, x, 510);
+      ctx.fillText(s.value, x, 570);
 
       if (i < stats.length - 1) {
         ctx.strokeStyle = "rgba(255,255,255,0.12)";
         ctx.beginPath();
-        ctx.moveTo(x + statBlockW - 18, 440);
-        ctx.lineTo(x + statBlockW - 18, 515);
+        ctx.moveTo(x + statBlockW - 18, 500);
+        ctx.lineTo(x + statBlockW - 18, 575);
         ctx.stroke();
       }
     });
 
     // Draw Divider for Badges & HOF section
-    const badgeHofDividerY = 570;
+    const badgeHofDividerY = 680;
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.beginPath();
     ctx.moveTo(leftX, badgeHofDividerY);
@@ -698,11 +699,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     // Column 1: Featured Badges
     ctx.fillStyle = "#8a8a8a";
     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 615);
+    ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 725);
 
-    const badgeSize = 55;
-    const badgeGap = 20;
-    const badgeY = 640;
+    const badgeSize = 64;
+    const badgeGap = 22;
+    const badgeY = 750;
 
     if (featured.length === 0) {
       ctx.fillStyle = "#5c5a61";
@@ -727,11 +728,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     const hofX = 520;
     ctx.fillStyle = "#8a8a8a";
     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 615);
+    ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 725);
 
-    const hofSize = 55;
-    const hofGap = 20;
-    const hofY = 640;
+    const hofSize = 64;
+    const hofGap = 22;
+    const hofY = 750;
 
     if (hofHistory.length === 0) {
       ctx.fillStyle = "#5c5a61";

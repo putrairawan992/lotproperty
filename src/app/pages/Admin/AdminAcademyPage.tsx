@@ -269,16 +269,42 @@ export default function AdminAcademyPage() {
                   <div>
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">URL Video Pembelajaran</label>
                     <input type="url" value={videoUrl} onChange={e => { setVideoUrl(e.target.value); if (formError) setFormError(""); }}
-                      placeholder="Contoh: https://www.youtube.com/watch?v=..."
+                      placeholder="Contoh: https://youtu.be/VIDEO_ID"
                       className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
                       style={{ borderColor: formError ? "#DC2626" : T.border, color: T.text1 }} />
-                    {formError ? (
-                      <p className="mt-1.5 text-xs text-[#DC2626] whitespace-pre-line leading-relaxed">{formError}</p>
-                    ) : (
-                      <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                        Standar: link YouTube — video (<code>watch?v=…</code> / <code>youtu.be/…</code>) atau playlist (<code>list=…</code>).
-                      </p>
-                    )}
+
+                    {/* Feedback validasi: error submit → live invalid → live valid/playlist */}
+                    {(() => {
+                      if (formError) {
+                        return <p className="mt-1.5 text-xs text-[#DC2626] whitespace-pre-line leading-relaxed">{formError}</p>;
+                      }
+                      const url = videoUrl.trim();
+                      if (!url) return null;
+                      const err = validateYoutubeUrl(url);
+                      if (err) {
+                        return <p className="mt-1.5 text-xs text-[#DC2626] whitespace-pre-line leading-relaxed">{err}</p>;
+                      }
+                      const hasVideoId = /(?:\/embed\/|[?&]v=|youtu\.be\/)[A-Za-z0-9_-]{11}/.test(url);
+                      return hasVideoId
+                        ? <p className="mt-1.5 text-xs text-[#16A34A] font-semibold">✓ Format link valid — thumbnail akan tampil.</p>
+                        : <p className="mt-1.5 text-xs text-[#D97706] font-semibold">⚠ Link playlist valid, tapi thumbnail tidak muncul. Disarankan pakai link 1 video.</p>;
+                    })()}
+
+                    {/* Panduan visual cara ambil link */}
+                    <div className="mt-2.5 p-3 rounded-xl border bg-muted/20" style={{ borderColor: T.border }}>
+                      <p className="text-[11px] font-bold text-foreground mb-1.5">📋 Cara ambil link YouTube</p>
+                      <ol className="list-decimal list-inside text-[11px] text-muted-foreground space-y-0.5 leading-relaxed">
+                        <li>Buka video di YouTube (<b>bukan</b> halaman playlist).</li>
+                        <li>Klik <b>Bagikan / Share</b> → <b>Salin / Copy</b>.</li>
+                        <li>Tempel di kolom di atas. Kalau ada <code>&amp;list=…</code> di belakang, hapus mulai dari <code>&amp;list</code>.</li>
+                      </ol>
+                      <div className="mt-2 pt-2 border-t space-y-1 text-[11px]" style={{ borderColor: T.border }}>
+                        <p className="text-muted-foreground"><span className="text-[#16A34A] font-bold">✅</span> <code className="text-foreground">https://youtu.be/VIDEO_ID</code></p>
+                        <p className="text-muted-foreground"><span className="text-[#16A34A] font-bold">✅</span> <code className="text-foreground">https://www.youtube.com/watch?v=VIDEO_ID</code></p>
+                        <p className="text-muted-foreground"><span className="text-[#D97706] font-bold">⚠️</span> <code className="text-foreground">…/playlist?list=…</code> — diterima, tanpa thumbnail</p>
+                        <p className="text-muted-foreground"><span className="text-[#DC2626] font-bold">❌</span> Link selain YouTube</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 

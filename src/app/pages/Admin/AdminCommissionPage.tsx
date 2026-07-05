@@ -16,6 +16,7 @@ interface CommissionItem {
   xp: string;
   submitted: string;
   status: "Pending" | "Approved" | "Rejected";
+  details: Record<string, any>;
 }
 
 interface HelpSubmissionItem {
@@ -63,6 +64,9 @@ export default function AdminCommissionPage() {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
+  // Commission Detail Modal State
+  const [detailClaim, setDetailClaim] = useState<CommissionItem | null>(null);
+
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingHelpId, setUpdatingHelpId] = useState<number | null>(null);
@@ -87,6 +91,7 @@ export default function AdminCommissionPage() {
           xp: `+${Number(c.xp_earned || 0)} XP`,
           submitted: formatDate(String(c.submitted_at || c.created_at || "")),
           status: String(c.status || "Pending") as "Pending" | "Approved" | "Rejected",
+          details: (() => { try { return c.details ? JSON.parse(c.details) : {}; } catch { return {}; } })(),
         })));
       }
 
@@ -349,16 +354,21 @@ export default function AdminCommissionPage() {
                         </div>
                       </div>
 
-                      {commissionSubTab === "Pending" && (
-                        <div className="flex gap-2">
-                          <button onClick={() => setRejectId(c.id)} className="flex-1 py-2 rounded-xl text-xs font-bold border border-red-500 text-red-500 cursor-pointer hover:bg-red-500/10 transition-colors">
-                            Tolak
-                          </button>
-                          <button onClick={() => approveCommission(c.id)} className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700 transition-colors">
-                            Approve
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex gap-2">
+                        <button onClick={() => setDetailClaim(c)} className="flex-1 py-2 rounded-xl text-xs font-bold border cursor-pointer hover:bg-muted/40 transition-colors flex items-center justify-center gap-1" style={{ borderColor: T.border, color: T.text2 }}>
+                          <HelpCircle size={13} /> Detail
+                        </button>
+                        {commissionSubTab === "Pending" && (
+                          <>
+                            <button onClick={() => setRejectId(c.id)} className="flex-1 py-2 rounded-xl text-xs font-bold border border-red-500 text-red-500 cursor-pointer hover:bg-red-500/10 transition-colors">
+                              Tolak
+                            </button>
+                            <button onClick={() => approveCommission(c.id)} className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700 transition-colors">
+                              Approve
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
@@ -407,16 +417,21 @@ export default function AdminCommissionPage() {
                           <td className="px-5 py-4 text-sm font-semibold text-left text-[#C8922A]">{c.xp}</td>
                           <td className="px-5 py-4 text-xs text-left" style={{ color: T.text3 }}>{c.submitted}</td>
                           <td className="px-5 py-4 text-right">
-                            {commissionSubTab === "Pending" ? (
-                              <div className="flex gap-2 justify-end">
-                                <button onClick={() => setRejectId(c.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold border border-red-500 text-red-500 cursor-pointer hover:bg-red-500/10">Tolak</button>
-                                <button onClick={() => approveCommission(c.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700">Approve</button>
-                              </div>
-                            ) : (
-                              <span className="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wide" style={{ backgroundColor: commissionSubTab === "Approved" ? "rgba(22, 163, 74, 0.1)" : "rgba(220, 38, 38, 0.1)", color: commissionSubTab === "Approved" ? "#16A34A" : "#DC2626" }}>
-                                {commissionSubTab}
-                              </span>
-                            )}
+                            <div className="flex gap-2 justify-end items-center">
+                              <button onClick={() => setDetailClaim(c)} className="px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer hover:bg-muted/40 flex items-center gap-1" style={{ borderColor: T.border, color: T.text2 }}>
+                                <HelpCircle size={13} /> Detail
+                              </button>
+                              {commissionSubTab === "Pending" ? (
+                                <>
+                                  <button onClick={() => setRejectId(c.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold border border-red-500 text-red-500 cursor-pointer hover:bg-red-500/10">Tolak</button>
+                                  <button onClick={() => approveCommission(c.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700">Approve</button>
+                                </>
+                              ) : (
+                                <span className="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wide" style={{ backgroundColor: commissionSubTab === "Approved" ? "rgba(22, 163, 74, 0.1)" : "rgba(220, 38, 38, 0.1)", color: commissionSubTab === "Approved" ? "#16A34A" : "#DC2626" }}>
+                                  {commissionSubTab}
+                                </span>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -528,6 +543,73 @@ export default function AdminCommissionPage() {
               <button onClick={() => setRejectId(null)} className="px-4 py-2 border rounded-xl text-xs font-semibold cursor-pointer" style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
               <button onClick={() => rejectCommission(rejectId, rejectReason)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-red-700">Tolak Klaim</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Commission Detail Modal */}
+      {detailClaim && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div onClick={() => setDetailClaim(null)} className="absolute inset-0 bg-black/60" />
+          <div className="bg-card w-full max-w-lg rounded-3xl border shadow-2xl relative z-10 flex flex-col max-h-[88vh]" style={{ borderColor: T.border }}>
+            <div className="px-6 py-4 border-b flex items-start justify-between gap-3 flex-shrink-0" style={{ borderColor: T.border }}>
+              <div>
+                <h3 className="font-bold text-lg font-display text-left" style={{ color: T.text1 }}>Detail Klaim Komisi</h3>
+                <p className="text-[11px] text-muted-foreground mt-0.5">#{detailClaim.id} • {detailClaim.submitted}</p>
+              </div>
+              <button onClick={() => setDetailClaim(null)} style={{ color: T.text3 }}><X size={20} /></button>
+            </div>
+
+            <div className="p-6 space-y-4 overflow-y-auto text-left">
+              {/* Ringkasan */}
+              <div className="grid grid-cols-2 gap-3">
+                {[
+                  { l: "Agent", v: detailClaim.agent, sub: detailClaim.agentEmail },
+                  { l: "Status", v: detailClaim.status },
+                  { l: "Properti", v: detailClaim.property },
+                  { l: "Jenis", v: detailClaim.type },
+                  { l: "Jumlah Komisi", v: formatIDR(detailClaim.amount), color: "#E8A500" },
+                  { l: "Reward XP", v: detailClaim.xp, color: "#C8922A" },
+                ].map(f => (
+                  <div key={f.l}>
+                    <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wide">{f.l}</p>
+                    <p className="font-semibold text-sm" style={{ color: f.color || T.text1 }}>{f.v}</p>
+                    {f.sub && <p className="text-[11px] text-muted-foreground break-all">{f.sub}</p>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Detail lengkap dari form */}
+              <div className="border-t pt-3" style={{ borderColor: T.border }}>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2 tracking-wide">Detail Formulir</p>
+                {Object.keys(detailClaim.details).length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">Tidak ada detail tambahan (claim lama, atau dikirim tanpa data form).</p>
+                ) : (
+                  <div className="space-y-2">
+                    {Object.entries(detailClaim.details).map(([k, v]) => {
+                      const val = String(v ?? "").trim();
+                      if (!val) return null;
+                      const isUrl = /^https?:\/\//i.test(val);
+                      return (
+                        <div key={k} className="flex flex-col sm:flex-row sm:gap-3 text-sm border-b pb-2 last:border-0" style={{ borderColor: T.border }}>
+                          <span className="sm:w-2/5 text-xs font-semibold text-muted-foreground">{k}</span>
+                          <span className="sm:w-3/5 break-words" style={{ color: T.text1 }}>
+                            {isUrl ? <a href={val} target="_blank" rel="noreferrer" className="text-[#E8A500] underline break-all">Lihat file / link</a> : val}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {detailClaim.status === "Pending" && (
+              <div className="px-6 py-4 border-t flex justify-end gap-3 flex-shrink-0" style={{ borderColor: T.border }}>
+                <button onClick={() => { setRejectId(detailClaim.id); setDetailClaim(null); }} className="px-4 py-2 rounded-xl text-xs font-bold border border-red-500 text-red-500 hover:bg-red-500/10">Tolak</button>
+                <button onClick={() => { approveCommission(detailClaim.id); setDetailClaim(null); }} className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#16A34A] hover:bg-green-700">Approve</button>
+              </div>
+            )}
           </div>
         </div>
       )}
