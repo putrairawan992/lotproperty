@@ -532,7 +532,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       img.crossOrigin = "anonymous";
       img.onload = () => resolve(img);
       img.onerror = () => reject(new Error("Failed to load image"));
-      img.src = src;
+      // Remote images: cache-bust so the CORS request isn't served from the
+      // non-CORS cache left by the modal's plain <img> (which fails the CORS check).
+      img.src = src.startsWith("http")
+        ? src + (src.includes("?") ? "&" : "?") + "_cors=1"
+        : src;
     });
 
   const buildCompatibilityCardCanvas = async () => {
@@ -648,15 +652,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.lineTo(leftX + 280, 300);
     ctx.stroke();
 
-    ctx.fillStyle = "#9ca3af";
-    ctx.font = "700 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.commission.toUpperCase(), leftX, 375);
+    // Career commission intentionally omitted here to match the share modal (hidden there).
 
-    ctx.fillStyle = "#E8A500";
-    ctx.font = "900 76px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(profileCard.commission, leftX, 450);
-
-    const statYTop = 530;
+    const statYTop = 380;
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.lineWidth = 2;
     ctx.beginPath();
@@ -675,22 +673,22 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       const x = leftX + i * statBlockW;
       ctx.fillStyle = "#8a8a8a";
       ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.label, x, 590);
+      ctx.fillText(s.label, x, 440);
       ctx.fillStyle = "#ffffff";
       ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.value, x, 660);
+      ctx.fillText(s.value, x, 510);
 
       if (i < stats.length - 1) {
         ctx.strokeStyle = "rgba(255,255,255,0.12)";
         ctx.beginPath();
-        ctx.moveTo(x + statBlockW - 18, 590);
-        ctx.lineTo(x + statBlockW - 18, 665);
+        ctx.moveTo(x + statBlockW - 18, 440);
+        ctx.lineTo(x + statBlockW - 18, 515);
         ctx.stroke();
       }
     });
 
     // Draw Divider for Badges & HOF section
-    const badgeHofDividerY = 720;
+    const badgeHofDividerY = 570;
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
     ctx.beginPath();
     ctx.moveTo(leftX, badgeHofDividerY);
@@ -700,11 +698,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     // Column 1: Featured Badges
     ctx.fillStyle = "#8a8a8a";
     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 765);
+    ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 615);
 
     const badgeSize = 55;
     const badgeGap = 20;
-    const badgeY = 790;
+    const badgeY = 640;
 
     if (featured.length === 0) {
       ctx.fillStyle = "#5c5a61";
@@ -729,11 +727,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     const hofX = 520;
     ctx.fillStyle = "#8a8a8a";
     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 765);
+    ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 615);
 
     const hofSize = 55;
     const hofGap = 20;
-    const hofY = 790;
+    const hofY = 640;
 
     if (hofHistory.length === 0) {
       ctx.fillStyle = "#5c5a61";
