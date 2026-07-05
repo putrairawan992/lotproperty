@@ -36,15 +36,19 @@ export default function AdminDashboard() {
   const [commissions, setCommissions] = useState<CommissionDataItem[]>([]);
   const [logs, setLogs] = useState<LogDataItem[]>([]);
   const [eventsCount, setEventsCount] = useState(0);
+  const [checkouts, setCheckouts] = useState<any[]>([]);
 
   const loadDashboard = async () => {
     try {
-      const [agentsRows, commissionRows, logRows, eventRows] = await Promise.all([
+      const [agentsRows, commissionRows, logRows, eventRows, checkoutRows] = await Promise.all([
         api.admin.getAgents(),
         api.admin.getCommissions(),
         api.admin.getLogs(),
         api.events.getList(),
+        api.checkouts.getList().catch(() => []),
       ]);
+
+      if (Array.isArray(checkoutRows)) setCheckouts(checkoutRows);
 
       if (Array.isArray(agentsRows)) {
         setAgents(agentsRows.map((a: any) => ({
@@ -158,6 +162,55 @@ export default function AdminDashboard() {
           </Card>
         ))}
       </div>
+
+      {/* Rental checkout reminders (≤45 hari) */}
+      <Card className="p-5">
+        <div className="flex items-center justify-between mb-4">
+          <h3 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 16, color: T.text1 }}>
+            Reminder Checkout Sewa <span className="text-xs font-normal" style={{ color: T.text3 }}>(≤45 hari)</span>
+          </h3>
+          {checkouts.length > 0 && (
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(232,165,0,0.12)", color: "#C8922A" }}>{checkouts.length}</span>
+          )}
+        </div>
+        {checkouts.length === 0 ? (
+          <p className="text-sm text-center py-6" style={{ color: T.text3 }}>Tidak ada sewa yang akan checkout dalam 45 hari ke depan.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[10px] uppercase tracking-wider" style={{ color: T.text3 }}>
+                  <th className="text-left font-semibold px-2 py-2">Nama Customer</th>
+                  <th className="text-left font-semibold px-2 py-2">Unit</th>
+                  <th className="text-left font-semibold px-2 py-2">Marketing</th>
+                  <th className="text-left font-semibold px-2 py-2">Tanggal Checkout</th>
+                  <th className="text-right font-semibold px-2 py-2">Sisa</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y" style={{ borderColor: T.border }}>
+                {checkouts.map((co, i) => {
+                  const urgent = co.urgency === "urgent";
+                  const d = new Date(co.checkout_date);
+                  const dateStr = Number.isNaN(d.getTime()) ? co.checkout_date : d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+                  return (
+                    <tr key={i}>
+                      <td className="px-2 py-2.5 font-semibold" style={{ color: T.text1 }}>{co.customer_name || "—"}</td>
+                      <td className="px-2 py-2.5" style={{ color: T.text2 }}>{co.unit || co.property || "—"}</td>
+                      <td className="px-2 py-2.5" style={{ color: T.text2 }}>{co.agent_name || "—"}</td>
+                      <td className="px-2 py-2.5" style={{ color: T.text2 }}>{dateStr}</td>
+                      <td className="px-2 py-2.5 text-right">
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ backgroundColor: urgent ? "rgba(220,38,38,0.12)" : "rgba(232,165,0,0.12)", color: urgent ? "#DC2626" : "#C8922A" }}>
+                          {co.days_remaining <= 0 ? "Hari ini" : `${co.days_remaining} hari`}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
 
       {/* Pending actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

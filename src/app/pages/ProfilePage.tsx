@@ -209,7 +209,7 @@ function buildShareText(
   ].join("\n");
 }
 
-import { api } from "../services/api";
+import { api, BASE_URL } from "../services/api";
 
 export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const loadingTime = useLoading(1200);
@@ -553,24 +553,24 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.clip();
 
     const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, "#2D1A05");
-    bg.addColorStop(0.5, "#150D02");
-    bg.addColorStop(1, "#050301");
+    bg.addColorStop(0, "#4A2B0A");
+    bg.addColorStop(0.5, "#1F1203");
+    bg.addColorStop(1, "#0A0601");
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, width, height);
 
     ctx.save();
     ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = 0.40;
+    ctx.globalAlpha = 0.65;
 
     const glow1 = ctx.createRadialGradient(width * 0.8, height * 0.2, 0, width * 0.8, height * 0.2, width * 0.65);
-    glow1.addColorStop(0, "rgba(232, 165, 0, 0.45)");
+    glow1.addColorStop(0, "rgba(232, 165, 0, 0.60)");
     glow1.addColorStop(1, "rgba(232, 165, 0, 0)");
     ctx.fillStyle = glow1;
     ctx.fillRect(0, 0, width, height);
 
     const glow2 = ctx.createRadialGradient(width * 0.2, height * 0.8, 0, width * 0.2, height * 0.8, width * 0.5);
-    glow2.addColorStop(0, "rgba(249, 115, 22, 0.15)");
+    glow2.addColorStop(0, "rgba(249, 115, 22, 0.30)");
     glow2.addColorStop(1, "rgba(249, 115, 22, 0)");
     ctx.fillStyle = glow2;
     ctx.fillRect(0, 0, width, height);
@@ -609,14 +609,18 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.lineTo(width - bracketOffset, height - bracketOffset - bracketLen);
     ctx.stroke();
 
+    ctx.save();
+    ctx.shadowColor = "rgba(232, 165, 0, 0.45)";
+    ctx.shadowBlur = 30;
     ctx.lineWidth = 4;
-    ctx.strokeStyle = "rgba(200,146,42,0.55)";
+    ctx.strokeStyle = "rgba(232, 165, 0, 0.8)";
     drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
     ctx.stroke();
+    ctx.restore();
 
     // Inner decorative card border (matching share modal card-in-card effect)
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = "rgba(200, 146, 42, 0.25)";
+    ctx.strokeStyle = "rgba(200, 146, 42, 0.45)";
     drawRoundedRectPath(ctx, 30, 30, width - 60, height - 60, 34);
     ctx.stroke();
 
@@ -701,14 +705,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
     ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 725);
 
-    const badgeSize = 64;
-    const badgeGap = 22;
-    const badgeY = 750;
+    const badgeSize = 120;
+    const badgeGap = 20;
+    const badgeY = 745;
 
     if (featured.length === 0) {
       ctx.fillStyle = "#5c5a61";
       ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("None", leftX, badgeY + 35);
+      ctx.fillText("None", leftX, badgeY + 45);
     } else {
       for (let idx = 0; idx < Math.min(featured.length, 3); idx++) {
         const badgeName = featured[idx];
@@ -730,14 +734,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
     ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 725);
 
-    const hofSize = 64;
-    const hofGap = 22;
-    const hofY = 750;
+    const hofSize = 120;
+    const hofGap = 20;
+    const hofY = 745;
 
     if (hofHistory.length === 0) {
       ctx.fillStyle = "#5c5a61";
       ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("None", hofX, hofY + 35);
+      ctx.fillText("None", hofX, hofY + 45);
     } else {
       for (let idx = 0; idx < Math.min(hofHistory.length, 3); idx++) {
         const hof = hofHistory[idx];
@@ -771,7 +775,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
         // Draw Rank Text inside Circle
         ctx.fillStyle = "#121115";
-        ctx.font = "900 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+        ctx.font = "900 42px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(hof.rank, circleX, circleY);
@@ -780,7 +784,8 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     }
 
     try {
-      const photo = await loadDataImage(profileCard.photo);
+      const proxyPhotoUrl = `${BASE_URL}/public/image-proxy?url=${encodeURIComponent(profileCard.photo)}`;
+      const photo = await loadDataImage(proxyPhotoUrl);
       const px = 1070;
       const py = 245;
       const pw = 420;
@@ -1545,15 +1550,15 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 <div id="profile-scorecard-card" className="rounded-2xl border relative overflow-hidden p-4 sm:p-5 flex flex-col justify-between share-scorecard-card"
                   style={{
                     width: SCORECARD_W,
-                    background: "linear-gradient(135deg, #2D1A05 0%, #150D02 50%, #050301 100%)",
-                    borderColor: "#C8922A60",
-                    borderWidth: "1.5px",
-                    boxShadow: "0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)",
+                    background: "linear-gradient(135deg, #4A2B0A 0%, #1F1203 50%, #0A0601 100%)",
+                    borderColor: "#C8922AA5",
+                    borderWidth: "1.8px",
+                    boxShadow: "0 0 25px rgba(232, 165, 0, 0.25), 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
                     aspectRatio: "1.58 / 1"
                   }}>
                   {/* Background overlay glimmers */}
-                  <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-40 z-0"
-                    style={{ background: "radial-gradient(circle at 80% 20%, rgba(232, 165, 0, 0.45), transparent 65%), radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.15), transparent 50%)" }} />
+                  <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-65 z-0"
+                    style={{ background: "radial-gradient(circle at 80% 20%, rgba(232, 165, 0, 0.60), transparent 65%), radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.30), transparent 50%)" }} />
 
                   {/* Corner brackets decoration */}
                   <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-[#C8922A] opacity-60" />
@@ -1625,7 +1630,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         {/* Column 1: Lencana Utama */}
                         <div className="flex-1 text-left">
                           <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.featuredBadges}</p>
-                          <div className="flex gap-1">
+                          <div className="flex gap-2.5">
                             {featured.length === 0 ? (
                               <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
                             ) : (
@@ -1637,7 +1642,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                                     key={idx}
                                     src={asset}
                                     alt={badgeName}
-                                    className="w-[18px] h-[18px] object-contain"
+                                    className="w-[34px] h-[34px] object-contain"
                                     title={badgeName}
                                   />
                                 );
@@ -1649,7 +1654,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         {/* Column 2: Hall of Fame */}
                         <div className="flex-1 text-left">
                           <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.hofTitle}</p>
-                          <div className="flex gap-1 items-center">
+                          <div className="flex gap-2.5 items-center">
                             {hofHistory.length === 0 ? (
                               <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
                             ) : (
@@ -1665,7 +1670,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                                 return (
                                   <div
                                     key={idx}
-                                    className={`w-[18px] h-[18px] rounded-full flex items-center justify-center text-[7px] font-black text-[#121115] ${bgColor} border border-white/10 shadow-sm`}
+                                    className={`w-[34px] h-[34px] rounded-full flex items-center justify-center text-[12px] font-black text-[#121115] ${bgColor} border border-white/10 shadow-sm`}
                                     title={`${hof.cat} (${hof.period})`}
                                   >
                                     {hof.rank}

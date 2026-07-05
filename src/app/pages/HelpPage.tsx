@@ -489,14 +489,14 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
               </p>
               <div className="grid grid-cols-1 gap-3">
                 <a
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSfsKTexewfq7xTkkQTkaaAuvUNfhbqXK4dv_dLO8DtaAfWULQ/viewform"
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSdaoeYPZSUskh8pS40gmgCRlvXDu3wdbsJ4OBoMQgGZqvd2pw/viewform"
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-between p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 bg-muted/20 transition-all text-left no-underline group cursor-pointer"
                 >
                   <div>
-                    <p className="text-xs font-bold text-foreground group-hover:text-emerald-500 transition-colors">Formulir Klaim Komisi</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Pengajuan klaim komisi transaksi resmi</p>
+                    <p className="text-xs font-bold text-foreground group-hover:text-emerald-500 transition-colors">Formulir Klaim DP</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Pengajuan klaim DP transaksi resmi</p>
                   </div>
                   <ChevronRight size={14} className="text-muted-foreground group-hover:text-emerald-500 transition-colors" />
                 </a>

@@ -83,8 +83,8 @@ export default function AdminCommissionPage() {
       if (Array.isArray(commData)) {
         setClaims(commData.map((c: any) => ({
           id: String(c.id),
-          agent: String(c.agent?.name || "Unknown Agent"),
-          agentEmail: String(c.agent?.email || "-"),
+          agent: String(c.agent?.name || c.submitter_name || "Tanpa Agent (email belum terdaftar)"),
+          agentEmail: String(c.agent?.email || c.submitter_email || "-"),
           type: String(c.type || "SALE"),
           property: String(c.property || "-"),
           amount: Number(c.amount || 0),

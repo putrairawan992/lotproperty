@@ -19,7 +19,15 @@ interface AgentItem {
   joined: string;
   mentor_id?: number | null;
   role?: string;
+  photo_url?: string;
 }
+
+const getInitials = (name: string) => {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 0 || !parts[0]) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+};
 
 interface TreeNodeData {
   name: string;
@@ -326,6 +334,7 @@ export default function AdminAgentsPage() {
           joined: formatJoined(r.created_at),
           mentor_id: r.mentor_id ? Number(r.mentor_id) : null,
           role: String(r.role || "Agent"),
+          photo_url: String(r.photo_url || ""),
         })));
       } catch {
         // Keep empty list when API fails.
@@ -580,7 +589,13 @@ export default function AdminAgentsPage() {
                         onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
                         <td className="px-4 py-3 flex items-center gap-2">
                           <div className="flex items-center gap-2">
-                            <LevelBadge title={a.level} size={30} />
+                            <div className="w-8 h-8 rounded-full overflow-hidden border border-border flex-shrink-0 flex items-center justify-center bg-muted text-xs font-bold" style={{ borderColor: T.border }}>
+                              {a.photo_url ? (
+                                <img src={a.photo_url} alt={a.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-[10px] text-muted-foreground">{getInitials(a.name)}</span>
+                              )}
+                            </div>
                             <div className="text-left">
                               <p className="text-sm font-semibold" style={{ color: T.text1 }}>{a.name}</p>
                               <p className="text-xs" style={{ color: T.text3 }}>{a.email}</p>
@@ -716,7 +731,13 @@ export default function AdminAgentsPage() {
                         {/* Upper info section */}
                         <div className="p-4 space-y-3">
                           <div className="flex items-center gap-3">
-                            <LevelBadge title={a.level} size={36} />
+                            <div className="w-9 h-9 rounded-full overflow-hidden border border-border flex-shrink-0 flex items-center justify-center bg-muted text-xs font-bold" style={{ borderColor: T.border }}>
+                              {a.photo_url ? (
+                                <img src={a.photo_url} alt={a.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-xs text-muted-foreground">{getInitials(a.name)}</span>
+                              )}
+                            </div>
                             <div className="flex-1 min-w-0 text-left">
                               <EllipsisTooltip
                                 text={a.name}
@@ -992,17 +1013,17 @@ export default function AdminAgentsPage() {
               <div className="p-6 space-y-4">
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Nama</label>
-                  <input value={editName} onChange={e => setEditName(e.target.value)}
+                  <input value={editName} onChange={e => setEditName(e.target.value)} autoComplete="off"
                     className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Email</label>
-                  <input value={editEmail} onChange={e => setEditEmail(e.target.value)}
+                  <input value={editEmail} onChange={e => setEditEmail(e.target.value)} autoComplete="off"
                     className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Password (kosongkan jika tidak diubah)</label>
-                  <input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="••••••••"
+                  <input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password"
                     className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
                 </div>
                 <div>

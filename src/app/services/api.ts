@@ -8,7 +8,7 @@ function resolveBaseUrl(): string {
   return `${typeof window !== "undefined" ? window.location.origin : ""}/api`;
 }
 
-const BASE_URL = resolveBaseUrl();
+export const BASE_URL = resolveBaseUrl();
 
 // Helper to get stored auth token
 export function getAuthToken(): string | null {
@@ -241,6 +241,11 @@ export const api = {
     },
   },
 
+  checkouts: {
+    // Rental checkout reminders (≤45 hari). Agent: milik sendiri; admin: semua.
+    getList: () => request<any[]>("/checkouts"),
+  },
+
   // Events
   events: {
     getList: () => request<any[]>("/events"),
@@ -351,6 +356,18 @@ export const api = {
         method: "POST",
         body: formData,
         headers: {}, // Let browser set Content-Type for FormData
+      });
+    },
+    getBadges: () => request<any[]>("/admin/badges"),
+    uploadEventBadge: (file: File, name: string, rarity: string) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("name", name);
+      formData.append("rarity", rarity);
+      return request<{badge_id: number; image_url: string}>("/admin/events/upload-badge", {
+        method: "POST",
+        body: formData,
+        headers: {},
       });
     },
     createAcademyModule: (payload: any) => {

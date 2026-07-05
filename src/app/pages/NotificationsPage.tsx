@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Award, Target, AlertCircle, Trophy, DollarSign, Pin } from "lucide-react";
+import { Award, Target, AlertCircle, Trophy, DollarSign, Pin, CalendarClock, Home as HomeIcon } from "lucide-react";
 import { NotificationsPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { useTabQuery } from "../routes";
@@ -23,6 +23,7 @@ export default function NotificationsPage() {
   const { isDark, setUnreadNotifCount } = useTheme();
   const [tab, setTab] = useTabQuery("tab", "All");
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
+  const [checkouts, setCheckouts] = useState<any[]>([]);
 
   useEffect(() => {
     const loadNotifs = async () => {
@@ -39,6 +40,12 @@ export default function NotificationsPage() {
             pinned: n.category === "system" && (n.title || "").toLowerCase().includes("reminder"),
           })));
         }
+      } catch {
+        // Keep empty list
+      }
+      try {
+        const co = await api.checkouts.getList();
+        if (Array.isArray(co)) setCheckouts(co);
       } catch {
         // Keep empty list
       }
@@ -88,7 +95,13 @@ export default function NotificationsPage() {
     commission:  { icon: <DollarSign size={16} />,   bg: isDark ? "rgba(22,163,74,0.12)" : "#DCFCE7", color: "#16A34A", label: "Commission" },
   };
 
-  const tabs = ["All", "Achievement", "System", "Leaderboard", "Commission"];
+  const tabs = ["All", "Checkout", "Achievement", "System", "Leaderboard", "Commission"];
+
+  const formatCheckoutDate = (s: string) => {
+    const d = new Date(s);
+    if (Number.isNaN(d.getTime())) return s;
+    return d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  };
 
   // Sort notifications to put pinned ones at the top of the feed permanently
   const sortedNotifs = [...notifs].sort((a, b) => {
@@ -121,6 +134,45 @@ export default function NotificationsPage() {
           ))}
         </div>
 
+        {tab === "Checkout" ? (
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground mb-1">
+              Sewa yang akan checkout dalam 45 hari ke depan. Follow up client untuk perpanjangan.
+            </p>
+            {checkouts.map((co, i) => {
+              const urgent = co.urgency === "urgent";
+              return (
+                <div key={i} className="p-4 rounded-2xl border" style={{
+                  borderColor: urgent ? "rgba(220,38,38,0.4)" : T.border,
+                  borderLeft: `4px solid ${urgent ? "#DC2626" : "#E8A500"}`,
+                  backgroundColor: T.card,
+                }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <HomeIcon size={14} style={{ color: urgent ? "#DC2626" : "#E8A500" }} />
+                        <p className="font-semibold text-sm truncate" style={{ color: T.text1 }}>{co.customer_name || "—"}</p>
+                      </div>
+                      <p className="text-xs mt-1 truncate" style={{ color: T.text2 }}>{co.unit || co.property || "—"}</p>
+                      <p className="text-[11px] mt-1 flex items-center gap-1" style={{ color: T.text3 }}>
+                        <CalendarClock size={11} /> Checkout: {formatCheckoutDate(co.checkout_date)}
+                      </p>
+                    </div>
+                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full flex-shrink-0 uppercase tracking-wide"
+                      style={{ backgroundColor: urgent ? "rgba(220,38,38,0.12)" : "rgba(232,165,0,0.12)", color: urgent ? "#DC2626" : "#C8922A" }}>
+                      {co.days_remaining <= 0 ? "Hari ini" : `${co.days_remaining} hari lagi`}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+            {checkouts.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground text-sm">
+                Tidak ada sewa yang akan checkout dalam 45 hari ke depan.
+              </div>
+            )}
+          </div>
+        ) : (
         <div className="space-y-3">
           {shown.map((n, i) => {
             const tc = TYPE_CFG[n.type];
@@ -194,6 +246,7 @@ export default function NotificationsPage() {
             </div>
           )}
         </div>
+        )}
       </div>
     </div>
   );
