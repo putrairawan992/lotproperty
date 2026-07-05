@@ -37,29 +37,61 @@ export const FAQ_DATA = [
 ];
 
 export const TERMS_SECTIONS = [
+  // ── BAGIAN 1: ATURAN UMUM ──
   {
-    title: "SOP-01: Pendaftaran dan Verifikasi Akun Agen",
-    content: "Seluruh agen baru wajib melakukan registrasi menggunakan Nama Lengkap resmi, email terdaftar, nomor HP aktif, dan memilih kantor cabang penempatan. Status akun akan berstatus 'Pending Approval' dan tidak dapat mengakses sistem hingga diverifikasi secara manual oleh Office Manager dalam kurun waktu 1x24 jam kerja.",
+    title: "1. ATURAN UMUM — Eksklusivitas & Kepatuhan",
+    content: "(1) Eksklusivitas Agen — Agen hanya boleh mewakili PT LOT PROPERTY GROUP dan dilarang bekerja untuk agency lain selama masa kerja sama. Seluruh transaksi dan komisi dari jual, beli, atau sewa properti wajib dilaporkan kepada perusahaan. (2) Kepatuhan Hukum — Seluruh aktivitas agen harus sesuai dengan ketentuan hukum properti yang berlaku di Indonesia. (3) Menjaga Reputasi Kantor — Agen mewakili nama baik LOT Property dan wajib menjaga sikap profesional, termasuk di media sosial, komunikasi dengan klien, dan interaksi di lapangan.",
+  },
+  // ── BAGIAN 2: ETIKA AGEN ──
+  {
+    title: "2. ETIKA AGEN — Penampilan, Kejujuran & Solidaritas",
+    content: "(1) Penampilan dan Perilaku — Berpakaian rapi (celana panjang, sepatu tertutup, name tag). Bertutur kata sopan dan profesional. Tepat waktu dan fast response. Menjaga etika dalam komunikasi kepada klien maupun rekan kerja. (2) Kejujuran dan Tanggung Jawab — Memberikan informasi jujur dan akurat. Tidak menyembunyikan informasi penting dari klien atau kantor. (3) Hubungan Antar Agen — Tidak menjatuhkan sesama agen atau kompetitor. Menjaga solidaritas dan kerja sama antar agen LOT Property.",
+  },
+  // ── BAGIAN 3: PERATURAN LISTING ──
+  {
+    title: "3. PERATURAN LISTING — Sistem Bebas & DP Absolut",
+    content: "(1) Sistem Listing Bebas — Kantor tidak meminta listing dari pihak agen. Semua listing bersifat umum dan tidak ada eksklusivitas yang diakui kantor. Saat membagikan listing di dalam grup kantor, dilarang menyebutkan alamat unit. (2) DP Bersifat Absolut — Jika sudah ada DP, maka tidak ada agen LOT lainnya yang boleh mengganggu transaksi tersebut. Dilarang menghasut customer maupun owner yang sudah masuk DP. Apabila DP berupa cash atau uang tunai, wajib melapor kepada FINANCE kantor lalu disetorkan ke kantor ataupun ke owner.",
   },
   {
-    title: "SOP-02: Kebijakan Input Listing CRM",
-    content: "Setiap penginputan properti baru wajib mencantumkan Nama Pemilik, Nomor HP valid, Alamat lengkap, Harga, dan Tipe Properti. Kolom Luas Tanah, Luas Bangunan, dan Jumlah Lantai bersifat opsional namun sangat direkomendasikan untuk diisi secara akurat untuk mendukung data matching pencarian properti klien.",
+    title: "3.1. PERATURAN LISTING — Booking, Privasi & Fire Fight",
+    content: "(3) Booking Unit — Unit tidak boleh di-hold atau dibooking tanpa DP resmi. DILARANG TANDA JADI menggunakan uang pribadi, apabila dilakukan kantor berhak tidak mengembalikan dana tersebut. (4) Privasi Buyer/Owner — Jika kamu memegang buyer atau owner, jangan minta atau memberi tahu nama mereka. Risiko atas kebocoran identitas ditanggung sendiri oleh agen. (5) Fire Fight & Komisi — Jika terjadi perebutan listing, tidak boleh membuang komisi (contoh: dari 2% menjadi 1%). Lebih baik kompromi dan bekerja sama agar semua senang.",
   },
   {
-    title: "SOP-03: Kebijakan Manajemen Prospek (CRM)",
-    content: "Agen wajib memasukkan data prospek baru dan menjadwalkan tindakan lanjutan (Follow Up, Showing, atau Akad) beserta tanggal kalender di sistem. Sistem akan mengirim notifikasi pengingat otomatis sebelum tanggal jatuh tempo. Penyelesaian reminder tepat waktu akan memberikan bonus mingguan 'Prospect Clearance' sebesar +1.000 XP.",
+    title: "3.2. PERATURAN LISTING — Eksklusivitas Negosiasi & Denda",
+    content: "(6) Eksklusivitas Negosiasi — Jika listing sudah diberikan alamat unit oleh Marketing A, maka transaksi wajib dilakukan dengan Marketing A yang pertama memberikan alamat tersebut, dalam periode 3 bulan. (7) Dilarang memberikan alamat unit secara langsung kepada marketing lain apabila tidak diminta atau tidak sesuai kriteria. Marketing yang menerima info berhak menolak alamat tersebut. (8) Jika terjadi pelanggaran, penyerobotan, atau bypass listing, maka DENDA 50% KOMISI akan dikenakan kepada pelanggar. Semua klaim dan pelanggaran wajib bisa dibuktikan dengan screenshot chat atau bukti konkret lainnya.",
+  },
+  // ── BAGIAN 4: PROSEDUR TRANSAKSI ──
+  {
+    title: "4. PROSEDUR TRANSAKSI — Pembayaran & Dokumen",
+    content: "(1) Transfer DP/Tanda Jadi — Setiap transaksi hanya boleh melakukan transfer ke: Rekening DP LOT PROPERTY: BCA 8650-3399-17, atau langsung ke rekening owner/developer. DILARANG menampung DP di rekening pribadi agent. (2) Dokumen Perjanjian — Kedua agent wajib membuat perjanjian sewa menyewa atau jual beli menggunakan dokumen resmi internal LOT PROPERTY atau melalui notaris. DILARANG membuat atau memodifikasi sendiri perjanjian tanpa persetujuan kantor. (3) Verifikasi Dokumen — Wajib melakukan pengecekan keabsahan dokumen dan identitas semua pihak (buyer/owner).",
   },
   {
-    title: "SOP-04: Alur Verifikasi Komisi oleh Finance",
-    content: "Klaim komisi diproses oleh divisi Finance. Hanya transaksi yang statusnya diubah menjadi 'Approved' yang akan dicatat ke dalam database komisi resmi agen. Finance berhak melakukan penolakan (Reject) klaim dengan alasan yang jelas seperti komisi belum cair atau duplikasi penginputan data.",
+    title: "4.1. PROSEDUR TRANSAKSI — Keabsahan & Penyimpanan",
+    content: "(4) Keabsahan Kesepakatan — Transaksi sah jika perjanjian ditandatangani oleh semua pihak: Owner wajib suami istri, Buyer/Penyewa, atau kuasa yang sah secara hukum. (5) Penyimpanan Dokumen — Agen wajib menyimpan salinan dokumen dan menyerahkannya ke kantor sebagai arsip.",
+  },
+  // ── BAGIAN 5: KELENGKAPAN DOKUMEN ──
+  {
+    title: "5. KELENGKAPAN DOKUMEN — Perorangan & Perusahaan",
+    content: "Kategori Perorangan — Pihak Penjual: KTP suami & istri, NPWP, Bukti kepemilikan (SHM/SHGB atau PPJB/SP dan payment schedule), IMB/PBG (jika ada), PBB terakhir, Bukti pembayaran listrik/air, Surat kuasa (jika dikuasakan). Pihak Pembeli/Penyewa: KTP (suami & istri jika menikah), NPWP, Surat kuasa (jika dikuasakan). Kategori Perusahaan — Pihak Penjual: Akta Pendirian & SK Kemenkumham, NPWP perusahaan, Sertifikat & IMB/SLF, PBB terakhir, Surat kuasa direksi (jika dikuasakan). Pihak Pembeli/Penyewa: KTP Direktur Utama atau pemilik saham mayoritas, Akta pendirian & SK Kemenkumham, NPWP perusahaan, SIUP/NIB, Surat kuasa pembelian/sewa.",
+  },
+  // ── BAGIAN 6: PEMBAYARAN KOMISI ──
+  {
+    title: "6. PEMBAYARAN KOMISI — Setor, Klaim & Pajak",
+    content: "(1) Setor Komisi ke Perusahaan — Komisi yang didapat wajib disetor ke rekening resmi: BCA 1270-588-588 / PT LOT PROPERTY GROUP. (2) Klaim Komisi — Agen wajib mengisi link Google Form klaim komisi yang disediakan kantor. Sertakan bukti transfer komisi. (3) Deadline Komisi — Pencairan komisi WAJIB dilakukan di bulan yang sama saat komisi diterima, agar dihitung dalam sistem reward dan ranking bulanan. (4) Pemotongan Pajak — Seluruh komisi akan dipotong pajak sesuai peraturan yang berlaku.",
   },
   {
-    title: "SOP-05: Partisipasi Event dan Modul Akademi",
-    content: "Setiap penyelesaian video pelatihan di Academy memberikan reward +200 XP. Untuk event promosi khusus (seperti Event 17 Agustusan), agen dapat berpartisipasi dengan melakukan scan barcode di lokasi acara atau memasukkan kode event manual yang valid untuk mendapatkan reward +1.000 XP serta lencana khusus.",
+    title: "6.1. PEMBAYARAN KOMISI — Transparansi & Markup",
+    content: "(5) Transparansi Hadiah/Tambahan — Segala bentuk uang dari klien (angpau, bonus, tambahan lainnya) wajib dilaporkan. Jika jumlahnya melebihi Rp1.000.000, maka dianggap sebagai komisi. (6) Kesepakatan Komisi & Markup — Nilai komisi maupun markup harus diketahui dan disetujui oleh pihak owner. DILARANG memanipulasi nilai komisi tanpa izin dari owner.",
   },
+  // ── BAGIAN 7: PELANGGARAN ──
   {
-    title: "SOP-06: Kebijakan Keamanan dan Kode Etik Agen",
-    content: "LOT Property menjunjung tinggi integritas data. Penginputan data palsu (fake listing/fake prospect) demi mengejar XP dan peringkat leaderboard dilarang keras. Pelanggaran terhadap aturan ini akan ditindaklanjuti dengan penangguhan (suspend) akun agen oleh Super Admin.",
+    title: "7. PELANGGARAN & PEMUTUSAN KONTRAK",
+    content: "PT LOT PROPERTY GROUP berhak memberikan hukuman berupa sanksi, denda, skorsing, maupun pemutusan kerja sepihak apabila terjadi pelanggaran. Pelanggaran Ringan (tidak memakai atribut, keterlambatan, tata krama tidak sopan, slow response, tidak bertanggung jawab) → Sanksi: Teguran, skorsing sementara, denda administratif. Pelanggaran Berat (pemalsuan dokumen atau tanda tangan, penyalahgunaan nama perusahaan, pelanggaran etika berat, penggelapan atau bypass listing) → Sanksi: Proses hukum, blacklist, dan pemutusan kontrak kerja secara sepihak.",
+  },
+  // ── BAGIAN 8: SANKSI & DENDA ──
+  {
+    title: "8. SANKSI & DENDA INTERNAL — Tabel Denda Resmi",
+    content: "(1) Penampilan & Identitas: Celana pendek di kantor → Denda Rp20.000. Sandal (bukan sepatu tertutup) → Denda Rp20.000. Tanpa name tag → Denda Rp20.000. (2) Jadwal & Komitmen Klien: Terlambat/tidak hadir survei terjadwal → Denda Rp100.000–Rp500.000. Tidak hadir transaksi tanpa konfirmasi & tanpa pengalihan → Denda Rp500.000–Rp1.000.000. (3) Layanan Klien: Sengaja tidak merespons klien hingga menyebabkan komplain melalui hotline/Google Review/platform publik → Denda Rp100.000–Rp1.000.000.",
   },
 ];
 

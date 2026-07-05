@@ -448,9 +448,9 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                 </div>
                 <div>
                   <h3 className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 16, color: T.text1 }}>
-                    Standard Operating Procedure (SOP) Agen
+                    Tata Tertib Karyawan — PT LOT PROPERTY GROUP
                   </h3>
-                  <p className="text-xs" style={{ color: T.text3 }}>Versi 1.0 · Berlaku resmi sejak 1 Januari 2025</p>
+                  <p className="text-xs" style={{ color: T.text3 }}>Dokumen Resmi · Berlaku untuk seluruh karyawan & agen tanpa terkecuali</p>
                 </div>
               </div>
               <div className="space-y-5">
@@ -470,7 +470,7 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
             </Card>
             <div className="text-center py-2">
               <p className="text-xs" style={{ color: T.text3 }}>
-                Sebagai Agen Profesional LOT Property, Anda diwajibkan memahami dan mematuhi seluruh butir SOP di atas.
+                Sebagai Agen Profesional LOT Property, Anda diwajibkan memahami dan mematuhi seluruh butir Tata Tertib di atas.
               </p>
               <p className="text-xs mt-1" style={{ color: T.text3 }}>
                 © {new Date().getFullYear()} LOT Property Group. All rights reserved.
