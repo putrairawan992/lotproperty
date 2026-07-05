@@ -2,17 +2,12 @@ import { useState, useEffect } from "react";
 import { ChevronRight, Flame, Users, Calendar, Trophy, Check, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
-import XPBar from "../components/XPBar";
 import { T, useTheme } from "../types";
 import { useLocation } from "../routes";
 import { api } from "../services/api";
 import { formatEventPeriod } from "../appData";
 
 export default function EventDetailPage({ onBack }: { onBack: () => void }) {
-  const [submitted, setSubmitted] = useState(false);
-  const [url, setUrl] = useState("");
-  const [urlFocused, setUrlFocused] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [toastError, setToastError] = useState(false);
   const { isDark } = useTheme();
@@ -40,10 +35,6 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
         const detail = await api.events.getDetail(eventId);
         if (detail) {
           setEventDetail(detail);
-          setSubmitted(detail.my_submission?.submitted || false);
-          if (detail.my_submission?.submission_url) {
-            setUrl(detail.my_submission.submission_url);
-          }
         }
       }
     } catch (err) {
@@ -58,8 +49,6 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
   }, []);
 
   const ev = eventDetail?.event;
-  const myProgress = eventDetail?.my_progress || 0;
-  const mySubmission = eventDetail?.my_submission || { submitted: false, submission_url: "", submission_status: "Pending", reject_reason: "" };
   const leaderboard = eventDetail?.leaderboard || [];
 
   const getDaysRemaining = () => {
@@ -86,8 +75,6 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
   const sectionLabel = isDark ? "#A89B88" : "#6B7280";
   const ruleNumBg = isDark ? "rgba(232, 165, 0, 0.12)" : "#FFFAED";
   const ruleNumColor = isDark ? "#E8A500" : "#B45309";
-  const successBg = isDark ? "rgba(22, 163, 74, 0.1)" : "#F0FDF4";
-  const successIconBg = isDark ? "rgba(22, 163, 74, 0.2)" : "#DCFCE7";
 
   const triggerToast = (msg: string, isError = false) => {
     setToastMsg(msg);
@@ -215,24 +202,8 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
         </div>
       </motion.div>
 
-      {/* Progress & Rewards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <Card className="p-5" style={{ borderColor: isDark ? "rgba(232,165,0,0.15)" : T.border }}>
-            <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: sectionLabel }}>Progress Kamu</p>
-            <div className="flex items-end gap-2 mb-2">
-              <span style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 36, color: "#E8A500", lineHeight: 1 }}>
-                {myProgress}
-              </span>
-              <span className="text-sm mb-1" style={{ color: T.text3 }}>/ 50 unit</span>
-            </div>
-            <XPBar value={Number(myProgress)} max={50} height={8} />
-            <p className="text-xs mt-1.5" style={{ color: T.text3 }}>
-              {myProgress >= 50 ? "Target tercapai!" : `${50 - myProgress} unit lagi untuk menang`}
-            </p>
-          </Card>
-        </motion.div>
-
+      {/* Rewards */}
+      <div>
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <Card className="p-5" style={{ borderColor: isDark ? "rgba(232,165,0,0.15)" : T.border }}>
             <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: sectionLabel }}>Reward</p>
@@ -289,165 +260,6 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
               </div>
             ))}
           </div>
-        </Card>
-      </motion.div>
-
-      {/* Submission */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-        <Card className="p-5">
-          <p className="text-xs font-semibold mb-1 uppercase tracking-wider" style={{ color: sectionLabel }}>Submission Konten</p>
-          <p className="text-sm mb-4" style={{ color: T.text3 }}>
-            Submit URL konten promosi kamu (Instagram, TikTok, atau YouTube) untuk mendapat +1.000 XP bonus event.
-          </p>
-
-          {submitted ? (
-            <motion.div
-              className="py-6 text-center rounded-2xl border px-4"
-              style={{
-                backgroundColor: mySubmission.submission_status === "Rejected"
-                  ? (isDark ? "rgba(220,38,38,0.1)" : "#FEF2F2")
-                  : mySubmission.submission_status === "Approved"
-                    ? (isDark ? "rgba(22,163,74,0.1)" : "#F0FDF4")
-                    : successBg,
-                borderColor: mySubmission.submission_status === "Rejected"
-                  ? (isDark ? "rgba(220,38,38,0.3)" : "#FCA5A5")
-                  : mySubmission.submission_status === "Approved"
-                    ? (isDark ? "rgba(22,163,74,0.3)" : "#86EFAC")
-                    : (isDark ? "rgba(22,163,74,0.25)" : "#BBF7D0")
-              }}
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-            >
-              <div
-                className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
-                style={{
-                  backgroundColor: mySubmission.submission_status === "Rejected"
-                    ? (isDark ? "rgba(220,38,38,0.2)" : "#FEE2E2")
-                    : mySubmission.submission_status === "Approved"
-                      ? (isDark ? "rgba(22,163,74,0.2)" : "#DCFCE7")
-                      : successIconBg
-                }}
-              >
-                <Check size={28} style={{
-                  color: mySubmission.submission_status === "Rejected"
-                    ? "#DC2626"
-                    : mySubmission.submission_status === "Approved"
-                      ? "#16A34A"
-                      : "#16A34A"
-                }} />
-              </div>
-              <p className="font-bold mb-1" style={{
-                fontFamily: "'Rajdhani', sans-serif",
-                fontSize: 18,
-                color: mySubmission.submission_status === "Rejected"
-                  ? "#DC2626"
-                  : mySubmission.submission_status === "Approved"
-                    ? "#16A34A"
-                    : "#16A34A"
-              }}>
-                {mySubmission.submission_status === "Rejected"
-                  ? "Submission Ditolak"
-                  : mySubmission.submission_status === "Approved"
-                    ? "Submission Disetujui!"
-                    : "Submission Terkirim!"}
-              </p>
-              <p className="text-sm" style={{ color: T.text3 }}>
-                {mySubmission.submission_status === "Rejected"
-                  ? `Alasan: ${mySubmission.reject_reason || "Tidak ada alasan spesifik."}`
-                  : mySubmission.submission_status === "Approved"
-                    ? "Selamat! Bonus XP Anda telah ditambahkan."
-                    : "Sedang diverifikasi oleh admin. Kamu akan dapat notifikasi hasilnya."}
-              </p>
-              {mySubmission.submission_status === "Rejected" && (
-                <button
-                  onClick={() => setSubmitted(false)}
-                  className="mt-3 text-xs font-bold px-3 py-1.5 rounded-lg border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors"
-                >
-                  Kirim Ulang Link Konten
-                </button>
-              )}
-            </motion.div>
-          ) : (
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: T.text1 }}>URL Konten</label>
-                <div className="relative">
-                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: urlFocused ? "#E8A500" : T.text3 }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                    </svg>
-                  </div>
-                  <input
-                    type="url"
-                    value={url}
-                    onChange={e => setUrl(e.target.value)}
-                    placeholder="https://www.instagram.com/p/..."
-                    className="w-full pl-10 pr-4 rounded-xl border outline-none"
-                    style={{
-                      height: 48,
-                      borderColor: urlFocused ? "#E8A500" : T.border,
-                      backgroundColor: T.input,
-                      color: T.text1,
-                      fontSize: 14,
-                      boxShadow: urlFocused ? "0 0 0 3px rgba(232,165,0,0.12)" : "none",
-                    }}
-                    onFocus={() => setUrlFocused(true)}
-                    onBlur={() => setUrlFocused(false)}
-                  />
-                </div>
-                <p className="text-xs mt-1.5 flex items-center gap-1 flex-wrap" style={{ color: T.text3 }}>
-                  <span>Platform:</span>
-                  {["Instagram", "TikTok", "YouTube"].map(p => (
-                    <span
-                      key={p}
-                      className="px-1.5 py-0.5 rounded text-xs border"
-                      style={{ backgroundColor: T.muted, color: T.text2, borderColor: T.border }}
-                    >
-                      {p}
-                    </span>
-                  ))}
-                </p>
-              </div>
-              <motion.button
-                onClick={async () => {
-                  if (!url.trim() || !ev.id || submitting) return;
-                  setSubmitting(true);
-                  try {
-                    await api.events.submit(ev.id, url);
-                    setSubmitted(true);
-                    triggerToast("Link konten berhasil dikirim! Menunggu verifikasi admin.");
-                    loadEventDetail();
-                  } catch (err: any) {
-                    triggerToast(err?.message || "Gagal mengirim submission", true);
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                disabled={!url.trim() || submitting}
-                className="w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: url.trim() && !submitting ? "#E8A500" : T.muted,
-                  color: url.trim() && !submitting ? "white" : T.text3,
-                  fontFamily: "'Rajdhani', sans-serif",
-                  fontSize: 16,
-                  letterSpacing: "0.05em",
-                  cursor: url.trim() && !submitting ? "pointer" : "not-allowed",
-                }}
-                whileHover={url.trim() && !submitting ? { backgroundColor: "#CC9200" } : {}}
-                whileTap={url.trim() && !submitting ? { scale: 0.98 } : {}}
-              >
-                {submitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    MENGIRIM...
-                  </>
-                ) : (
-                  "SUBMIT KONTEN"
-                )}
-              </motion.button>
-            </div>
-          )}
         </Card>
       </motion.div>
 

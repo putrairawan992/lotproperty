@@ -41,20 +41,20 @@ function EventBannerSlide({
     >
       {/* Uploaded Banner Image Background */}
       {event.banner && (
-        <img 
-          src={event.banner} 
-          alt={event.title} 
-          className="absolute inset-0 w-full h-full object-cover z-0 opacity-80" 
+        <img
+          src={event.banner}
+          alt={event.title}
+          className="absolute inset-0 w-full h-full object-cover z-0"
         />
       )}
-      {/* Gradient overlay for readability when image is present */}
+      {/* Gradient overlay: only darkens the left (text) side so the banner stays visible */}
       {event.banner && (
-        <div 
-          className="absolute inset-0 z-10" 
+        <div
+          className="absolute inset-0 z-10"
           style={{
             background: isDark
-              ? "linear-gradient(90deg, rgba(23,14,8,0.95) 0%, rgba(23,14,8,0.85) 40%, rgba(16,12,22,0.5) 100%)"
-              : "linear-gradient(90deg, rgba(255,249,242,0.95) 0%, rgba(255,249,242,0.85) 40%, rgba(245,247,250,0.5) 100%)"
+              ? "linear-gradient(90deg, rgba(23,14,8,0.82) 0%, rgba(23,14,8,0.45) 45%, rgba(16,12,22,0.05) 100%)"
+              : "linear-gradient(90deg, rgba(255,249,242,0.85) 0%, rgba(255,249,242,0.5) 45%, rgba(245,247,250,0.08) 100%)"
           }}
         />
       )}

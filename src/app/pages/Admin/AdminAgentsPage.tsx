@@ -436,8 +436,8 @@ export default function AdminAgentsPage() {
 
       setEditModal(null);
       triggerToast("Agent berhasil diperbarui");
-    } catch {
-      triggerToast("Gagal memperbarui agent", true);
+    } catch (err: any) {
+      triggerToast(err?.message || "Gagal memperbarui agent", true);
     } finally {
       setSavingEdit(false);
     }

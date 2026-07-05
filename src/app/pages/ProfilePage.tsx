@@ -319,6 +319,23 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const [showShareModal, setShowShareModal] = useState(false);
   const [activeLang, setActiveLang] = useState<"ID" | "EN" | "CN">("ID");
 
+  // Scale the fixed-design scorecard (440px) down to fit narrow screens so its
+  // content never clips/overlaps. Keeps proportions across phone/tablet/desktop.
+  const SCORECARD_W = 440;
+  const SCORECARD_H = SCORECARD_W / 1.58;
+  const cardScaleWrapRef = useRef<HTMLDivElement>(null);
+  const [cardScale, setCardScale] = useState(1);
+  useEffect(() => {
+    if (!showShareModal) return;
+    const el = cardScaleWrapRef.current;
+    if (!el) return;
+    const update = () => setCardScale(Math.min(1, el.clientWidth / SCORECARD_W));
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [showShareModal]);
+
   const [successToast, setSuccessToast] = useState("");
   const [errorAlert, setErrorAlert] = useState("");
   const [isDownloading, setIsDownloading] = useState(false);
@@ -377,7 +394,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       photo: (() => {
         const raw = profile?.photo_url && String(profile.photo_url).trim();
         if (!raw) return fallbackPhoto;
-        return raw;
+        // Ensure absolute URL for canvas cross-origin loading
+        if (raw.startsWith("http")) return raw;
+        return `${window.location.origin}${raw.startsWith("/") ? "" : "/"}${raw}`;
       })(),
     };
   }, [profile, careerRank]);
@@ -556,9 +575,45 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
     ctx.restore();
 
+    // Corner brackets decoration (matching share modal)
+    const bracketLen = 32;
+    const bracketOffset = 26;
+    ctx.strokeStyle = "rgba(200, 146, 42, 0.55)";
+    ctx.lineWidth = 3;
+    // Top-left
+    ctx.beginPath();
+    ctx.moveTo(bracketOffset, bracketOffset + bracketLen);
+    ctx.lineTo(bracketOffset, bracketOffset);
+    ctx.lineTo(bracketOffset + bracketLen, bracketOffset);
+    ctx.stroke();
+    // Top-right
+    ctx.beginPath();
+    ctx.moveTo(width - bracketOffset - bracketLen, bracketOffset);
+    ctx.lineTo(width - bracketOffset, bracketOffset);
+    ctx.lineTo(width - bracketOffset, bracketOffset + bracketLen);
+    ctx.stroke();
+    // Bottom-left
+    ctx.beginPath();
+    ctx.moveTo(bracketOffset, height - bracketOffset - bracketLen);
+    ctx.lineTo(bracketOffset, height - bracketOffset);
+    ctx.lineTo(bracketOffset + bracketLen, height - bracketOffset);
+    ctx.stroke();
+    // Bottom-right
+    ctx.beginPath();
+    ctx.moveTo(width - bracketOffset - bracketLen, height - bracketOffset);
+    ctx.lineTo(width - bracketOffset, height - bracketOffset);
+    ctx.lineTo(width - bracketOffset, height - bracketOffset - bracketLen);
+    ctx.stroke();
+
     ctx.lineWidth = 4;
     ctx.strokeStyle = "rgba(200,146,42,0.55)";
     drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
+    ctx.stroke();
+
+    // Inner decorative card border (matching share modal card-in-card effect)
+    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = "rgba(200, 146, 42, 0.25)";
+    drawRoundedRectPath(ctx, 30, 30, width - 60, height - 60, 34);
     ctx.stroke();
 
     ctx.fillStyle = "#E8A500";
@@ -584,6 +639,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.fillStyle = "#C8922A";
     ctx.font = "900 32px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
     ctx.fillText(profileCard.tier.toUpperCase(), leftX, 280);
+
+    // Gold accent line under name (matching share modal style)
+    ctx.strokeStyle = "rgba(200, 146, 42, 0.4)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(leftX, 300);
+    ctx.lineTo(leftX + 280, 300);
+    ctx.stroke();
 
     ctx.fillStyle = "#9ca3af";
     ctx.font = "700 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
@@ -1477,8 +1540,12 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               </div>
 
               <div className="p-4 sm:p-6 flex flex-col items-center bg-zinc-950/20 flex-1 overflow-y-auto min-h-0 share-modal-body">
-                <div id="profile-scorecard-card" className="w-full max-w-[440px] rounded-2xl border relative overflow-hidden p-4 sm:p-5 flex flex-col justify-between share-scorecard-card"
+                {/* Measure wrapper: shrinks the fixed-size card to fit the screen */}
+                <div ref={cardScaleWrapRef} className="w-full max-w-[440px] flex justify-center" style={{ height: SCORECARD_H * cardScale }}>
+                <div style={{ width: SCORECARD_W, transform: `scale(${cardScale})`, transformOrigin: "top center" }}>
+                <div id="profile-scorecard-card" className="rounded-2xl border relative overflow-hidden p-4 sm:p-5 flex flex-col justify-between share-scorecard-card"
                   style={{
+                    width: SCORECARD_W,
                     background: "linear-gradient(135deg, #2D1A05 0%, #150D02 50%, #050301 100%)",
                     borderColor: "#C8922A60",
                     borderWidth: "1.5px",
@@ -1630,6 +1697,8 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     <span>LOT PROPERTY</span>
                     <span>CERTIFIED DIGITAL SCOREBOARD</span>
                   </div>
+                </div>
+                </div>
                 </div>
 
                 <p className="text-[10px] text-muted-foreground text-center mt-3 share-modal-desc">{L.desc}</p>

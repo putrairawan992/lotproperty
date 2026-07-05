@@ -532,9 +532,6 @@ html.theme-transitioning *::after {
     padding-top: 12px !important;
     padding-bottom: 12px !important;
   }
-  .share-scorecard-card {
-    max-width: 320px !important;
-  }
   .share-modal-desc {
     display: none !important;
   }

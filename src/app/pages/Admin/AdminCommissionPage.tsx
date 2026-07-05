@@ -41,12 +41,6 @@ interface HelpSubmissionItem {
 const formatIDR = (amount: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount || 0);
 
-const formatIDRStr = (amountStr: string) => {
-  const num = Number(amountStr.replace(/[^0-9]/g, ""));
-  if (Number.isNaN(num) || num === 0) return amountStr;
-  return formatIDR(num);
-};
-
 const formatDate = (value: string) => {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "-";
@@ -54,8 +48,8 @@ const formatDate = (value: string) => {
 };
 
 export default function AdminCommissionPage() {
-  // Main Category Tab: "Komisi" | "Pindah DP" | "Kritik & Saran"
-  const [activeMainTab, setActiveMainTab] = useState<"komisi" | "pindah_dp" | "feedback">("komisi");
+  // Main Category Tab: "Komisi" | "Kritik & Saran"
+  const [activeMainTab, setActiveMainTab] = useState<"komisi" | "feedback">("komisi");
 
   // State arrays
   const [claims, setClaims] = useState<CommissionItem[]>([]);
@@ -203,7 +197,6 @@ export default function AdminCommissionPage() {
 
   // Badge counts
   const pendingClaimsCount = claims.filter(c => c.status === "Pending").length;
-  const pendingPindahDPCount = helpSubmissions.filter(s => s.form_type === "pindah_dp" && (s.status === "Menunggu Verifikasi" || s.status === "Terkirim")).length;
   const pendingFeedbackCount = helpSubmissions.filter(s => s.form_type === "feedback" && (s.status === "Menunggu Verifikasi" || s.status === "Terkirim")).length;
 
   const typeBg: Record<string, string> = { SALE: "#EEF5FC", RENT: "#DCFCE7", PRIMARY: "#F5F0FD" };
@@ -271,21 +264,6 @@ export default function AdminCommissionPage() {
           Klaim Komisi
           {pendingClaimsCount > 0 && (
             <span className="bg-[#E8A500] text-white font-bold text-[9px] px-1.5 py-0.5 rounded-full">{pendingClaimsCount}</span>
-          )}
-        </button>
-        <button
-          onClick={() => { setActiveMainTab("pindah_dp"); setSearchTerm(""); }}
-          className="flex-1 py-2.5 rounded-xl font-semibold text-xs transition-all cursor-pointer flex items-center justify-center gap-2"
-          style={{
-            backgroundColor: activeMainTab === "pindah_dp" ? "var(--card)" : "transparent",
-            color: activeMainTab === "pindah_dp" ? "#E8A500" : "var(--text-secondary)",
-            boxShadow: activeMainTab === "pindah_dp" ? "0 1px 3px rgba(0,0,0,0.05)" : "none",
-          }}
-        >
-          <ArrowRight size={13} />
-          Pindah DP
-          {pendingPindahDPCount > 0 && (
-            <span className="bg-[#E8A500] text-white font-bold text-[9px] px-1.5 py-0.5 rounded-full">{pendingPindahDPCount}</span>
           )}
         </button>
         <button
@@ -450,14 +428,14 @@ export default function AdminCommissionPage() {
           </div>
         )}
 
-        {/* TAB 2 & 3: PINDAH DP / KRITIK & SARAN PANEL */}
-        {(activeMainTab === "pindah_dp" || activeMainTab === "feedback") && (
+        {/* KRITIK & SARAN PANEL */}
+        {activeMainTab === "feedback" && (
           <div>
             {loading && <div className="py-20 text-center text-sm text-muted-foreground">Memuat data pengajuan...</div>}
 
             {!loading && filteredHelp.length === 0 && (
               <div className="py-20 text-center text-sm text-muted-foreground">
-                Tidak ada pengajuan {activeMainTab === "pindah_dp" ? "pindah DP" : "kritik & saran"} yang cocok.
+                Tidak ada pengajuan kritik & saran yang cocok.
               </div>
             )}
 
@@ -473,14 +451,14 @@ export default function AdminCommissionPage() {
                         <div className="flex items-center gap-3">
                           <div
                             className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                            style={{ backgroundColor: item.form_type === "pindah_dp" ? "#1A6FC4" : "#7B2FBE" }}
+                            style={{ backgroundColor: "#7B2FBE" }}
                           >
-                            {item.form_type === "pindah_dp" ? <ArrowRight size={16} /> : <MessageSquare size={16} />}
+                            <MessageSquare size={16} />
                           </div>
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="font-bold text-sm" style={{ color: T.text1 }}>
-                                {item.form_type === "pindah_dp" ? "Pengajuan Pindah DP" : `Feedback: ${item.feedback_type}`}
+                                Feedback: {item.feedback_type}
                               </span>
                               <span className="text-[9px] font-mono px-1.5 py-0.5 rounded border bg-muted/30" style={{ borderColor: T.border, color: T.text3 }}>
                                 #{item.id}
@@ -515,46 +493,15 @@ export default function AdminCommissionPage() {
                       </div>
 
                       {/* Details Box */}
-                      {item.form_type === "pindah_dp" ? (
-                        <div className="p-4 rounded-2xl border space-y-3 bg-muted/20" style={{ borderColor: T.border }}>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5 text-xs">
-                            <div>
-                              <p className="text-muted-foreground font-medium mb-0.5">Nama Klien</p>
-                              <p className="font-semibold" style={{ color: T.text1 }}>{item.client_name}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground font-medium mb-0.5">Jumlah DP</p>
-                              <p className="font-bold text-[#E8A500]" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                                {formatIDRStr(item.amount || "0")}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground font-medium mb-0.5">Unit Awal</p>
-                              <p className="font-semibold" style={{ color: T.text1 }}>{item.unit_awal}</p>
-                            </div>
-                            <div>
-                              <p className="text-muted-foreground font-medium mb-0.5">Unit Baru</p>
-                              <p className="font-semibold" style={{ color: T.text1 }}>{item.unit_baru}</p>
-                            </div>
-                          </div>
-                          <div className="text-xs border-t pt-2.5" style={{ borderColor: T.border }}>
-                            <p className="text-muted-foreground font-medium mb-1">Alasan Pemindahan:</p>
-                            <p className="italic bg-card/40 p-2.5 rounded-xl border border-dashed text-foreground/90 whitespace-pre-wrap" style={{ borderColor: T.border }}>
-                              {item.reason || "— Tidak ada alasan yang diisi —"}
-                            </p>
-                          </div>
+                      <div className="p-4 rounded-2xl border space-y-2 bg-muted/20 text-xs" style={{ borderColor: T.border }}>
+                        <p className="font-bold" style={{ color: T.text1 }}>Subjek: {item.subject}</p>
+                        <div className="border-t pt-2" style={{ borderColor: T.border }}>
+                          <p className="text-muted-foreground font-medium mb-1">Pesan / Masukan:</p>
+                          <p className="bg-card/40 p-2.5 rounded-xl border border-dashed text-foreground/90 whitespace-pre-wrap" style={{ borderColor: T.border }}>
+                            {item.message}
+                          </p>
                         </div>
-                      ) : (
-                        <div className="p-4 rounded-2xl border space-y-2 bg-muted/20 text-xs" style={{ borderColor: T.border }}>
-                          <p className="font-bold" style={{ color: T.text1 }}>Subjek: {item.subject}</p>
-                          <div className="border-t pt-2" style={{ borderColor: T.border }}>
-                            <p className="text-muted-foreground font-medium mb-1">Pesan / Masukan:</p>
-                            <p className="bg-card/40 p-2.5 rounded-xl border border-dashed text-foreground/90 whitespace-pre-wrap" style={{ borderColor: T.border }}>
-                              {item.message}
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                      </div>
                     </div>
                   );
                 })}

@@ -48,7 +48,7 @@ export default function AdminEventsPage() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [xpPool, setXpPool] = useState("");
-  const [badge, setBadge] = useState("Merdeka Creator");
+  const [badge, setBadge] = useState("");
   const [prizeItems, setPrizeItems] = useState<{rank: string; prize: string}[]>([]);
   
   // Prize helpers
@@ -97,7 +97,7 @@ export default function AdminEventsPage() {
       setStart("");
       setEnd("");
       setXpPool("");
-      setBadge("Merdeka Creator");
+      setBadge("");
       setPrizeItems([]);
       setBannerFile(null);
       setBannerPreview("");
@@ -180,7 +180,7 @@ export default function AdminEventsPage() {
       setStart("");
       setEnd("");
       setXpPool("");
-      setBadge("Merdeka Creator");
+      setBadge("");
       setPrizeItems([]);
       setBannerFile(null);
       setBannerPreview("");
@@ -320,6 +320,7 @@ export default function AdminEventsPage() {
                     <select value={badge} onChange={e => setBadge(e.target.value)}
                       className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none cursor-pointer animate-fade-in"
                       style={{ borderColor: T.border }}>
+                      <option value="">— Tidak Ada Badge —</option>
                       {ALL_BADGES.map(b => (
                         <option key={b.name} value={b.name}>{b.name}</option>
                       ))}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Search, ChevronDown, BookOpen, ChevronRight, MessageSquare, ArrowLeftRight, Check, AlertCircle, FileText } from "lucide-react";
+import { Search, ChevronDown, BookOpen, ChevronRight, MessageSquare, Check, AlertCircle, FileText } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
@@ -20,24 +20,14 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
   const { isDark, isGuest, user } = useTheme();
 
   // Interactive Form States
-  const [formType, setFormType] = useState<"feedback" | "pindah_dp">("feedback");
   const [toastMsg, setToastMsg] = useState("");
-  
+
   // Feedback Form Input States
   const [fbType, setFbType] = useState("Saran");
   const [fbSubject, setFbSubject] = useState("");
   const [fbMessage, setFbMessage] = useState("");
   const [fbError, setFbError] = useState("");
   const [fbHistory, setFbHistory] = useState<any[]>([]);
-
-  // Form Pindah DP Input States
-  const [dpClient, setDpClient] = useState("");
-  const [dpUnitAwal, setDpUnitAwal] = useState("");
-  const [dpUnitBaru, setDpUnitBaru] = useState("");
-  const [dpAmount, setDpAmount] = useState("");
-  const [dpReason, setDpReason] = useState("");
-  const [dpError, setDpError] = useState("");
-  const [dpHistory, setDpHistory] = useState<any[]>([]);
 
   const formatDate = (v: string) => {
     const d = new Date(v);
@@ -61,15 +51,6 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
           status: item.status || "Terkirim",
         })));
 
-        setDpHistory((data.pindah_dp || []).map((item: any) => ({
-          client: item.client_name || "",
-          unitAwal: item.unit_awal || "",
-          unitBaru: item.unit_baru || "",
-          amount: item.amount || "",
-          reason: item.reason || "",
-          date: formatDate(item.created_at),
-          status: item.status || "Menunggu Verifikasi",
-        })));
       } catch {
         // Keep empty state if API is unavailable.
       }
@@ -114,48 +95,6 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
       showToast("Feedback kritik & saran berhasil dikirim ke Management!");
     } catch (err: any) {
       showToast(err?.message || "Gagal mengirim feedback.");
-    }
-  };
-
-  const handleDpSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!dpClient.trim() || !dpUnitAwal.trim() || !dpUnitBaru.trim() || !dpAmount.trim() || !dpReason.trim()) {
-      showToast("Semua field pada formulir Pindah DP wajib diisi!");
-      return;
-    }
-    setDpError("");
-    
-    // Format currency mock if needed
-    const formattedAmount = dpAmount.startsWith("Rp") ? dpAmount : `Rp ${parseInt(dpAmount).toLocaleString("id-ID")}`;
-    
-    try {
-      const res = await api.help.submitPindahDP({
-        client_name: dpClient,
-        unit_awal: dpUnitAwal,
-        unit_baru: dpUnitBaru,
-        amount: formattedAmount,
-        reason: dpReason,
-      });
-
-      const item = res?.data || {};
-      const newDp = {
-        client: item.client_name || dpClient,
-        unitAwal: item.unit_awal || dpUnitAwal,
-        unitBaru: item.unit_baru || dpUnitBaru,
-        amount: item.amount || formattedAmount,
-        reason: item.reason || dpReason,
-        date: formatDate(item.created_at || new Date().toISOString()),
-        status: item.status || "Menunggu Verifikasi",
-      };
-      setDpHistory(prev => [newDp, ...prev]);
-      setDpClient("");
-      setDpUnitAwal("");
-      setDpUnitBaru("");
-      setDpAmount("");
-      setDpReason("");
-      showToast("Formulir Pindah DP berhasil diajukan ke Office Manager!");
-    } catch (err: any) {
-      showToast(err?.message || "Gagal mengirim form pindah DP.");
     }
   };
 
@@ -548,22 +487,10 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
               <p className="text-xs font-bold text-[#E8A500] uppercase tracking-wider mb-2.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                 📋 GOOGLE FORM RESMI LOT PROPERTY
               </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <a 
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSdaoeYPZSUskh8pS40gmgCRlvXDu3wdbsJ4OBoMQgGZqvd2pw/viewform" 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="flex items-center justify-between p-3 rounded-xl border border-white/5 hover:border-amber-500/30 bg-muted/20 transition-all text-left no-underline group cursor-pointer"
-                >
-                  <div>
-                    <p className="text-xs font-bold text-foreground group-hover:text-[#E8A500] transition-colors">Formulir Pindah DP</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Pengajuan pemindahan DP client resmi</p>
-                  </div>
-                  <ChevronRight size={14} className="text-muted-foreground group-hover:text-[#E8A500] transition-colors" />
-                </a>
-                <a 
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSfsKTexewfq7xTkkQTkaaAuvUNfhbqXK4dv_dLO8DtaAfWULQ/viewform" 
-                  target="_blank" 
+              <div className="grid grid-cols-1 gap-3">
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSfsKTexewfq7xTkkQTkaaAuvUNfhbqXK4dv_dLO8DtaAfWULQ/viewform"
+                  target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-between p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 bg-muted/20 transition-all text-left no-underline group cursor-pointer"
                 >
@@ -576,31 +503,8 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
               </div>
             </Card>
 
-            {/* Form Selection Buttons */}
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setFormType("feedback")}
-                className="flex items-center justify-center gap-2 p-3 rounded-2xl border text-sm font-bold transition-all"
-                style={{ 
-                  borderColor: formType === "feedback" ? "#E8A500" : "var(--border)",
-                  backgroundColor: formType === "feedback" ? (isDark ? "rgba(232,165,0,0.1)" : "#FFFAED") : T.card,
-                  color: formType === "feedback" ? "#E8A500" : "var(--foreground)"
-                }}>
-                <MessageSquare size={16} /> kritik & saran
-              </button>
-              <button onClick={() => setFormType("pindah_dp")}
-                className="flex items-center justify-center gap-2 p-3 rounded-2xl border text-sm font-bold transition-all"
-                style={{ 
-                  borderColor: formType === "pindah_dp" ? "#E8A500" : "var(--border)",
-                  backgroundColor: formType === "pindah_dp" ? (isDark ? "rgba(232,165,0,0.1)" : "#FFFAED") : T.card,
-                  color: formType === "pindah_dp" ? "#E8A500" : "var(--foreground)"
-                }}>
-                <ArrowLeftRight size={16} /> Form Pindah DP
-              </button>
-            </div>
-
             {/* FEEDBACK FORM */}
-            {formType === "feedback" && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                 <Card className="p-5">
                   <div className="flex items-center gap-2.5 mb-4 pb-2 border-b" style={{ borderColor: T.border }}>
                     <MessageSquare className="text-[#E8A500]" size={18} />
@@ -676,94 +580,6 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                   ))}
                 </div>
               </motion.div>
-            )}
-
-            {/* FORM PINDAH DP */}
-            {formType === "pindah_dp" && (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                <Card className="p-5">
-                  <div className="flex items-center gap-2.5 mb-4 pb-2 border-b" style={{ borderColor: T.border }}>
-                    <ArrowLeftRight className="text-[#16A34A]" size={18} />
-                    <h3 className="font-bold text-sm uppercase tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>Formulir Pengajuan Pindah DP Client</h3>
-                  </div>
-
-                  <form onSubmit={handleDpSubmit} className="space-y-4 text-left">
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Nama Client</label>
-                        <input type="text" value={dpClient} onChange={e => setDpClient(e.target.value)}
-                          placeholder="Nama lengkap client"
-                          className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                          style={{ borderColor: T.border }} />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Jumlah DP (Nominal)</label>
-                        <div className="relative">
-                          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-semibold">Rp</span>
-                          <input type="text" value={dpAmount} onChange={e => setDpAmount(e.target.value)}
-                            placeholder="Contoh: 50000000"
-                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border bg-card text-sm outline-none font-semibold"
-                            style={{ borderColor: T.border }} />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Unit Properti Awal</label>
-                        <input type="text" value={dpUnitAwal} onChange={e => setDpUnitAwal(e.target.value)}
-                          placeholder="Contoh: BSD Cluster Foresta C7"
-                          className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                          style={{ borderColor: T.border }} />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Unit Properti Baru</label>
-                        <input type="text" value={dpUnitBaru} onChange={e => setDpUnitBaru(e.target.value)}
-                          placeholder="Contoh: BSD Cluster Lavon B12"
-                          className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                          style={{ borderColor: T.border }} />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Alasan Pemindahan Unit & DP</label>
-                      <textarea rows={3} value={dpReason} onChange={e => setDpReason(e.target.value)}
-                        placeholder="Uraikan secara detail alasan client memindahkan DP ke unit baru..."
-                        className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none resize-none"
-                        style={{ borderColor: T.border }} />
-                    </div>
-
-                    <button type="submit" className="w-full py-3 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md">
-                      Kirim Pengajuan Pindah DP
-                    </button>
-                  </form>
-                </Card>
-
-                {/* DP History Log */}
-                <div className="space-y-2">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider text-left">Riwayat Pengajuan Pindah DP</h4>
-                  {dpHistory.map((dp, idx) => (
-                    <div key={idx} className="p-4 bg-card rounded-2xl border text-left flex justify-between items-start gap-4" style={{ borderColor: T.border }}>
-                      <div className="space-y-1.5 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <ArrowLeftRight className="text-[#16A34A]" size={14} />
-                          <h5 className="font-bold text-sm text-foreground">{dp.client}</h5>
-                        </div>
-                        <div className="text-xs space-y-0.5 text-muted-foreground">
-                          <p>Awal: <span className="font-medium text-foreground">{dp.unitAwal}</span></p>
-                          <p>Baru: <span className="font-medium text-foreground">{dp.unitBaru}</span></p>
-                          <p>Nominal DP: <span className="font-semibold text-[#16A34A]">{dp.amount}</span></p>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground italic">" {dp.reason} "</p>
-                        <span className="text-[10px] text-muted-foreground block">{dp.date}</span>
-                      </div>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full border border-[#C8922A]/20 text-[#C8922A] bg-[#C8922A]/5">{dp.status}</span>
-                    </div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
           </motion.div>
         )}
 

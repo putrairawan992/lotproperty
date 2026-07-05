@@ -101,6 +101,7 @@ export default function AcademyPage() {
   const [videoWatched, setVideoWatched] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [finishing, setFinishing] = useState(false);
+  const [activated, setActivated] = useState(false); // false = show thumbnail poster
   const playerHostRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
   const firstVideoIdRef = useRef<string | null>(null);
@@ -134,14 +135,16 @@ export default function AcademyPage() {
     setActiveModule(m);
     setVideoWatched(false);
     setIsPlaying(false);
+    setActivated(false); // show thumbnail first; player builds on click
     triggerToast(`Membuka modul: ${m.title}`);
   };
 
-  // Build the player via the official IFrame API — reliable end-detection,
-  // and stopVideo() on end prevents the playlist from auto-advancing.
+  // Build the player via the official IFrame API — only after the user clicks the
+  // thumbnail (so a single click starts playback). Reliable end-detection, and
+  // stopVideo() on end prevents the playlist from auto-advancing.
   useEffect(() => {
     const url = activeModule?.video_url;
-    if (!url) return;
+    if (!url || !activated) return;
     let cancelled = false;
     firstVideoIdRef.current = null;
 
@@ -152,7 +155,8 @@ export default function AcademyPage() {
       host.className = "w-full h-full";
       playerHostRef.current.appendChild(host);
 
-      const playerVars: any = { controls: 0, rel: 0, modestbranding: 1, fs: 0, disablekb: 1, playsinline: 1 };
+      // autoplay:1 — the click that activated the player is the required user gesture
+      const playerVars: any = { autoplay: 1, controls: 0, rel: 0, modestbranding: 1, fs: 0, disablekb: 1, playsinline: 1 };
       if (!videoId && list) { playerVars.list = list; playerVars.listType = "playlist"; }
 
       const config: any = {
@@ -187,7 +191,7 @@ export default function AcademyPage() {
       playerRef.current = null;
       if (playerHostRef.current) playerHostRef.current.innerHTML = "";
     };
-  }, [activeModule?.video_url]);
+  }, [activeModule?.video_url, activated]);
 
   if (loading) return <AcademyPageSkeleton />;
 
@@ -385,23 +389,52 @@ export default function AcademyPage() {
 
               {activeModule.video_url ? (
                 <div ref={videoBoxRef} className="relative aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
-                  <div ref={playerHostRef} className="w-full h-full" />
-                  {/* Click-catcher: blocks native prev/next/logo, toggles play/pause */}
-                  <div
-                    className="absolute inset-0 cursor-pointer"
-                    onClick={togglePlay}
-                    role="button"
-                    aria-label={isPlaying ? "Jeda video" : "Putar video"}
-                  />
-                  {/* Our own fullscreen toggle — keeps native controls/next hidden */}
-                  <button
-                    type="button"
-                    onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
-                    className="absolute bottom-2 right-2 z-10 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors"
-                    aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
-                  >
-                    {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
-                  </button>
+                  {activated ? (
+                    <>
+                      <div ref={playerHostRef} className="w-full h-full" />
+                      {/* Click-catcher: blocks native prev/next/logo, toggles play/pause */}
+                      <div
+                        className="absolute inset-0 cursor-pointer"
+                        onClick={togglePlay}
+                        role="button"
+                        aria-label={isPlaying ? "Jeda video" : "Putar video"}
+                      />
+                      {/* Our own fullscreen toggle — keeps native controls/next hidden */}
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }}
+                        className="absolute bottom-2 right-2 z-10 p-2 rounded-lg bg-black/50 hover:bg-black/70 text-white transition-colors"
+                        aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                      >
+                        {isFullscreen ? <Minimize size={16} /> : <Maximize size={16} />}
+                      </button>
+                    </>
+                  ) : (
+                    // Thumbnail poster — one click builds the player and autoplays
+                    <button
+                      type="button"
+                      onClick={() => setActivated(true)}
+                      className="absolute inset-0 w-full h-full group"
+                      aria-label="Putar video"
+                    >
+                      {(() => {
+                        const { videoId } = parseYouTube(activeModule.video_url);
+                        return videoId ? (
+                          <img
+                            src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : null;
+                      })()}
+                      <span className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/45 transition-colors">
+                        <span className="w-16 h-16 rounded-full bg-black/60 flex items-center justify-center">
+                          <Play size={26} className="text-white ml-1" fill="white" />
+                        </span>
+                      </span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 <div className="aspect-video rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-center">
