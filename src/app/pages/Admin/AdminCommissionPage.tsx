@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Check, Clock, AlertCircle, X, Search, MessageSquare, ArrowRight, User, HelpCircle, CheckCircle2, XCircle } from "lucide-react";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { Check, Clock, AlertCircle, X, Search, MessageSquare, ArrowRight, User, HelpCircle, CheckCircle2, XCircle, Square, CheckSquare, MinusSquare } from "lucide-react";
 import Card from "../../components/Card";
 import { T } from "../../types";
 import { useTabQuery } from "../../routes";
@@ -67,6 +67,11 @@ export default function AdminCommissionPage() {
   // Commission Detail Modal State
   const [detailClaim, setDetailClaim] = useState<CommissionItem | null>(null);
 
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkRejectMode, setBulkRejectMode] = useState(false);
+  const [bulkRejectReason, setBulkRejectReason] = useState("");
+
   // Search & Filter
   const [searchTerm, setSearchTerm] = useState("");
   const [updatingHelpId, setUpdatingHelpId] = useState<number | null>(null);
@@ -119,6 +124,7 @@ export default function AdminCommissionPage() {
     try {
       await api.admin.reviewCommission(id, "Approved");
       setClaims(p => p.map(c => c.id === id ? { ...c, status: "Approved" } : c));
+      setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
       triggerToast("Klaim komisi disetujui!");
     } catch {
       triggerToast("Gagal menyetujui klaim");
@@ -129,6 +135,7 @@ export default function AdminCommissionPage() {
     try {
       await api.admin.reviewCommission(id, "Rejected", reason);
       setClaims(p => p.map(c => c.id === id ? { ...c, status: "Rejected" } : c));
+      setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
       triggerToast("Klaim komisi ditolak");
     } catch {
       triggerToast("Gagal menolak klaim");
@@ -136,6 +143,8 @@ export default function AdminCommissionPage() {
     setRejectId(null);
     setRejectReason("");
   };
+
+  // Bulk actions
 
   const approveAllCommissions = async () => {
     const pending = claims.filter(c => c.status === "Pending");
@@ -199,6 +208,53 @@ export default function AdminCommissionPage() {
       (s.message || "").toLowerCase().includes(searchLower);
     return matchesFormType && matchesSearch;
   });
+
+  // Bulk actions
+  const pendingFiltered = useMemo(
+    () => filteredClaims.filter(c => c.status === "Pending"),
+    [filteredClaims]
+  );
+
+  const isAllSelected = pendingFiltered.length > 0 && pendingFiltered.every(c => selectedIds.has(c.id));
+  const isPartialSelected = pendingFiltered.some(c => selectedIds.has(c.id)) && !isAllSelected;
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleSelectAll = useCallback(() => {
+    if (isAllSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(pendingFiltered.map(c => c.id)));
+    }
+  }, [isAllSelected, pendingFiltered]);
+
+  const approveSelected = async () => {
+    const ids = [...selectedIds];
+    for (const id of ids) {
+      try { await api.admin.reviewCommission(id, "Approved"); } catch {}
+    }
+    setSelectedIds(new Set());
+    await loadData();
+    triggerToast(`${ids.length} klaim disetujui!`);
+  };
+
+  const rejectSelected = async (reason: string) => {
+    const ids = [...selectedIds];
+    for (const id of ids) {
+      try { await api.admin.reviewCommission(id, "Rejected", reason); } catch {}
+    }
+    setSelectedIds(new Set());
+    setBulkRejectMode(false);
+    setBulkRejectReason("");
+    await loadData();
+    triggerToast(`${ids.length} klaim ditolak!`);
+  };
 
   // Badge counts
   const pendingClaimsCount = claims.filter(c => c.status === "Pending").length;
@@ -378,9 +434,39 @@ export default function AdminCommissionPage() {
             {/* Desktop Claims Table */}
             {!loading && filteredClaims.length > 0 && (
               <div className="hidden md:block overflow-x-auto">
+                {/* Bulk Action Bar — only for Pending tab */}
+                {commissionSubTab === "Pending" && selectedIds.size > 0 && (
+                  <div className="flex items-center gap-2 px-5 py-2.5 border-b bg-[#E8A500]/5" style={{ borderColor: T.border }}>
+                    <span className="text-xs font-semibold" style={{ color: T.text2 }}>
+                      {selectedIds.size} item terpilih
+                    </span>
+                    <div className="flex-1" />
+                    <button
+                      onClick={approveSelected}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700 transition-colors"
+                      style={{ fontFamily: "'Rajdhani', sans-serif" }}
+                    >
+                      <Check size={14} /> Approve Selected
+                    </button>
+                    <button
+                      onClick={() => setBulkRejectMode(true)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#DC2626] cursor-pointer hover:bg-red-700 transition-colors"
+                      style={{ fontFamily: "'Rajdhani', sans-serif" }}
+                    >
+                      <X size={14} /> Reject Selected
+                    </button>
+                  </div>
+                )}
                 <table className="w-full">
                   <thead>
                     <tr className="border-b text-xs font-semibold text-muted-foreground" style={{ borderColor: T.border }}>
+                      {commissionSubTab === "Pending" && (
+                        <th className="text-center px-3 py-3.5 w-10">
+                          <button onClick={toggleSelectAll} className="cursor-pointer" style={{ color: isAllSelected ? "#E8A500" : T.text3 }}>
+                            {isAllSelected ? <CheckSquare size={16} /> : isPartialSelected ? <MinusSquare size={16} /> : <Square size={16} />}
+                          </button>
+                        </th>
+                      )}
                       <th className="text-left px-5 py-3.5">AGENT</th>
                       <th className="text-left px-5 py-3.5">PROPERTI</th>
                       <th className="text-left px-5 py-3.5">JUMLAH KOMISI</th>
@@ -393,8 +479,16 @@ export default function AdminCommissionPage() {
                     {filteredClaims.map(c => {
                       const initials = c.agent.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
                       const avatar = AGENT_PHOTOS[initials];
+                      const isChecked = selectedIds.has(c.id);
                       return (
                         <tr key={c.id} className="hover:bg-muted/10 transition-colors">
+                          {commissionSubTab === "Pending" && (
+                            <td className="px-3 py-4 text-center">
+                              <button onClick={() => toggleSelect(c.id)} className="cursor-pointer" style={{ color: isChecked ? "#E8A500" : T.text3 }}>
+                                {isChecked ? <CheckSquare size={16} /> : <Square size={16} />}
+                              </button>
+                            </td>
+                          )}
                           <td className="px-5 py-4">
                             <div className="flex items-center gap-3 text-left">
                               {avatar ? (
@@ -525,6 +619,28 @@ export default function AdminCommissionPage() {
           </div>
         )}
       </Card>
+
+      {/* Bulk Reject Reason Dialog */}
+      {bulkRejectMode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div onClick={() => { setBulkRejectMode(false); setBulkRejectReason(""); }} className="absolute inset-0 bg-black/60" />
+          <div className="bg-card w-full max-w-md rounded-3xl border shadow-2xl relative z-10 p-6" style={{ borderColor: T.border }}>
+            <h3 className="font-bold text-lg font-display text-left mb-1" style={{ color: T.text1 }}>Tolak {selectedIds.size} Klaim</h3>
+            <p className="text-xs text-muted-foreground mb-3">Alasan akan diterapkan ke semua klaim yang dipilih.</p>
+            <textarea
+              value={bulkRejectReason}
+              onChange={e => setBulkRejectReason(e.target.value)}
+              placeholder="Masukkan alasan penolakan..."
+              className="w-full h-24 p-3 border rounded-xl bg-card text-sm outline-none resize-none"
+              style={{ borderColor: T.border, color: T.text1 }}
+            />
+            <div className="flex justify-end gap-3 mt-4">
+              <button onClick={() => { setBulkRejectMode(false); setBulkRejectReason(""); }} className="px-4 py-2 border rounded-xl text-xs font-semibold cursor-pointer" style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
+              <button onClick={() => rejectSelected(bulkRejectReason)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-red-700">Tolak {selectedIds.size} Klaim</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reject Reason Dialog (Commissions) */}
       {rejectId && (
