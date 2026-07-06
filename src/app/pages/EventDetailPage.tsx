@@ -238,30 +238,42 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
       </div>
 
       {/* Rules */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-        <Card className="p-5">
-          <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: sectionLabel }}>Syarat & Ketentuan</p>
-          <div className="space-y-2.5">
-            {[
-              "Closing unit dihitung dari Approved Commission Claim selama periode event.",
-              "Semua tipe properti berlaku: Rumah, Apartemen, Ruko, Tanah, Primary.",
-              "Periode event: 16 Juni 2025 – 16 September 2025.",
-              "Pemenang diumumkan paling lambat 30 September 2025.",
-              "Hadiah ditransfer ke rekening agent maksimal 7 hari kerja setelah pengumuman.",
-            ].map((r, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <div
-                  className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border"
-                  style={{ backgroundColor: ruleNumBg, borderColor: isDark ? "rgba(232,165,0,0.25)" : "rgba(232,165,0,0.15)" }}
-                >
-                  <span style={{ fontSize: 10, color: ruleNumColor, fontWeight: 700 }}>{i + 1}</span>
-                </div>
-                <p className="text-sm leading-relaxed" style={{ color: T.text2 }}>{r}</p>
+      {(() => {
+        let rules: string[] = [];
+        if (ev?.terms_and_conditions) {
+          try {
+            const parsed = JSON.parse(ev.terms_and_conditions);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              rules = parsed;
+            }
+          } catch {
+            // Fallback: If not valid JSON but has text, split by newline as backup
+            rules = ev.terms_and_conditions.split("\n").map((r: string) => r.trim()).filter(Boolean);
+          }
+        }
+        if (rules.length === 0) return null;
+
+        return (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+            <Card className="p-5">
+              <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: sectionLabel }}>Syarat & Ketentuan</p>
+              <div className="space-y-2.5">
+                {rules.map((r, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div
+                      className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 border"
+                      style={{ backgroundColor: ruleNumBg, borderColor: isDark ? "rgba(232,165,0,0.25)" : "rgba(232,165,0,0.15)" }}
+                    >
+                      <span style={{ fontSize: 10, color: ruleNumColor, fontWeight: 700 }}>{i + 1}</span>
+                    </div>
+                    <p className="text-sm leading-relaxed" style={{ color: T.text2 }}>{r}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </Card>
-      </motion.div>
+            </Card>
+          </motion.div>
+        );
+      })()}
 
       {/* Leaderboard mini */}
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>

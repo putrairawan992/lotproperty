@@ -1,5 +1,5 @@
 import { useState, useContext, useEffect, useMemo, useRef } from "react";
-import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, X, Check, Download, AlertCircle, Globe, ChevronRight, Camera } from "lucide-react";
+import { Trophy, DollarSign, TrendingUp, Building2, Users, Star, BookOpen, Award, Share2, X, Check, Download, AlertCircle, Globe, ChevronRight, Camera, Home, Shield, CheckCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import BadgeShield from "../components/BadgeShield";
@@ -11,6 +11,7 @@ import { T, Rarity, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
 import { eliteAgentBase64 } from "@/imports/elite-agent-base64";
+import html2canvas from "html2canvas-pro";
 import HofAwardLaurel from "../components/HofAwardLaurel";
 import HofFallingStars from "../components/HofFallingStars";
 import EllipsisTooltip from "../components/EllipsisTooltip";
@@ -211,6 +212,8 @@ function buildShareText(
 
 import { api, BASE_URL } from "../services/api";
 
+const FALLBACK_PHOTO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='250' viewBox='0 0 200 250'%3E%3Crect width='200' height='250' fill='%2317111a'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%23332b3d'/%3E%3Ccircle cx='100' cy='85' r='32' fill='%234a3f5c'/%3E%3Cellipse cx='100' cy='190' rx='60' ry='45' fill='%23332b3d'/%3E%3C/svg%3E";
+
 export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   const loadingTime = useLoading(1200);
   const { isDark, isGuest } = useContext(ThemeCtx);
@@ -378,7 +381,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     const list = Number(profile?.total_listings || 0);
     const prospect = Number(profile?.total_prospects || 0);
     const commission = Number(profile?.total_commission || 0);
-    const fallbackPhoto = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='250' viewBox='0 0 200 250'%3E%3Crect width='200' height='250' fill='%2317111a'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%23332b3d'/%3E%3Ccircle cx='100' cy='85' r='32' fill='%234a3f5c'/%3E%3Cellipse cx='100' cy='190' rx='60' ry='45' fill='%23332b3d'/%3E%3C/svg%3E";
+    const fallbackPhoto = FALLBACK_PHOTO;
 
     return {
       name,
@@ -395,11 +398,43 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         const raw = profile?.photo_url && String(profile.photo_url).trim();
         if (!raw) return fallbackPhoto;
         // Ensure absolute URL for canvas cross-origin loading
-        if (raw.startsWith("http")) return raw;
-        return `${window.location.origin}${raw.startsWith("/") ? "" : "/"}${raw}`;
+        if (raw.startsWith("http") || raw.startsWith("data:")) return raw;
+        const host = BASE_URL.replace(/\/api$/, "");
+        return `${host}${raw.startsWith("/") ? "" : "/"}${raw}`;
       })(),
     };
   }, [profile, careerRank]);
+
+  // Inline the photo as a data URL via the CORS-safe proxy: data URLs can
+  // never taint the export canvas, whatever the browser's image cache holds.
+  const inlineCardPhoto = async (): Promise<string | null> => {
+    if (!profileCard.photo) return null;
+    if (profileCard.photo.startsWith("data:")) return profileCard.photo;
+    try {
+      const r = await fetch(`${BASE_URL}/public/image-proxy?url=${encodeURIComponent(profileCard.photo)}`);
+      if (!r.ok) throw new Error(`proxy responded ${r.status}`);
+      const b = await r.blob();
+      return await new Promise<string>((res, rej) => {
+        const fr = new FileReader();
+        fr.onload = () => res(fr.result as string);
+        fr.onerror = rej;
+        fr.readAsDataURL(b);
+      });
+    } catch (err) {
+      console.error("Card photo inline via proxy failed:", err);
+      return null;
+    }
+  };
+
+  const [cardPhotoSrc, setCardPhotoSrc] = useState<string>("");
+  useEffect(() => {
+    let alive = true;
+    inlineCardPhoto().then((dataUrl) => {
+      // Fall back to the raw URL: preview still shows a photo either way.
+      if (alive) setCardPhotoSrc(dataUrl || profileCard.photo);
+    });
+    return () => { alive = false; };
+  }, [profileCard.photo]);
 
   const xpProgress = useMemo(() => {
     const totalXP = Number(profile?.total_xp || 0);
@@ -539,6 +574,80 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         : src;
     });
 
+  const drawStar = (ctx: CanvasRenderingContext2D, cx: number, cy: number, rMin: number, rMax: number, spikes: number) => {
+    let rot = Math.PI / 2 * 3;
+    let x = cx;
+    let y = cy;
+    const step = Math.PI / spikes;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - rMax);
+    for (let i = 0; i < spikes; i++) {
+      x = cx + Math.cos(rot) * rMax;
+      y = cy + Math.sin(rot) * rMax;
+      ctx.lineTo(x, y);
+      rot += step;
+      x = cx + Math.cos(rot) * rMin;
+      y = cy + Math.sin(rot) * rMin;
+      ctx.lineTo(x, y);
+      rot += step;
+    }
+    ctx.lineTo(cx, cy - rMax);
+    ctx.closePath();
+    ctx.fill();
+  };
+
+  const drawEmblemWatermark = (ctx: CanvasRenderingContext2D, cx: number, cy: number, scale: number) => {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    // ponytail: emblem alphas — the visible-crest knob; drop all to ~0.08 for a faint watermark
+    ctx.shadowColor = "rgba(232, 165, 0, 0.45)";
+    ctx.shadowBlur = 5;
+    ctx.lineWidth = 2.2;
+
+    // Draw 3 filled Stars (brightest part of the crest)
+    ctx.fillStyle = "rgba(232, 165, 0, 0.5)";
+    drawStar(ctx, 0, -32, 3, 6, 5);
+    drawStar(ctx, -15, -27, 2.5, 5, 5);
+    drawStar(ctx, 15, -27, 2.5, 5, 5);
+
+    ctx.strokeStyle = "rgba(232, 165, 0, 0.38)";
+    ctx.fillStyle = "rgba(232, 165, 0, 0.10)";
+
+    // Shield (translucent fill + gold outline)
+    ctx.beginPath();
+    ctx.moveTo(-20, -12);
+    ctx.quadraticCurveTo(0, -17, 0, -17);
+    ctx.quadraticCurveTo(20, -12, 20, -12);
+    ctx.quadraticCurveTo(20, 20, 0, 32);
+    ctx.quadraticCurveTo(-20, 20, -20, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // House inside shield
+    ctx.beginPath();
+    ctx.moveTo(-8, 9);
+    ctx.lineTo(-8, 0);
+    ctx.lineTo(8, 0);
+    ctx.lineTo(8, 9);
+    ctx.moveTo(0, -9);
+    ctx.lineTo(-11, -1);
+    ctx.lineTo(11, -1);
+    ctx.stroke();
+
+    // Wings / laurel (wider spread)
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(-30, -6, 34, Math.PI * 0.35, Math.PI * 0.9);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(30, -6, 34, Math.PI * 0.65, Math.PI * 0.1, true);
+    ctx.stroke();
+
+    ctx.restore();
+  };
+
   const buildCompatibilityCardCanvas = async () => {
     const width = 1580;
     const height = 1000;
@@ -552,38 +661,65 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
     ctx.clip();
 
-     const bg = ctx.createLinearGradient(0, 0, width, height);
-     bg.addColorStop(0, "#5E3A0E");
-     bg.addColorStop(0.5, "#251705");
-     bg.addColorStop(1, "#0A0601");
-     ctx.fillStyle = bg;
-     ctx.fillRect(0, 0, width, height);
- 
-     ctx.save();
-     ctx.globalAlpha = 0.85;
- 
-     const glow1 = ctx.createRadialGradient(width * 0.8, height * 0.2, 0, width * 0.8, height * 0.2, width * 0.7);
-     glow1.addColorStop(0, "rgba(232, 165, 0, 0.70)");
-     glow1.addColorStop(0.5, "rgba(232, 165, 0, 0.25)");
-     glow1.addColorStop(1, "rgba(232, 165, 0, 0)");
-     ctx.fillStyle = glow1;
-     ctx.fillRect(0, 0, width, height);
- 
-     const glow2 = ctx.createRadialGradient(width * 0.2, height * 0.8, 0, width * 0.2, height * 0.8, width * 0.6);
-     glow2.addColorStop(0, "rgba(249, 115, 22, 0.40)");
-     glow2.addColorStop(0.5, "rgba(249, 115, 22, 0.15)");
-     glow2.addColorStop(1, "rgba(249, 115, 22, 0)");
-     ctx.fillStyle = glow2;
-     ctx.fillRect(0, 0, width, height);
- 
-     ctx.restore();
- 
-     ctx.restore();
+    const bg = ctx.createLinearGradient(0, 0, width, height);
+    bg.addColorStop(0, "#1C1408");
+    bg.addColorStop(0.45, "#0B0805");
+    bg.addColorStop(1, "#000000");
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+
+    // ponytail: keep the interior BLACK — restrained warm glow at top/edges only.
+    // Bump these alphas back up if you want the older brown-gold wash.
+    ctx.save();
+    const glow1 = ctx.createRadialGradient(width * 0.5, height * -0.05, 0, width * 0.5, height * -0.05, width * 0.6);
+    glow1.addColorStop(0, "rgba(232, 165, 0, 0.30)");
+    glow1.addColorStop(0.5, "rgba(232, 165, 0, 0.10)");
+    glow1.addColorStop(1, "rgba(232, 165, 0, 0)");
+    ctx.fillStyle = glow1;
+    ctx.fillRect(0, 0, width, height);
+
+    const glow2 = ctx.createRadialGradient(width * 0.85, height * 0.22, 0, width * 0.85, height * 0.22, width * 0.42);
+    glow2.addColorStop(0, "rgba(232, 165, 0, 0.20)");
+    glow2.addColorStop(0.5, "rgba(232, 165, 0, 0.07)");
+    glow2.addColorStop(1, "rgba(232, 165, 0, 0)");
+    ctx.fillStyle = glow2;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.restore();
+
+    // Draw Diagonal Rays on Canvas
+    ctx.save();
+    ctx.globalAlpha = 0.13;
+    const rayGrad = ctx.createLinearGradient(0, 0, width, height);
+    rayGrad.addColorStop(0, "rgba(0,0,0,0)");
+    rayGrad.addColorStop(0.4, "rgba(232, 165, 0, 0.4)");
+    rayGrad.addColorStop(0.6, "rgba(232, 165, 0, 0.4)");
+    rayGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = rayGrad;
+    ctx.translate(width / 2, height / 2);
+    ctx.rotate(30 * Math.PI / 180);
+    ctx.fillRect(-width, -200, width * 2, 400);
+    ctx.restore();
+
+    // Draw Gold Particle Grid on Canvas
+    ctx.save();
+    ctx.fillStyle = "rgba(232, 165, 0, 0.09)";
+    const dotSpacing = 32;
+    for (let px = 30; px < width - 30; px += dotSpacing) {
+      for (let py = 30; py < height - 30; py += dotSpacing) {
+        ctx.beginPath();
+        ctx.arc(px, py, 1.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+    ctx.restore();
+
+    ctx.restore();
 
     // Corner brackets decoration (matching share modal)
     const bracketLen = 32;
     const bracketOffset = 26;
-    ctx.strokeStyle = "rgba(200, 146, 42, 0.55)";
+    ctx.strokeStyle = "#E8A500";
     ctx.lineWidth = 3;
     // Top-left
     ctx.beginPath();
@@ -611,17 +747,17 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.stroke();
 
     ctx.save();
-    ctx.shadowColor = "rgba(232, 165, 0, 0.45)";
-    ctx.shadowBlur = 30;
+    ctx.shadowColor = "rgba(232, 165, 0, 0.65)";
+    ctx.shadowBlur = 35;
     ctx.lineWidth = 4;
-    ctx.strokeStyle = "rgba(232, 165, 0, 0.8)";
+    ctx.strokeStyle = "#E8A500";
     drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
     ctx.stroke();
     ctx.restore();
 
     // Inner decorative card border (matching share modal card-in-card effect)
     ctx.lineWidth = 1.5;
-    ctx.strokeStyle = "rgba(200, 146, 42, 0.45)";
+    ctx.strokeStyle = "rgba(232, 165, 0, 0.45)";
     drawRoundedRectPath(ctx, 30, 30, width - 60, height - 60, 34);
     ctx.stroke();
 
@@ -632,6 +768,19 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.fillStyle = "#8a8a8a";
     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
     ctx.fillText("OFFICIAL AGENT", width - 250, 92);
+
+    // Draw gold shield next to OFFICIAL AGENT
+    ctx.fillStyle = "#E8A500";
+    const sx = width - 75;
+    const sy = 76;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(sx + 8, sy - 4);
+    ctx.lineTo(sx + 16, sy);
+    ctx.lineTo(sx + 16, sy + 10);
+    ctx.quadraticCurveTo(sx + 8, sy + 18, sx, sy + 10);
+    ctx.closePath();
+    ctx.fill();
 
     ctx.strokeStyle = "rgba(255,255,255,0.11)";
     ctx.lineWidth = 2;
@@ -657,87 +806,87 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.lineTo(leftX + 280, 300);
     ctx.stroke();
 
-     // Career commission intentionally omitted here to match the share modal (hidden there).
-     // Sections are spread vertically to fill the card height (aligns with the photo).
- 
-     const statYTop = 370;
-     ctx.strokeStyle = "rgba(255,255,255,0.12)";
-     ctx.lineWidth = 2;
-     ctx.beginPath();
-     ctx.moveTo(leftX, statYTop);
-     ctx.lineTo(960, statYTop);
-     ctx.stroke();
- 
-     const statBlockW = 296;
-     const stats = [
-       { label: Lx.levelLabel.toUpperCase(), value: String(profileCard.level) },
-       { label: Lx.listings.toUpperCase(), value: String(profileCard.totalListings) },
-       { label: Lx.prospects.toUpperCase(), value: String(profileCard.totalProspects) },
-     ];
- 
-     stats.forEach((s, i) => {
-       const x = leftX + i * statBlockW;
-       ctx.fillStyle = "#8a8a8a";
-       ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-       ctx.fillText(s.label, x, 430);
-       ctx.fillStyle = "#ffffff";
-       ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-       ctx.fillText(s.value, x, 500);
- 
-       if (i < stats.length - 1) {
-         ctx.strokeStyle = "rgba(255,255,255,0.12)";
-         ctx.beginPath();
-         ctx.moveTo(x + statBlockW - 18, 430);
-         ctx.lineTo(x + statBlockW - 18, 505);
-         ctx.stroke();
-       }
-     });
- 
-     // Draw Divider for Badges & HOF section
-     const badgeHofDividerY = 600;
-     ctx.strokeStyle = "rgba(255,255,255,0.12)";
-     ctx.beginPath();
-     ctx.moveTo(leftX, badgeHofDividerY);
-     ctx.lineTo(960, badgeHofDividerY);
-     ctx.stroke();
- 
-     // Column 1: Featured Badges
-     ctx.fillStyle = "#8a8a8a";
-     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-     ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 645);
- 
-     const badgeSize = 120;
-     const badgeGap = 20;
-     const badgeY = 665;
- 
-     if (featured.length === 0) {
-       ctx.fillStyle = "#5c5a61";
-       ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-       ctx.fillText("None", leftX, badgeY + 45);
-     } else {
-       for (let idx = 0; idx < Math.min(featured.length, 3); idx++) {
-         const badgeName = featured[idx];
-         const asset = BADGE_ASSETS[badgeName];
-         if (asset) {
-           try {
-             const badgeImg = await loadDataImage(asset);
-             ctx.drawImage(badgeImg, leftX + idx * (badgeSize + badgeGap), badgeY, badgeSize, badgeSize);
-           } catch (e) {
-             console.error("Failed to load canvas badge image", e);
-           }
-         }
-       }
-     }
- 
-     // Column 2: Hall of Fame Highlights
-     const hofX = 520;
-     ctx.fillStyle = "#8a8a8a";
-     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-     ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 645);
- 
-     const hofSize = 120;
-     const hofGap = 20;
-     const hofY = 665;
+    // Career commission intentionally omitted here to match the share modal (hidden there).
+    // Sections are spread vertically to fill the card height (aligns with the photo).
+
+    const statYTop = 370;
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(leftX, statYTop);
+    ctx.lineTo(960, statYTop);
+    ctx.stroke();
+
+    const statBlockW = 296;
+    const stats = [
+      { label: Lx.levelLabel.toUpperCase(), value: String(profileCard.level) },
+      { label: Lx.listings.toUpperCase(), value: String(profileCard.totalListings) },
+      { label: Lx.prospects.toUpperCase(), value: String(profileCard.totalProspects) },
+    ];
+
+    stats.forEach((s, i) => {
+      const x = leftX + i * statBlockW;
+      ctx.fillStyle = "#8a8a8a";
+      ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(s.label, x, 430);
+      ctx.fillStyle = "#E8A500";
+      ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+      ctx.fillText(s.value, x, 500);
+
+      if (i < stats.length - 1) {
+        ctx.strokeStyle = "rgba(255,255,255,0.12)";
+        ctx.beginPath();
+        ctx.moveTo(x + statBlockW - 18, 430);
+        ctx.lineTo(x + statBlockW - 18, 505);
+        ctx.stroke();
+      }
+    });
+
+    // Draw Divider for Badges & HOF section
+    const badgeHofDividerY = 600;
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.beginPath();
+    ctx.moveTo(leftX, badgeHofDividerY);
+    ctx.lineTo(960, badgeHofDividerY);
+    ctx.stroke();
+
+    // Column 1: Featured Badges
+    ctx.fillStyle = "#8a8a8a";
+    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 645);
+
+    const badgeSize = 120;
+    const badgeGap = 20;
+    const badgeY = 665;
+
+    if (featured.length === 0) {
+      ctx.fillStyle = "#5c5a61";
+      ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+      ctx.fillText("None", leftX, badgeY + 45);
+    } else {
+      for (let idx = 0; idx < Math.min(featured.length, 3); idx++) {
+        const badgeName = featured[idx];
+        const asset = BADGE_ASSETS[badgeName];
+        if (asset) {
+          try {
+            const badgeImg = await loadDataImage(asset);
+            ctx.drawImage(badgeImg, leftX + idx * (badgeSize + badgeGap), badgeY, badgeSize, badgeSize);
+          } catch (e) {
+            console.error("Failed to load canvas badge image", e);
+          }
+        }
+      }
+    }
+
+    // Column 2: Hall of Fame Highlights
+    const hofX = 520;
+    ctx.fillStyle = "#8a8a8a";
+    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+    ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 645);
+
+    const hofSize = 120;
+    const hofGap = 20;
+    const hofY = 665;
 
     if (hofHistory.length === 0) {
       ctx.fillStyle = "#5c5a61";
@@ -746,37 +895,65 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     } else {
       for (let idx = 0; idx < Math.min(hofHistory.length, 3); idx++) {
         const hof = hofHistory[idx];
-        const rankNum = parseInt(hof.rank.replace("#", ""), 10);
-        const isFirst = rankNum === 1;
-        const isTop5 = rankNum <= 5;
-        
+
         const circleX = hofX + idx * (hofSize + hofGap) + hofSize / 2;
         const circleY = hofY + hofSize / 2;
         const radius = hofSize / 2;
 
         ctx.save();
-        // Draw glow behind HOF medal
-        const glow = ctx.createRadialGradient(circleX, circleY, 0, circleX, circleY, radius * 1.5);
-        glow.addColorStop(0, isFirst ? "rgba(232, 194, 103, 0.4)" : isTop5 ? "rgba(199, 206, 219, 0.3)" : "rgba(207, 142, 87, 0.3)");
-        glow.addColorStop(1, "rgba(0,0,0,0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(circleX, circleY, radius * 1.5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.strokeStyle = "#E8A500";
+        ctx.lineWidth = 2.5;
 
-        // Draw gold/silver/bronze medal background
-        ctx.fillStyle = isFirst ? "#e8c267" : isTop5 ? "#c7cedb" : "#cf8e57";
+        // Outer dotted circle
+        ctx.save();
+        ctx.setLineDash([6, 6]);
         ctx.beginPath();
         ctx.arc(circleX, circleY, radius, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
 
-        ctx.strokeStyle = "rgba(255,255,255,0.2)";
-        ctx.lineWidth = 2;
+        // Left Laurel Arch
+        ctx.beginPath();
+        ctx.arc(circleX, circleY, radius - 6, Math.PI * 0.15, Math.PI * 0.85);
         ctx.stroke();
 
+        // Draw Left Leaves
+        ctx.lineWidth = 3;
+        const leavesLeft = [
+          { x1: -32, y1: 15, x2: -45, y2: 8 },
+          { x1: -37, y1: -10, x2: -50, y2: -15 },
+          { x1: -28, y1: -32, x2: -38, y2: -42 },
+          { x1: -10, y1: -45, x2: -15, y2: -58 }
+        ];
+        leavesLeft.forEach(l => {
+          ctx.beginPath();
+          ctx.moveTo(circleX + l.x1, circleY + l.y1);
+          ctx.lineTo(circleX + l.x2, circleY + l.y2);
+          ctx.stroke();
+        });
+
+        // Right Laurel Arch
+        ctx.beginPath();
+        ctx.arc(circleX, circleY, radius - 6, -Math.PI * 0.15, -Math.PI * 0.85, true);
+        ctx.stroke();
+
+        // Draw Right Leaves
+        const leavesRight = [
+          { x1: 32, y1: 15, x2: 45, y2: 8 },
+          { x1: 37, y1: -10, x2: 50, y2: -15 },
+          { x1: 28, y1: -32, x2: 38, y2: -42 },
+          { x1: 10, y1: -45, x2: 15, y2: -58 }
+        ];
+        leavesRight.forEach(l => {
+          ctx.beginPath();
+          ctx.moveTo(circleX + l.x1, circleY + l.y1);
+          ctx.lineTo(circleX + l.x2, circleY + l.y2);
+          ctx.stroke();
+        });
+
         // Draw Rank Text inside Circle
-        ctx.fillStyle = "#121115";
-        ctx.font = "900 42px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+        ctx.fillStyle = "#E8A500";
+        ctx.font = "900 38px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(hof.rank, circleX, circleY);
@@ -814,10 +991,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       ctx.fillRect(px, py, pw, ph);
       ctx.restore();
 
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = "#C8922A";
+      ctx.save();
+      ctx.shadowColor = "rgba(232, 165, 0, 0.5)";
+      ctx.shadowBlur = 20;
+      ctx.lineWidth = 3.5;
+      ctx.strokeStyle = "#E8A500";
       drawRoundedRectPath(ctx, px, py, pw, ph, 28);
       ctx.stroke();
+      ctx.restore();
 
       const tierImg = await loadDataImage(eliteAgentBase64);
       const tierSize = 160;
@@ -838,11 +1019,70 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.lineTo(width - 52, height - 72);
     ctx.stroke();
 
-    ctx.fillStyle = "#7a7a7a";
+    ctx.fillStyle = "#8a8a8a";
     ctx.font = "700 18px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText("LOT PROPERTY", 60, height - 40);
+
+    // Draw home icon
+    ctx.fillStyle = "#E8A500";
+    const hx = 60;
+    const hy = height - 58;
+    ctx.beginPath();
+    ctx.moveTo(hx, hy + 18);
+    ctx.lineTo(hx, hy + 8);
+    ctx.lineTo(hx + 8, hy);
+    ctx.lineTo(hx + 16, hy + 8);
+    ctx.lineTo(hx + 16, hy + 18);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = "#8a8a8a";
+    ctx.fillText("LOT PROPERTY", 84, height - 40);
+
     ctx.fillText("CERTIFIED DIGITAL SCOREBOARD", width - 370, height - 40);
 
+    // Draw checkmark icon next to CERTIFIED DIGITAL SCOREBOARD
+    ctx.strokeStyle = "#E8A500";
+    ctx.lineWidth = 2.5;
+    const cx = width - 55;
+    const cy = height - 48;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, cy);
+    ctx.lineTo(cx - 1, cy + 4);
+    ctx.lineTo(cx + 5, cy - 4);
+    ctx.stroke();
+
+    return canvas;
+  };
+
+  // Rasterize the exact scorecard DOM node so the downloaded PNG matches the modal
+  // preview 1:1 (position + spacing). The manual canvas below is only a fallback.
+  const buildScorecardCanvasFromDom = async (): Promise<HTMLCanvasElement> => {
+    const el = document.getElementById("profile-scorecard-card");
+    if (!el) throw new Error("Scorecard element not found");
+    // Get the photo as a data URL NOW; never let a cross-origin URL reach the
+    // capture (Chrome's image cache can serve a non-CORS entry and taint it).
+    const photoData = (cardPhotoSrc.startsWith("data:") ? cardPhotoSrc : null) || (await inlineCardPhoto()) || FALLBACK_PHOTO;
+    const scale = 1580 / (el.offsetWidth || SCORECARD_W); // export at ~1580px wide
+    const canvas = await html2canvas(el, {
+      scale,
+      backgroundColor: null,
+      useCORS: true,
+      logging: false,
+      onclone: (clonedDoc) => {
+        // Undo the responsive shrink so the capture is always full-size.
+        const scaleWrap = clonedDoc.getElementById("profile-scorecard-scale");
+        if (scaleWrap) scaleWrap.style.transform = "none";
+        const photoImg = clonedDoc.querySelector<HTMLImageElement>("img[data-scorecard-photo]");
+        if (photoImg) photoImg.src = photoData;
+      },
+    });
+    // Taint self-check: throws if anything cross-origin slipped in, which
+    // routes the download to the compatibility fallback instead of crashing.
+    canvas.getContext("2d")?.getImageData(0, 0, 1, 1);
     return canvas;
   };
 
@@ -854,7 +1094,14 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       // Small timeout to allow render states to settle
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      const compatibilityCanvas = await buildCompatibilityCardCanvas();
+      let compatibilityCanvas: HTMLCanvasElement;
+      try {
+        compatibilityCanvas = await buildScorecardCanvasFromDom();
+      } catch (domErr) {
+        console.error("DOM capture failed, using manual canvas fallback", domErr);
+        triggerError("Capture preview gagal — memakai mode kompatibilitas (hasil bisa beda dari preview). Cek console.");
+        compatibilityCanvas = await buildCompatibilityCardCanvas();
+      }
 
       const blob = await new Promise<Blob | null>((resolve) =>
         compatibilityCanvas.toBlob(resolve, "image/png", 1)
@@ -1547,163 +1794,176 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
               <div className="p-4 sm:p-6 flex flex-col items-center bg-zinc-950/20 flex-1 overflow-y-auto min-h-0 share-modal-body">
                 {/* Measure wrapper: shrinks the fixed-size card to fit the screen */}
                 <div ref={cardScaleWrapRef} className="w-full max-w-[440px] flex justify-center" style={{ height: SCORECARD_H * cardScale }}>
-                <div style={{ width: SCORECARD_W, transform: `scale(${cardScale})`, transformOrigin: "top center" }}>
-                <div id="profile-scorecard-card" className="rounded-2xl border relative overflow-hidden p-4 sm:p-5 flex flex-col justify-between share-scorecard-card"
-                  style={{
-                    width: SCORECARD_W,
-                    background: "linear-gradient(135deg, #4A2B0A 0%, #1F1203 50%, #0A0601 100%)",
-                    borderColor: "#C8922AA5",
-                    borderWidth: "1.8px",
-                    boxShadow: "0 0 25px rgba(232, 165, 0, 0.25), 0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
-                    aspectRatio: "1.58 / 1"
-                  }}>
-                  {/* Background overlay glimmers */}
-                  <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-65 z-0"
-                    style={{ background: "radial-gradient(circle at 80% 20%, rgba(232, 165, 0, 0.60), transparent 65%), radial-gradient(circle at 20% 80%, rgba(249, 115, 22, 0.30), transparent 50%)" }} />
+                  <div id="profile-scorecard-scale" style={{ width: SCORECARD_W, transform: `scale(${cardScale})`, transformOrigin: "top center" }}>
+                    {/* Outer metallic gold frame */}
+                    <div id="profile-scorecard-card" className="rounded-[22px] relative p-[5px] share-scorecard-card"
+                      style={{
+                        width: SCORECARD_W,
+                        aspectRatio: "1.58 / 1",
+                        background: "linear-gradient(135deg, #F7E08B 0%, #E8A500 16%, #6B4A0E 36%, #F4D06A 52%, #8A5C10 72%, #F7E08B 100%)",
+                        boxShadow: "0 0 35px rgba(232, 165, 0, 0.35), 0 15px 35px rgba(0,0,0,0.6)",
+                      }}>
+                      <div className="rounded-[17px] relative overflow-hidden w-full h-full p-4 sm:p-5 flex flex-col justify-between"
+                        style={{
+                          background: "linear-gradient(135deg, #1C1408 0%, #0B0805 45%, #000000 100%)",
+                          boxShadow: "inset 0 0 18px rgba(232, 165, 0, 0.12)",
+                        }}>
+                        {/* Background overlay glimmers */}
+                        <div className="absolute inset-0 pointer-events-none mix-blend-screen opacity-45 z-0"
+                          style={{ background: "radial-gradient(circle at 50% -12%, rgba(232, 165, 0, 0.42), transparent 55%), radial-gradient(circle at 88% 22%, rgba(232, 165, 0, 0.22), transparent 45%)" }} />
 
-                  {/* Corner brackets decoration */}
-                  <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-[#C8922A] opacity-60" />
-                  <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-[#C8922A] opacity-60" />
-                  <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-[#C8922A] opacity-60" />
-                  <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[#C8922A] opacity-60" />
+                        {/* Corner bokeh glows */}
+                        <div className="absolute inset-0 pointer-events-none z-0"
+                          style={{ background: "radial-gradient(circle at 100% 10%, rgba(232, 165, 0, 0.30), transparent 24%), radial-gradient(circle at 2% 98%, rgba(232, 165, 0, 0.18), transparent 22%)" }} />
 
-                  {/* Top Bar inside card */}
-                  <div className="flex justify-between items-center z-10 border-b border-white/10 pb-2">
-                    <div>
-                      <p className="text-[7.5px] font-black tracking-widest text-[#E8A500]" style={{ fontFamily: "var(--font-display)" }}>
-                        {L.title}
-                      </p>
-                    </div>
-                    <span className="text-[7.5px] font-black text-zinc-400 tracking-wider">
-                      OFFICIAL AGENT
-                    </span>
-                  </div>
-
-                  {/* Body Content: Split Left/Right */}
-                  <div className="flex gap-5 items-center z-10 flex-1 py-3">
-                    {/* Left: Stats */}
-                    <div className="flex-1 space-y-3.5 text-left">
-                      <div>
-                        <h4 className="font-extrabold text-[17px] leading-tight text-white tracking-wide" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                          {profileCard.name}
-                        </h4>
-                        <p className="text-[9px] text-[#C8922A] uppercase font-black mt-0.5 tracking-wider">
-                          {profileCard.tier}
-                        </p>
-                      </div>
-
-                      {/* Main Metric: Career Commission — HIDDEN */}
-                      {/* HIDDEN
-                      <div>
-                        <p className="text-[8px] text-zinc-400 font-bold tracking-wider uppercase">{L.commission}</p>
-                        <h2 className="font-black text-xl text-gradient-gold leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                          {profileCard.commission}
-                        </h2>
-                      </div>
-                      */}
-
-                      {/* Smaller stats: LEVEL AGEN, TOTAL LISTING, TOTAL PROSPEK */}
-                      <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2">
-                        <div className="flex-1 text-center">
-                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.levelLabel}</p>
-                          <p className="font-black text-[13px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {profileCard.level}
-                          </p>
+                        {/* Diagonal light rays — inline rgba (html2canvas can't parse Tailwind's color-mix) */}
+                        <div className="absolute inset-0 pointer-events-none opacity-20 z-0">
+                          <div className="absolute top-[-50%] left-[-20%] w-[150%] h-[50%] rotate-[30deg]"
+                            style={{ background: "linear-gradient(90deg, transparent, rgba(232, 165, 0, 0.30), transparent)" }} />
+                          <div className="absolute top-[20%] left-[-50%] w-[200%] h-[30%] rotate-[35deg]"
+                            style={{ background: "linear-gradient(90deg, transparent, rgba(232, 165, 0, 0.20), transparent)" }} />
                         </div>
-                        <div className="w-[1px] h-4 bg-white/10" />
-                        <div className="flex-1 text-center">
-                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.listings}</p>
-                          <p className="font-black text-[13px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {profileCard.totalListings}
-                          </p>
-                        </div>
-                        <div className="w-[1px] h-4 bg-white/10" />
-                        <div className="flex-1 text-center">
-                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.prospects}</p>
-                          <p className="font-black text-[13px] text-white leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                            {profileCard.totalProspects}
-                          </p>
-                        </div>
-                      </div>
 
-                      {/* Featured Badges & HOF Highlights */}
-                      <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2 gap-4">
-                        {/* Column 1: Lencana Utama */}
-                        <div className="flex-1 text-left">
-                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.featuredBadges}</p>
-                          <div className="flex gap-2.5">
-                            {featured.length === 0 ? (
-                              <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
-                            ) : (
-                              featured.slice(0, 3).map((badgeName, idx) => {
-                                const asset = BADGE_ASSETS[badgeName];
-                                if (!asset) return null;
-                                return (
-                                  <img
-                                    key={idx}
-                                    src={asset}
-                                    alt={badgeName}
-                                    className="w-[34px] h-[34px] object-contain"
-                                    title={badgeName}
-                                  />
-                                );
-                              })
-                            )}
+                        {/* Gold particles background */}
+                        <div className="absolute inset-0 pointer-events-none opacity-[0.15] z-0 bg-[radial-gradient(#E8A500_1px,transparent_1px)] [background-size:16px_16px]" />
+
+                        {/* Corner brackets decoration */}
+                        <div className="absolute top-2 left-2 w-3 h-3 border-t border-l border-[#E8A500] opacity-60" />
+                        <div className="absolute top-2 right-2 w-3 h-3 border-t border-r border-[#E8A500] opacity-60" />
+                        <div className="absolute bottom-2 left-2 w-3 h-3 border-b border-l border-[#E8A500] opacity-60" />
+                        <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[#E8A500] opacity-60" />
+
+                        {/* Top Bar inside card */}
+                        <div className="flex justify-between items-center z-10 border-b border-white/10 pb-2">
+                          <div>
+                            <p className="text-[7.5px] font-black tracking-widest text-[#E8A500]" style={{ fontFamily: "var(--font-display)" }}>
+                              {L.title}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[7.5px] font-black text-zinc-400 tracking-wider uppercase">
+                              OFFICIAL AGENT
+                            </span>
+                            <Shield size={10} className="text-[#E8A500] stroke-[2.5]" />
                           </div>
                         </div>
 
-                        {/* Column 2: Hall of Fame */}
-                        <div className="flex-1 text-left">
-                          <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.hofTitle}</p>
-                          <div className="flex gap-2.5 items-center">
-                            {hofHistory.length === 0 ? (
-                              <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
-                            ) : (
-                              hofHistory.slice(0, 3).map((hof, idx) => {
-                                const rankNum = parseInt(hof.rank.replace("#", ""), 10);
-                                const isFirst = rankNum === 1;
-                                const isTop5 = rankNum <= 5;
-                                const bgColor = isFirst
-                                  ? "bg-[#e8c267]"
-                                  : isTop5
-                                  ? "bg-[#c7cedb]"
-                                  : "bg-[#cf8e57]";
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={`w-[34px] h-[34px] rounded-full flex items-center justify-center text-[12px] font-black text-[#121115] ${bgColor} border border-white/10 shadow-sm`}
-                                    title={`${hof.cat} (${hof.period})`}
-                                  >
-                                    {hof.rank}
-                                  </div>
-                                );
-                              })
-                            )}
+                        {/* Body Content: Split Left/Right */}
+                        <div className="flex gap-5 items-center z-10 flex-1 py-3">
+                          {/* Left: Stats */}
+                          <div className="flex-1 space-y-3.5 text-left">
+                            <div>
+                              <h4 className="font-extrabold text-[19px] leading-tight text-white tracking-wide font-display">
+                                {profileCard.name}
+                              </h4>
+                              <p className="text-[9px] text-[#C8922A] uppercase font-black mt-0.5 tracking-wider">
+                                {profileCard.tier}
+                              </p>
+                              <div className="mt-1.5 h-[1.5px] w-[68px] rounded-full bg-[#C8922A]/50" />
+                            </div>
+
+                            {/* Smaller stats: LEVEL AGEN, TOTAL LISTING, TOTAL PROSPEK */}
+                            <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2">
+                              <div className="flex-1 text-center">
+                                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.levelLabel}</p>
+                                <p className="font-black text-[13px] text-[#E8A500] leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                  {profileCard.level}
+                                </p>
+                              </div>
+                              <div className="w-[1px] h-4 bg-white/10" />
+                              <div className="flex-1 text-center">
+                                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.listings}</p>
+                                <p className="font-black text-[13px] text-[#E8A500] leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                  {profileCard.totalListings}
+                                </p>
+                              </div>
+                              <div className="w-[1px] h-4 bg-white/10" />
+                              <div className="flex-1 text-center">
+                                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.prospects}</p>
+                                <p className="font-black text-[13px] text-[#E8A500] leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                  {profileCard.totalProspects}
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Featured Badges & HOF Highlights */}
+                            <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2 gap-4">
+                              {/* Column 1: Lencana Utama */}
+                              <div className="flex-1 text-left">
+                                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.featuredBadges}</p>
+                                <div className="flex gap-2.5">
+                                  {featured.length === 0 ? (
+                                    <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
+                                  ) : (
+                                    featured.slice(0, 3).map((badgeName, idx) => {
+                                      const asset = BADGE_ASSETS[badgeName];
+                                      if (!asset) return null;
+                                      return (
+                                        <img
+                                          key={idx}
+                                          src={asset}
+                                          alt={badgeName}
+                                          className="w-[34px] h-[34px] object-contain"
+                                          title={badgeName}
+                                        />
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Column 2: Hall of Fame */}
+                              <div className="flex-1 text-left">
+                                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.hofTitle}</p>
+                                <div className="flex gap-2.5 items-center">
+                                  {hofHistory.length === 0 ? (
+                                    <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
+                                  ) : (
+                                    hofHistory.slice(0, 3).map((hof, idx) => {
+                                      return (
+                                        <div key={idx} className="relative w-[44px] h-[42px] flex items-center justify-center" title={`${hof.cat} (${hof.period})`}>
+                                          <div className="w-[27px] h-[27px] rounded-full flex items-center justify-center z-10"
+                                            style={{ background: "#0B0805", border: "1.5px solid #E8A500", boxShadow: "0 0 8px rgba(232, 165, 0, 0.45)" }}>
+                                            <span className="text-[10px] font-black text-[#E8A500] leading-none" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                              {hof.rank}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right: Picture Card */}
+                          <div className="flex-shrink-0 relative">
+                            <div className="w-[104px] h-[135px] rounded-xl overflow-hidden border border-[#E8A500] shadow-[0_0_15px_rgba(232,165,0,0.35)] bg-zinc-950">
+                              <img src={cardPhotoSrc || profileCard.photo} data-scorecard-photo="1" alt={profileCard.name} className="w-full h-full object-contain object-center" />
+                              <div className="absolute inset-0" style={{ background: "linear-gradient(0deg, rgba(0,0,0,0.8), transparent 50%)" }} />
+                            </div>
+                            {/* Floating level badge graphic */}
+                            <div className="absolute -bottom-2 -right-2 z-20">
+                              <LevelBadge title={profileCard.tier} size={36} showPlate={false} customAsset={eliteAgentBase64} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Footer Branding */}
+                        <div className="flex justify-between items-center z-10 border-t border-white/10 pt-2 text-[6.5px] font-black tracking-wider text-zinc-400">
+                          <div className="flex items-center gap-1">
+                            <Home size={9} className="text-[#E8A500] stroke-[2.5]" />
+                            <span>LOT PROPERTY</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span>CERTIFIED DIGITAL SCOREBOARD</span>
+                            <CheckCircle size={9} className="text-[#E8A500] stroke-[2.5]" />
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Right: Picture Card */}
-                    <div className="flex-shrink-0 relative">
-                      <div className="w-[104px] h-[135px] rounded-xl overflow-hidden border border-[#C8922A] shadow-md bg-zinc-950">
-                        <img src={profileCard.photo} alt={profileCard.name} className="w-full h-full object-contain object-center" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                      </div>
-                      {/* Floating level badge graphic */}
-                      <div className="absolute -bottom-2 -right-2 z-20">
-                        <LevelBadge title={profileCard.tier} size={36} showPlate={false} customAsset={eliteAgentBase64} />
-                      </div>
-                    </div>
                   </div>
-
-                  {/* Footer watermark */}
-                  <div className="flex justify-between items-center z-10 border-t border-white/10 pt-1 text-[6.5px] font-bold text-zinc-500 uppercase tracking-widest leading-none">
-                    <span>LOT PROPERTY</span>
-                    <span>CERTIFIED DIGITAL SCOREBOARD</span>
-                  </div>
-                </div>
-                </div>
                 </div>
 
                 <p className="text-[10px] text-muted-foreground text-center mt-3 share-modal-desc">{L.desc}</p>

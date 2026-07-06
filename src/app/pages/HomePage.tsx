@@ -153,6 +153,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const [hofRawData, setHofRawData] = useState<any[]>([]);
   const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
   const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [completedModulesCount, setCompletedModulesCount] = useState(0);
 
   useEffect(() => {
     if (hofRawData.length > 0) {
@@ -265,11 +266,12 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
           return;
         }
 
-        const [summaryRes, weeklyRes, hofRes, eventsRes] = await Promise.all([
+        const [summaryRes, weeklyRes, hofRes, eventsRes, academyRes] = await Promise.all([
           api.dashboard.getSummary(),
           api.dashboard.getWeeklyLeaderboard(),
           api.dashboard.getHof(),
           api.events.getList(),
+          api.academy.getModules().catch(() => []),
         ]);
 
         const summaryPayload = (summaryRes || {}) as SummaryResponse;
@@ -287,6 +289,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         if (eventsPayload.length > 0) {
           setEventData(eventsPayload.map(mapEvent));
         }
+
+        const completedCount = Array.isArray(academyRes) ? academyRes.filter((m: any) => m.status === "Completed").length : 0;
+        setCompletedModulesCount(completedCount);
       } catch (err) {
         console.error("Failed to load homepage data", err);
       } finally {
@@ -306,6 +311,12 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const switchHofCat = (cat: string) => { goHofTab(cat); };
   const hofPrev = () => { const ni = Math.max(0, hofIdx - 1); setSlideDir(-1); setHofTab(HOF_TABS[ni]); };
   const hofNext = () => { const ni = Math.min(HOF_TABS.length - 1, hofIdx + 1); setSlideDir(1); setHofTab(HOF_TABS[ni]); };
+
+  const qLogin = isGuest ? 1 : (summary?.daily_quest?.login_completed ? 1 : 0);
+  const qListings = isGuest ? 2 : Math.min(summary?.daily_quest?.listings_count || 0, 3);
+  const qProspects = isGuest ? 6 : Math.min(activeAgent?.total_prospects || 0, 10);
+  const qContent = isGuest ? 1 : Math.min(summary?.daily_quest?.contents_count || 0, 1);
+  const qAcademy = isGuest ? 2 : Math.min(completedModulesCount || 0, 5);
 
   if (loading) return <HomePageSkeleton />;
 
@@ -565,11 +576,11 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
               {[
-                { name: "Daily Login", icon: "📅", p: 1, t: 1, xp: 100, done: true },
-                { name: "New Listing", icon: "🏢", p: 2, t: 3, xp: 100, done: false },
-                { name: "New Prospect", icon: "👥", p: 6, t: 10, xp: 100, done: false },
-                { name: "New Content", icon: "📱", p: 1, t: 1, xp: 300, done: true },
-                { name: "Complete Module", icon: "🎓", p: 2, t: 5, xp: 200, done: false },
+                { name: "Daily Login", icon: "📅", p: qLogin, t: 1, xp: 100, done: qLogin >= 1 },
+                { name: "New Listing", icon: "🏢", p: qListings, t: 3, xp: 100, done: qListings >= 3 },
+                { name: "New Prospect", icon: "👥", p: qProspects, t: 10, xp: 100, done: qProspects >= 10 },
+                { name: "New Content", icon: "📱", p: qContent, t: 1, xp: 300, done: qContent >= 1 },
+                { name: "Complete Module", icon: "🎓", p: qAcademy, t: 5, xp: 200, done: qAcademy >= 5 },
               ].map((q, i) => (
                 <div key={i} onClick={() => onNav("quest")} className="flex flex-col items-center flex-shrink-0 rounded-2xl border p-2.5 cursor-pointer transition-all duration-200 hover:scale-[1.03] hover:border-amber-500/50 hover:shadow-md"
                   style={{ minWidth: 80, borderColor: q.done ? "#86EFAC50" : T.border, backgroundColor: q.done ? (isDark ? "#0A2010" : "#F0FDF4") : T.card }}>

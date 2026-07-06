@@ -41,6 +41,7 @@ export default function AdminEventsPage() {
             badge: ev.badge?.name || "Event Badge",
             banner: ev.banner || "",
             prizes: ev.prizes || "",
+            terms_and_conditions: ev.terms_and_conditions || "",
             status: ev.status || "Upcoming",
           })));
         } else {
@@ -61,6 +62,7 @@ export default function AdminEventsPage() {
   const [xpPool, setXpPool] = useState("");
   const [badgeId, setBadgeId] = useState<string | number>("");
   const [prizeItems, setPrizeItems] = useState<{rank: string; prize: string}[]>([]);
+  const [termsAndConditions, setTermsAndConditions] = useState("");
   
   // Custom Badge Upload States
   const [customBadgeFile, setCustomBadgeFile] = useState<File | null>(null);
@@ -112,6 +114,7 @@ export default function AdminEventsPage() {
       setXpPool("");
       setBadgeId("");
       setPrizeItems([]);
+      setTermsAndConditions("");
       setBannerFile(null);
       setBannerPreview("");
       setBannerUrl("");
@@ -224,6 +227,11 @@ export default function AdminEventsPage() {
       const payloadId = isNumeric ? parseInt(finalBadgeId as string) : null;
       const payloadName = !isNumeric && finalBadgeId !== "upload" && finalBadgeId ? finalBadgeId as string : "";
 
+      const serializeTerms = () => {
+        const lines = termsAndConditions.split("\n").map(t => t.trim()).filter(Boolean);
+        return lines.length > 0 ? JSON.stringify(lines) : "";
+      };
+
       const payload = {
         title: title.trim(),
         desc: desc.trim(),
@@ -239,6 +247,7 @@ export default function AdminEventsPage() {
         accent_color: "#E53E3E",
         banner: finalBanner,
         prizes: serializePrizes(),
+        terms_and_conditions: serializeTerms(),
       };
 
       if (editId) {
@@ -263,6 +272,7 @@ export default function AdminEventsPage() {
           badge: ev.badge?.name || "Event Badge",
           banner: ev.banner || "",
           prizes: ev.prizes || "",
+          terms_and_conditions: ev.terms_and_conditions || "",
           status: ev.status || "Upcoming",
         })));
       }
@@ -293,6 +303,21 @@ export default function AdminEventsPage() {
     setCustomBadgeName("");
     setCustomBadgeRarity("rare");
     setBadgeError("");
+    
+    if (ev.terms_and_conditions) {
+      try {
+        const parsed = JSON.parse(ev.terms_and_conditions);
+        if (Array.isArray(parsed)) {
+          setTermsAndConditions(parsed.join("\n"));
+        } else {
+          setTermsAndConditions("");
+        }
+      } catch {
+        setTermsAndConditions("");
+      }
+    } else {
+      setTermsAndConditions("");
+    }
     
     setEditId(ev.id);
     setShowAddForm(true);
@@ -539,6 +564,19 @@ export default function AdminEventsPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider">Syarat & Ketentuan (S&K)</label>
+                    <textarea
+                      rows={4}
+                      value={termsAndConditions}
+                      onChange={e => setTermsAndConditions(e.target.value)}
+                      placeholder="Masukkan syarat & ketentuan, satu aturan per baris...&#10;Contoh:&#10;Closing unit dihitung dari Approved Commission Claim selama periode event.&#10;Semua tipe properti berlaku."
+                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none resize-none"
+                      style={{ borderColor: T.border }}
+                    />
+                    <p className="text-[10px] text-muted-foreground mt-0.5">Satu baris untuk setiap aturan/syarat. Kosongkan textarea ini jika event tidak menggunakan syarat & ketentuan.</p>
                   </div>
 
                   {/* Banner preview */}
