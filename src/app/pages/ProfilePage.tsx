@@ -436,6 +436,38 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     return () => { alive = false; };
   }, [profileCard.photo]);
 
+  const [inlinedBadges, setInlinedBadges] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    const inlineBadges = async () => {
+      const urls = await Promise.all(
+        featured.slice(0, 3).map(async (badgeName) => {
+          const asset = BADGE_ASSETS[badgeName];
+          if (!asset) return "";
+          if (asset.startsWith("data:")) return asset;
+          try {
+            const r = await fetch(asset);
+            if (!r.ok) throw new Error();
+            const b = await r.blob();
+            return await new Promise<string>((res, rej) => {
+              const fr = new FileReader();
+              fr.onload = () => res(fr.result as string);
+              fr.onerror = rej;
+              fr.readAsDataURL(b);
+            });
+          } catch {
+            return asset;
+          }
+        })
+      );
+      if (alive) {
+        setInlinedBadges(urls);
+      }
+    };
+    inlineBadges();
+    return () => { alive = false; };
+  }, [featured]);
+
   const xpProgress = useMemo(() => {
     const totalXP = Number(profile?.total_xp || 0);
 
@@ -866,7 +898,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     } else {
       for (let idx = 0; idx < Math.min(featured.length, 3); idx++) {
         const badgeName = featured[idx];
-        const asset = BADGE_ASSETS[badgeName];
+        const asset = inlinedBadges[idx] || BADGE_ASSETS[badgeName];
         if (asset) {
           try {
             const badgeImg = await loadDataImage(asset);
@@ -1896,7 +1928,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                                     <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
                                   ) : (
                                     featured.slice(0, 3).map((badgeName, idx) => {
-                                      const asset = BADGE_ASSETS[badgeName];
+                                      const asset = inlinedBadges[idx] || BADGE_ASSETS[badgeName];
                                       if (!asset) return null;
                                       return (
                                         <img
