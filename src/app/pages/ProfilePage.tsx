@@ -12,6 +12,7 @@ import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
 import { eliteAgentBase64 } from "@/imports/elite-agent-base64";
 import * as htmlToImage from "html-to-image";
+import lotLogo from "@/imports/LOT_PROPERTY_logo_white_text.png";
 import HofAwardLaurel from "../components/HofAwardLaurel";
 import HofFallingStars from "../components/HofFallingStars";
 import EllipsisTooltip from "../components/EllipsisTooltip";
@@ -1440,11 +1441,9 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                         <div className="absolute bottom-2 right-2 w-3 h-3 border-b border-r border-[#E8A500] opacity-60" />
 
                         {/* Top Bar inside card */}
-                        <div className="flex justify-between items-center z-10 border-b border-white/10 pb-2">
+                        <div className="flex justify-between items-center z-10 border-b border-white/10 pb-1.5">
                           <div>
-                            <p className="text-[7.5px] font-black tracking-widest text-[#E8A500]" style={{ fontFamily: "var(--font-display)" }}>
-                              {L.title}
-                            </p>
+                            <img src={lotLogo} alt="LOT Property" className="h-[14px] object-contain opacity-90" />
                           </div>
                           <div className="flex items-center gap-1">
                             <span className="text-[7.5px] font-black text-zinc-400 tracking-wider uppercase">
@@ -1459,7 +1458,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                           {/* Left: Stats */}
                           <div className="flex-1 space-y-3.5 text-left">
                             <div>
-                              <h4 className="font-extrabold text-[19px] leading-tight text-white tracking-wide font-display">
+                              <h4 className="font-extrabold text-[16.5px] leading-tight text-white tracking-wide font-display">
                                 {profileCard.name}
                               </h4>
                               <p className="text-[9px] text-[#C8922A] uppercase font-black mt-0.5 tracking-wider">
@@ -1469,35 +1468,42 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                             </div>
 
                             {/* Smaller stats: LEVEL AGEN, TOTAL LISTING, TOTAL PROSPEK */}
-                            <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2">
-                              <div className="flex-1 text-center">
-                                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.levelLabel}</p>
-                                <p className="font-black text-[13px] text-[#E8A500] leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                            <div className="flex items-center gap-1.5 pt-1.5 mt-1.5 border-t border-white/10">
+                              <div className="flex-1 flex flex-col items-center justify-center py-1 rounded-[10px] border border-[#E8A500]/20" style={{ background: "linear-gradient(135deg, rgba(232,165,0,0.12), rgba(0,0,0,0.5))", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
+                                <TrendingUp size={10} className="text-[#E8A500] mb-0.5" />
+                                <p className="font-black text-[13px] text-[#E8A500] leading-none drop-shadow-md" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                                   {profileCard.level}
                                 </p>
-                              </div>
-                              <div className="w-[1px] h-4 bg-white/10" />
-                              <div className="flex-1 text-center">
-                                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.listings}</p>
-                                <p className="font-black text-[13px] text-[#E8A500] leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                                  {profileCard.totalListings}
+                                <p className="text-[6px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5 leading-none">
+                                  {L.levelLabel}
                                 </p>
                               </div>
-                              <div className="w-[1px] h-4 bg-white/10" />
-                              <div className="flex-1 text-center">
-                                <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none">{L.prospects}</p>
-                                <p className="font-black text-[13px] text-[#E8A500] leading-none mt-1" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                              <div className="flex-1 flex flex-col items-center justify-center py-1 rounded-[10px] border border-[#E8A500]/20" style={{ background: "linear-gradient(135deg, rgba(232,165,0,0.12), rgba(0,0,0,0.5))", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
+                                <Building2 size={10} className="text-[#E8A500] mb-0.5" />
+                                <p className="font-black text-[13px] text-[#E8A500] leading-none drop-shadow-md" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                  {profileCard.totalListings}
+                                </p>
+                                <p className="text-[6px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5 leading-none">
+                                  {L.listings}
+                                </p>
+                              </div>
+                              <div className="flex-1 flex flex-col items-center justify-center py-1 rounded-[10px] border border-[#E8A500]/20" style={{ background: "linear-gradient(135deg, rgba(232,165,0,0.12), rgba(0,0,0,0.5))", boxShadow: "0 4px 12px rgba(0,0,0,0.5)" }}>
+                                <Users size={10} className="text-[#E8A500] mb-0.5" />
+                                <p className="font-black text-[13px] text-[#E8A500] leading-none drop-shadow-md" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                                   {profileCard.totalProspects}
+                                </p>
+                                <p className="text-[6px] font-bold text-zinc-400 uppercase tracking-wider mt-0.5 leading-none">
+                                  {L.prospects}
                                 </p>
                               </div>
                             </div>
 
                             {/* Featured Badges & HOF Highlights */}
-                            <div className="flex items-center justify-between pt-2 border-t border-white/10 mt-2 gap-4">
+                            <div className="flex items-center justify-between pt-1.5 border-t border-white/10 mt-1.5 gap-3">
                               {/* Column 1: Lencana Utama */}
                               <div className="flex-1 text-left">
                                 <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.featuredBadges}</p>
-                                <div className="flex gap-2.5">
+                                <div className="flex gap-2">
                                   {featured.length === 0 ? (
                                     <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
                                   ) : (
@@ -1509,7 +1515,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                                           key={idx}
                                           src={asset}
                                           alt={badgeName}
-                                          className="w-[34px] h-[34px] object-contain"
+                                          className="w-[28px] h-[28px] object-contain"
                                           title={badgeName}
                                         />
                                       );
@@ -1521,16 +1527,16 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                               {/* Column 2: Hall of Fame */}
                               <div className="flex-1 text-left">
                                 <p className="text-[8px] font-black text-zinc-400 uppercase tracking-wide leading-none mb-1.5">{L.hofTitle}</p>
-                                <div className="flex gap-2.5 items-center">
+                                <div className="flex gap-2 items-center">
                                   {hofHistory.length === 0 ? (
                                     <span className="text-[8px] text-zinc-500 font-semibold italic leading-none">None</span>
                                   ) : (
                                     hofHistory.slice(0, 3).map((hof, idx) => {
                                       return (
-                                        <div key={idx} className="relative w-[44px] h-[42px] flex items-center justify-center" title={`${hof.cat} (${hof.period})`}>
-                                          <div className="w-[27px] h-[27px] rounded-full flex items-center justify-center z-10"
+                                        <div key={idx} className="relative w-[36px] h-[34px] flex items-center justify-center" title={`${hof.cat} (${hof.period})`}>
+                                          <div className="w-[24px] h-[24px] rounded-full flex items-center justify-center z-10"
                                             style={{ background: "#0B0805", border: "1.5px solid #E8A500", boxShadow: "0 0 8px rgba(232, 165, 0, 0.45)" }}>
-                                            <span className="text-[10px] font-black text-[#E8A500] leading-none" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                                            <span className="text-[9px] font-black text-[#E8A500] leading-none" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                                               {hof.rank}
                                             </span>
                                           </div>
