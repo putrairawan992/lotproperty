@@ -65,7 +65,7 @@ export default function AdminDashboard() {
       if (Array.isArray(commissionRows)) {
         setCommissions(commissionRows.map((c: any) => ({
           id: Number(c.id),
-          agent: String(c.agent?.name || "Unknown Agent"),
+          agent: String(c.agent?.name || c.submitter_name || "Unknown Agent"),
           property: String(c.property || "-"),
           amount: Number(c.amount || 0),
           xpEarned: Number(c.xp_earned || 0),

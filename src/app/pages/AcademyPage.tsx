@@ -249,19 +249,19 @@ export default function AcademyPage() {
         {!activeModule ? (
           <div>
             {/* Header */}
-            <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-              <div>
-                <h1 className="font-bold text-2xl" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>Academy</h1>
-                <p className="text-xs text-muted-foreground" style={{ color: T.text3 }}>Kembangkan karir Anda bersama LOT Property Academy</p>
+            <div className="flex items-center justify-between mb-5 gap-3">
+              <div className="min-w-0 flex-1">
+                <h1 className="font-bold text-2xl whitespace-nowrap" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>Academy</h1>
+                <p className="text-xs text-muted-foreground truncate" style={{ color: T.text3 }}>Kembangkan karir Anda bersama LOT Property Academy</p>
               </div>
-              <div className="flex items-center gap-2 text-xs px-3.5 py-2 rounded-full border" 
+              <div className="flex items-center gap-2 text-xs px-3.5 py-2 rounded-full border shrink-0 whitespace-nowrap" 
                 style={{ 
                   backgroundColor: isDark ? "rgba(200,146,42,0.12)" : "#FFFDF5", 
                   borderColor: "rgba(200,146,42,0.3)",
                   color: isDark ? "#FFD666" : "#A66D00",
                   fontWeight: 700 
                 }}>
-                <Award size={14} className="animate-bounce" /> {completedCount} Modul Selesai — +{totalXPEarned.toLocaleString()} XP
+                <Award size={14} className="animate-bounce shrink-0" /> {completedCount} Modul Selesai — +{totalXPEarned.toLocaleString()} XP
               </div>
             </div>
 
