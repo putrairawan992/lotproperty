@@ -781,9 +781,16 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.save();
     ctx.shadowColor = "rgba(232, 165, 0, 0.65)";
     ctx.shadowBlur = 35;
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "#E8A500";
-    drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
+    ctx.lineWidth = 10;
+    const goldFrame = ctx.createLinearGradient(0, 0, width, height);
+    goldFrame.addColorStop(0, "#F7E08B");
+    goldFrame.addColorStop(0.16, "#E8A500");
+    goldFrame.addColorStop(0.36, "#6B4A0E");
+    goldFrame.addColorStop(0.52, "#F4D06A");
+    goldFrame.addColorStop(0.72, "#8A5C10");
+    goldFrame.addColorStop(1, "#F7E08B");
+    ctx.strokeStyle = goldFrame;
+    drawRoundedRectPath(ctx, 5, 5, width - 10, height - 10, 44);
     ctx.stroke();
     ctx.restore();
 
@@ -849,7 +856,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.lineTo(960, statYTop);
     ctx.stroke();
 
-    const statBlockW = 296;
+    const statBlockW = 335;
     const stats = [
       { label: Lx.levelLabel.toUpperCase(), value: String(profileCard.level) },
       { label: Lx.listings.toUpperCase(), value: String(profileCard.totalListings) },
@@ -911,7 +918,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     }
 
     // Column 2: Hall of Fame Highlights
-    const hofX = 520;
+    const hofX = 600;
     ctx.fillStyle = "#8a8a8a";
     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
     ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 645);
@@ -930,58 +937,23 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
 
         const circleX = hofX + idx * (hofSize + hofGap) + hofSize / 2;
         const circleY = hofY + hofSize / 2;
-        const radius = hofSize / 2;
+        const radius = 45; // diameter 90px matching HTML card ratio
 
         ctx.save();
-        ctx.strokeStyle = "#E8A500";
-        ctx.lineWidth = 2.5;
+        ctx.shadowColor = "rgba(232, 165, 0, 0.45)";
+        ctx.shadowBlur = 12;
 
-        // Outer dotted circle
-        ctx.save();
-        ctx.setLineDash([6, 6]);
+        // Fill background
+        ctx.fillStyle = "#0B0805";
         ctx.beginPath();
         ctx.arc(circleX, circleY, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Stroke border
+        ctx.strokeStyle = "#E8A500";
+        ctx.lineWidth = 3.5;
         ctx.stroke();
         ctx.restore();
-
-        // Left Laurel Arch
-        ctx.beginPath();
-        ctx.arc(circleX, circleY, radius - 6, Math.PI * 0.15, Math.PI * 0.85);
-        ctx.stroke();
-
-        // Draw Left Leaves
-        ctx.lineWidth = 3;
-        const leavesLeft = [
-          { x1: -32, y1: 15, x2: -45, y2: 8 },
-          { x1: -37, y1: -10, x2: -50, y2: -15 },
-          { x1: -28, y1: -32, x2: -38, y2: -42 },
-          { x1: -10, y1: -45, x2: -15, y2: -58 }
-        ];
-        leavesLeft.forEach(l => {
-          ctx.beginPath();
-          ctx.moveTo(circleX + l.x1, circleY + l.y1);
-          ctx.lineTo(circleX + l.x2, circleY + l.y2);
-          ctx.stroke();
-        });
-
-        // Right Laurel Arch
-        ctx.beginPath();
-        ctx.arc(circleX, circleY, radius - 6, -Math.PI * 0.15, -Math.PI * 0.85, true);
-        ctx.stroke();
-
-        // Draw Right Leaves
-        const leavesRight = [
-          { x1: 32, y1: 15, x2: 45, y2: 8 },
-          { x1: 37, y1: -10, x2: 50, y2: -15 },
-          { x1: 28, y1: -32, x2: 38, y2: -42 },
-          { x1: 10, y1: -45, x2: 15, y2: -58 }
-        ];
-        leavesRight.forEach(l => {
-          ctx.beginPath();
-          ctx.moveTo(circleX + l.x1, circleY + l.y1);
-          ctx.lineTo(circleX + l.x2, circleY + l.y2);
-          ctx.stroke();
-        });
 
         // Draw Rank Text inside Circle
         ctx.fillStyle = "#E8A500";
@@ -989,17 +961,16 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         ctx.fillText(hof.rank, circleX, circleY);
-        ctx.restore();
       }
     }
 
     try {
       const proxyPhotoUrl = `${BASE_URL}/public/image-proxy?url=${encodeURIComponent(profileCard.photo)}`;
       const photo = await loadDataImage(proxyPhotoUrl);
-      const px = 1070;
+      const px = 1128;
       const py = 245;
-      const pw = 420;
-      const ph = 560;
+      const pw = 380;
+      const ph = 500;
 
       ctx.save();
       drawRoundedRectPath(ctx, px, py, pw, ph, 28);
@@ -1037,11 +1008,11 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       ctx.drawImage(tierImg, px + pw - tierSize + 24, py + ph - tierSize + 24, tierSize, tierSize);
     } catch {
       ctx.fillStyle = "#171717";
-      drawRoundedRectPath(ctx, 1070, 245, 420, 560, 28);
+      drawRoundedRectPath(ctx, 1128, 245, 380, 500, 28);
       ctx.fill();
       ctx.fillStyle = "#9ca3af";
       ctx.font = "700 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("Photo unavailable", 1154, 545);
+      ctx.fillText("Photo unavailable", 1128 + 100, 245 + 250);
     }
 
     ctx.strokeStyle = "rgba(255,255,255,0.12)";
@@ -1102,7 +1073,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     const canvas = await html2canvas(el, {
       scale,
       backgroundColor: null,
-      useCORS: true,
+      useCORS: false,
       logging: false,
       onclone: (clonedDoc) => {
         // Undo the responsive shrink so the capture is always full-size.
@@ -1131,7 +1102,6 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
         compatibilityCanvas = await buildScorecardCanvasFromDom();
       } catch (domErr) {
         console.error("DOM capture failed, using manual canvas fallback", domErr);
-        triggerError("Capture preview gagal — memakai mode kompatibilitas (hasil bisa beda dari preview). Cek console.");
         compatibilityCanvas = await buildCompatibilityCardCanvas();
       }
 
