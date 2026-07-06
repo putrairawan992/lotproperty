@@ -552,32 +552,33 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
     ctx.clip();
 
-    const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, "#4A2B0A");
-    bg.addColorStop(0.5, "#1F1203");
-    bg.addColorStop(1, "#0A0601");
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.save();
-    ctx.globalCompositeOperation = "screen";
-    ctx.globalAlpha = 0.65;
-
-    const glow1 = ctx.createRadialGradient(width * 0.8, height * 0.2, 0, width * 0.8, height * 0.2, width * 0.65);
-    glow1.addColorStop(0, "rgba(232, 165, 0, 0.60)");
-    glow1.addColorStop(1, "rgba(232, 165, 0, 0)");
-    ctx.fillStyle = glow1;
-    ctx.fillRect(0, 0, width, height);
-
-    const glow2 = ctx.createRadialGradient(width * 0.2, height * 0.8, 0, width * 0.2, height * 0.8, width * 0.5);
-    glow2.addColorStop(0, "rgba(249, 115, 22, 0.30)");
-    glow2.addColorStop(1, "rgba(249, 115, 22, 0)");
-    ctx.fillStyle = glow2;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.restore();
-
-    ctx.restore();
+     const bg = ctx.createLinearGradient(0, 0, width, height);
+     bg.addColorStop(0, "#5E3A0E");
+     bg.addColorStop(0.5, "#251705");
+     bg.addColorStop(1, "#0A0601");
+     ctx.fillStyle = bg;
+     ctx.fillRect(0, 0, width, height);
+ 
+     ctx.save();
+     ctx.globalAlpha = 0.85;
+ 
+     const glow1 = ctx.createRadialGradient(width * 0.8, height * 0.2, 0, width * 0.8, height * 0.2, width * 0.7);
+     glow1.addColorStop(0, "rgba(232, 165, 0, 0.70)");
+     glow1.addColorStop(0.5, "rgba(232, 165, 0, 0.25)");
+     glow1.addColorStop(1, "rgba(232, 165, 0, 0)");
+     ctx.fillStyle = glow1;
+     ctx.fillRect(0, 0, width, height);
+ 
+     const glow2 = ctx.createRadialGradient(width * 0.2, height * 0.8, 0, width * 0.2, height * 0.8, width * 0.6);
+     glow2.addColorStop(0, "rgba(249, 115, 22, 0.40)");
+     glow2.addColorStop(0.5, "rgba(249, 115, 22, 0.15)");
+     glow2.addColorStop(1, "rgba(249, 115, 22, 0)");
+     ctx.fillStyle = glow2;
+     ctx.fillRect(0, 0, width, height);
+ 
+     ctx.restore();
+ 
+     ctx.restore();
 
     // Corner brackets decoration (matching share modal)
     const bracketLen = 32;
@@ -656,87 +657,87 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.lineTo(leftX + 280, 300);
     ctx.stroke();
 
-    // Career commission intentionally omitted here to match the share modal (hidden there).
-    // Sections are spread vertically to fill the card height (aligns with the photo).
-
-    const statYTop = 440;
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(leftX, statYTop);
-    ctx.lineTo(960, statYTop);
-    ctx.stroke();
-
-    const statBlockW = 296;
-    const stats = [
-      { label: Lx.levelLabel.toUpperCase(), value: String(profileCard.level) },
-      { label: Lx.listings.toUpperCase(), value: String(profileCard.totalListings) },
-      { label: Lx.prospects.toUpperCase(), value: String(profileCard.totalProspects) },
-    ];
-
-    stats.forEach((s, i) => {
-      const x = leftX + i * statBlockW;
-      ctx.fillStyle = "#8a8a8a";
-      ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.label, x, 500);
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.value, x, 570);
-
-      if (i < stats.length - 1) {
-        ctx.strokeStyle = "rgba(255,255,255,0.12)";
-        ctx.beginPath();
-        ctx.moveTo(x + statBlockW - 18, 500);
-        ctx.lineTo(x + statBlockW - 18, 575);
-        ctx.stroke();
-      }
-    });
-
-    // Draw Divider for Badges & HOF section
-    const badgeHofDividerY = 680;
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.beginPath();
-    ctx.moveTo(leftX, badgeHofDividerY);
-    ctx.lineTo(960, badgeHofDividerY);
-    ctx.stroke();
-
-    // Column 1: Featured Badges
-    ctx.fillStyle = "#8a8a8a";
-    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 725);
-
-    const badgeSize = 120;
-    const badgeGap = 20;
-    const badgeY = 745;
-
-    if (featured.length === 0) {
-      ctx.fillStyle = "#5c5a61";
-      ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("None", leftX, badgeY + 45);
-    } else {
-      for (let idx = 0; idx < Math.min(featured.length, 3); idx++) {
-        const badgeName = featured[idx];
-        const asset = BADGE_ASSETS[badgeName];
-        if (asset) {
-          try {
-            const badgeImg = await loadDataImage(asset);
-            ctx.drawImage(badgeImg, leftX + idx * (badgeSize + badgeGap), badgeY, badgeSize, badgeSize);
-          } catch (e) {
-            console.error("Failed to load canvas badge image", e);
-          }
-        }
-      }
-    }
-
-    // Column 2: Hall of Fame Highlights
-    const hofX = 520;
-    ctx.fillStyle = "#8a8a8a";
-    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 725);
-
-    const hofSize = 120;
-    const hofGap = 20;
-    const hofY = 745;
+     // Career commission intentionally omitted here to match the share modal (hidden there).
+     // Sections are spread vertically to fill the card height (aligns with the photo).
+ 
+     const statYTop = 370;
+     ctx.strokeStyle = "rgba(255,255,255,0.12)";
+     ctx.lineWidth = 2;
+     ctx.beginPath();
+     ctx.moveTo(leftX, statYTop);
+     ctx.lineTo(960, statYTop);
+     ctx.stroke();
+ 
+     const statBlockW = 296;
+     const stats = [
+       { label: Lx.levelLabel.toUpperCase(), value: String(profileCard.level) },
+       { label: Lx.listings.toUpperCase(), value: String(profileCard.totalListings) },
+       { label: Lx.prospects.toUpperCase(), value: String(profileCard.totalProspects) },
+     ];
+ 
+     stats.forEach((s, i) => {
+       const x = leftX + i * statBlockW;
+       ctx.fillStyle = "#8a8a8a";
+       ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+       ctx.fillText(s.label, x, 430);
+       ctx.fillStyle = "#ffffff";
+       ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+       ctx.fillText(s.value, x, 500);
+ 
+       if (i < stats.length - 1) {
+         ctx.strokeStyle = "rgba(255,255,255,0.12)";
+         ctx.beginPath();
+         ctx.moveTo(x + statBlockW - 18, 430);
+         ctx.lineTo(x + statBlockW - 18, 505);
+         ctx.stroke();
+       }
+     });
+ 
+     // Draw Divider for Badges & HOF section
+     const badgeHofDividerY = 600;
+     ctx.strokeStyle = "rgba(255,255,255,0.12)";
+     ctx.beginPath();
+     ctx.moveTo(leftX, badgeHofDividerY);
+     ctx.lineTo(960, badgeHofDividerY);
+     ctx.stroke();
+ 
+     // Column 1: Featured Badges
+     ctx.fillStyle = "#8a8a8a";
+     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+     ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 645);
+ 
+     const badgeSize = 120;
+     const badgeGap = 20;
+     const badgeY = 665;
+ 
+     if (featured.length === 0) {
+       ctx.fillStyle = "#5c5a61";
+       ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+       ctx.fillText("None", leftX, badgeY + 45);
+     } else {
+       for (let idx = 0; idx < Math.min(featured.length, 3); idx++) {
+         const badgeName = featured[idx];
+         const asset = BADGE_ASSETS[badgeName];
+         if (asset) {
+           try {
+             const badgeImg = await loadDataImage(asset);
+             ctx.drawImage(badgeImg, leftX + idx * (badgeSize + badgeGap), badgeY, badgeSize, badgeSize);
+           } catch (e) {
+             console.error("Failed to load canvas badge image", e);
+           }
+         }
+       }
+     }
+ 
+     // Column 2: Hall of Fame Highlights
+     const hofX = 520;
+     ctx.fillStyle = "#8a8a8a";
+     ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
+     ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 645);
+ 
+     const hofSize = 120;
+     const hofGap = 20;
+     const hofY = 665;
 
     if (hofHistory.length === 0) {
       ctx.fillStyle = "#5c5a61";
