@@ -388,7 +388,7 @@ export default function AcademyPage() {
               </p>
 
               {activeModule.video_url ? (
-                <div ref={videoBoxRef} className="relative aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800">
+                <div ref={videoBoxRef} className="relative aspect-video rounded-xl overflow-hidden bg-black border border-zinc-800 md:w-[65%] md:mx-auto">
                   {activated ? (
                     <>
                       <div ref={playerHostRef} className="w-full h-full" />
