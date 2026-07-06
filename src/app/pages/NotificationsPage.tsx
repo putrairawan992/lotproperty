@@ -25,32 +25,43 @@ export default function NotificationsPage() {
   const [notifs, setNotifs] = useState<NotifItem[]>([]);
   const [checkouts, setCheckouts] = useState<any[]>([]);
 
+  const loadNotifs = async () => {
+    try {
+      const data = await api.notifications.getList();
+      if (Array.isArray(data)) {
+        setNotifs(data.map((n: any) => ({
+          id: Number(n.id),
+          type: n.category || "system",
+          title: n.title || "",
+          body: n.content || "",
+          time: formatTimeAgo(n.created_at),
+          unread: !n.is_read,
+          pinned: n.category === "system" && (n.title || "").toLowerCase().includes("reminder"),
+        })));
+      }
+    } catch {
+      // Keep empty list
+    }
+    try {
+      const co = await api.checkouts.getList();
+      if (Array.isArray(co)) setCheckouts(co);
+    } catch {
+      // Keep empty list
+    }
+  };
+
   useEffect(() => {
-    const loadNotifs = async () => {
-      try {
-        const data = await api.notifications.getList();
-        if (Array.isArray(data)) {
-          setNotifs(data.map((n: any) => ({
-            id: Number(n.id),
-            type: n.category || "system",
-            title: n.title || "",
-            body: n.content || "",
-            time: formatTimeAgo(n.created_at),
-            unread: !n.is_read,
-            pinned: n.category === "system" && (n.title || "").toLowerCase().includes("reminder"),
-          })));
-        }
-      } catch {
-        // Keep empty list
-      }
-      try {
-        const co = await api.checkouts.getList();
-        if (Array.isArray(co)) setCheckouts(co);
-      } catch {
-        // Keep empty list
-      }
-    };
     loadNotifs();
+  }, []);
+
+  // Poll while this page stays open so a reminder that becomes due (or any new
+  // notification) shows up without the user having to refresh or tab away —
+  // same 60s/visibility pattern as the bell badge in App.tsx.
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") loadNotifs();
+    }, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleMarkRead = async (id: number) => {
