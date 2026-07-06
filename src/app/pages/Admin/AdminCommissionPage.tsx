@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { Check, Clock, AlertCircle, X, Search, MessageSquare, ArrowRight, User, HelpCircle, CheckCircle2, XCircle, Square, CheckSquare, MinusSquare } from "lucide-react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import { Check, Clock, AlertCircle, X, Search, MessageSquare, ArrowRight, User, HelpCircle, CheckCircle2, XCircle, Square, CheckSquare, MinusSquare, MoreVertical } from "lucide-react";
 import Card from "../../components/Card";
 import { T } from "../../types";
 import { useTabQuery } from "../../routes";
@@ -77,6 +77,11 @@ export default function AdminCommissionPage() {
   const [updatingHelpId, setUpdatingHelpId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState("");
 
+  // Action Dropdown State
+  const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const loadData = async () => {
     setLoading(true);
     try {
@@ -112,6 +117,17 @@ export default function AdminCommissionPage() {
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpenDropdownId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
   const triggerToast = (msg: string) => {
@@ -461,7 +477,7 @@ export default function AdminCommissionPage() {
                   <thead>
                     <tr className="border-b text-xs font-semibold text-muted-foreground" style={{ borderColor: T.border }}>
                       {commissionSubTab === "Pending" && (
-                        <th className="text-center px-3 py-3.5 w-10">
+                        <th className="text-center px-3 py-3.5 w-10 sticky left-0 z-20 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]" style={{ backgroundColor: "var(--card)", borderColor: T.border }}>
                           <button onClick={toggleSelectAll} className="cursor-pointer" style={{ color: isAllSelected ? "#E8A500" : T.text3 }}>
                             {isAllSelected ? <CheckSquare size={16} /> : isPartialSelected ? <MinusSquare size={16} /> : <Square size={16} />}
                           </button>
@@ -472,7 +488,7 @@ export default function AdminCommissionPage() {
                       <th className="text-left px-5 py-3.5 whitespace-nowrap">JUMLAH KOMISI</th>
                       <th className="text-left px-5 py-3.5 whitespace-nowrap">XP REWARD</th>
                       <th className="text-left px-5 py-3.5 whitespace-nowrap">DIAJUKAN</th>
-                      <th className="text-right px-5 py-3.5 whitespace-nowrap">ACTION</th>
+                      <th className="text-right px-5 py-3.5 whitespace-nowrap sticky right-0 z-20 border-l shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.05)]" style={{ backgroundColor: "var(--card)", borderColor: T.border }}>ACTION</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: T.border }}>
@@ -481,15 +497,15 @@ export default function AdminCommissionPage() {
                       const avatar = AGENT_PHOTOS[initials];
                       const isChecked = selectedIds.has(c.id);
                       return (
-                        <tr key={c.id} className="hover:bg-muted/10 transition-colors">
+                        <tr key={c.id} className="hover:bg-muted/10 transition-colors group">
                           {commissionSubTab === "Pending" && (
-                            <td className="px-3 py-4 text-center">
+                            <td className="px-3 py-4 text-center sticky left-0 z-10 border-r shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]" style={{ backgroundColor: "var(--card)", borderColor: T.border }}>
                               <button onClick={() => toggleSelect(c.id)} className="cursor-pointer" style={{ color: isChecked ? "#E8A500" : T.text3 }}>
                                 {isChecked ? <CheckSquare size={16} /> : <Square size={16} />}
                               </button>
                             </td>
                           )}
-                          <td className="px-5 py-4">
+                          <td className="px-5 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-3 text-left">
                               {avatar ? (
                                 <img src={avatar} alt={c.agent} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />
@@ -499,31 +515,61 @@ export default function AdminCommissionPage() {
                                 </div>
                               )}
                               <div>
-                                <p className="font-semibold text-sm" style={{ color: T.text1 }}>{c.agent}</p>
+                                <p className="font-semibold text-sm whitespace-nowrap" style={{ color: T.text1 }}>{c.agent}</p>
                                 <span className="inline-block text-[10px] px-2 py-0.5 mt-0.5 rounded font-bold uppercase tracking-wider" style={{ backgroundColor: typeBg[c.type] || "var(--muted)", color: typeColor[c.type] || T.text3 }}>
                                   {c.type}
                                 </span>
                               </div>
                             </div>
                           </td>
-                          <td className="px-5 py-4 text-sm text-left" style={{ color: T.text2 }}>{c.property}</td>
-                          <td className="px-5 py-4 text-sm font-bold text-left text-[#E8A500]" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{formatIDR(c.amount)}</td>
-                          <td className="px-5 py-4 text-sm font-semibold text-left text-[#C8922A]">{c.xp}</td>
-                          <td className="px-5 py-4 text-xs text-left" style={{ color: T.text3 }}>{c.submitted}</td>
-                          <td className="px-5 py-4 text-right">
-                            <div className="flex gap-2 justify-end items-center">
-                              <button onClick={() => setDetailClaim(c)} className="px-3 py-1.5 rounded-lg text-xs font-bold border cursor-pointer hover:bg-muted/40 flex items-center gap-1" style={{ borderColor: T.border, color: T.text2 }}>
-                                <HelpCircle size={13} /> Detail
-                              </button>
-                              {commissionSubTab === "Pending" ? (
-                                <>
-                                  <button onClick={() => setRejectId(c.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold border border-red-500 text-red-500 cursor-pointer hover:bg-red-500/10">Tolak</button>
-                                  <button onClick={() => approveCommission(c.id)} className="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700">Approve</button>
-                                </>
-                              ) : (
-                                <span className="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wide" style={{ backgroundColor: commissionSubTab === "Approved" ? "rgba(22, 163, 74, 0.1)" : "rgba(220, 38, 38, 0.1)", color: commissionSubTab === "Approved" ? "#16A34A" : "#DC2626" }}>
+                          <td className="px-5 py-4 text-sm text-left whitespace-nowrap" style={{ color: T.text2 }}>{c.property}</td>
+                          <td className="px-5 py-4 text-sm font-bold text-left text-[#E8A500] whitespace-nowrap" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{formatIDR(c.amount)}</td>
+                          <td className="px-5 py-4 text-sm font-semibold text-left text-[#C8922A] whitespace-nowrap">{c.xp}</td>
+                          <td className="px-5 py-4 text-xs text-left whitespace-nowrap" style={{ color: T.text3 }}>{c.submitted}</td>
+                          <td className="px-5 py-4 text-right whitespace-nowrap sticky right-0 border-l shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.05)]" style={{ backgroundColor: "var(--card)", borderColor: T.border, zIndex: openDropdownId === c.id ? 30 : 10 }}>
+                            <div className="flex gap-2.5 justify-end items-center">
+                              {commissionSubTab !== "Pending" && (
+                                <span className="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wide flex-shrink-0" style={{ backgroundColor: commissionSubTab === "Approved" ? "rgba(22, 163, 74, 0.1)" : "rgba(220, 38, 38, 0.1)", color: commissionSubTab === "Approved" ? "#16A34A" : "#DC2626" }}>
                                   {commissionSubTab}
                                 </span>
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  const btn = e.currentTarget;
+                                  const rect = btn.getBoundingClientRect();
+                                  const spaceBelow = window.innerHeight - rect.bottom;
+                                  setDropdownDir(spaceBelow < 200 ? "up" : "down");
+                                  setOpenDropdownId(openDropdownId === c.id ? null : c.id);
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer flex-shrink-0"
+                              >
+                                <MoreVertical size={16} style={{ color: T.text3 }} />
+                              </button>
+                              {openDropdownId === c.id && (
+                                <div ref={dropdownRef}
+                                  className={`absolute right-5 z-50 w-36 rounded-xl border shadow-xl py-1 ${dropdownDir === "up" ? "bottom-full mb-1" : "top-full mt-1"}`}
+                                  style={{ backgroundColor: "var(--card)", borderColor: T.border }}
+                                >
+                                  <button onClick={() => { setDetailClaim(c); setOpenDropdownId(null); }}
+                                    className="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-muted flex items-center gap-2 transition-colors cursor-pointer"
+                                    style={{ color: T.text1 }}>
+                                    <HelpCircle size={13} /> Detail
+                                  </button>
+                                  {commissionSubTab === "Pending" && (
+                                    <>
+                                      <button onClick={() => { approveCommission(c.id); setOpenDropdownId(null); }}
+                                        className="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-muted flex items-center gap-2 transition-colors cursor-pointer"
+                                        style={{ color: "#16A34A" }}>
+                                        <Check size={13} /> Approve
+                                      </button>
+                                      <button onClick={() => { setRejectId(c.id); setOpenDropdownId(null); }}
+                                        className="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-muted flex items-center gap-2 transition-colors cursor-pointer"
+                                        style={{ color: "#DC2626" }}>
+                                        <X size={13} /> Tolak
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </td>

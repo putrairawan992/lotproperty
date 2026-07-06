@@ -11,7 +11,7 @@ import { T, Rarity, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG } from "../badgeAssets";
 import { useLocation } from "../routes";
 import { eliteAgentBase64 } from "@/imports/elite-agent-base64";
-import html2canvas from "html2canvas-pro";
+import * as htmlToImage from "html-to-image";
 import HofAwardLaurel from "../components/HofAwardLaurel";
 import HofFallingStars from "../components/HofFallingStars";
 import EllipsisTooltip from "../components/EllipsisTooltip";
@@ -325,7 +325,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
   // Scale the fixed-design scorecard (440px) down to fit narrow screens so its
   // content never clips/overlaps. Keeps proportions across phone/tablet/desktop.
   const SCORECARD_W = 440;
-  const SCORECARD_H = SCORECARD_W / 1.58;
+  const SCORECARD_H = SCORECARD_W / 1.75;
   const cardScaleWrapRef = useRef<HTMLDivElement>(null);
   const [cardScale, setCardScale] = useState(1);
   useEffect(() => {
@@ -680,436 +680,40 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
     ctx.restore();
   };
 
-  const buildCompatibilityCardCanvas = async () => {
-    const width = 1580;
-    const height = 1000;
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("Canvas 2D context unavailable");
-    const Lx = SHARE_LANG[activeLang];
-    ctx.save();
-    drawRoundedRectPath(ctx, 6, 6, width - 12, height - 12, 44);
-    ctx.clip();
 
-    const bg = ctx.createLinearGradient(0, 0, width, height);
-    bg.addColorStop(0, "#1C1408");
-    bg.addColorStop(0.45, "#0B0805");
-    bg.addColorStop(1, "#000000");
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, width, height);
 
-    // ponytail: keep the interior BLACK — restrained warm glow at top/edges only.
-    // Bump these alphas back up if you want the older brown-gold wash.
-    ctx.save();
-    const glow1 = ctx.createRadialGradient(width * 0.5, height * -0.05, 0, width * 0.5, height * -0.05, width * 0.6);
-    glow1.addColorStop(0, "rgba(232, 165, 0, 0.30)");
-    glow1.addColorStop(0.5, "rgba(232, 165, 0, 0.10)");
-    glow1.addColorStop(1, "rgba(232, 165, 0, 0)");
-    ctx.fillStyle = glow1;
-    ctx.fillRect(0, 0, width, height);
-
-    const glow2 = ctx.createRadialGradient(width * 0.85, height * 0.22, 0, width * 0.85, height * 0.22, width * 0.42);
-    glow2.addColorStop(0, "rgba(232, 165, 0, 0.20)");
-    glow2.addColorStop(0.5, "rgba(232, 165, 0, 0.07)");
-    glow2.addColorStop(1, "rgba(232, 165, 0, 0)");
-    ctx.fillStyle = glow2;
-    ctx.fillRect(0, 0, width, height);
-
-    ctx.restore();
-
-    // Draw Diagonal Rays on Canvas
-    ctx.save();
-    ctx.globalAlpha = 0.13;
-    const rayGrad = ctx.createLinearGradient(0, 0, width, height);
-    rayGrad.addColorStop(0, "rgba(0,0,0,0)");
-    rayGrad.addColorStop(0.4, "rgba(232, 165, 0, 0.4)");
-    rayGrad.addColorStop(0.6, "rgba(232, 165, 0, 0.4)");
-    rayGrad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = rayGrad;
-    ctx.translate(width / 2, height / 2);
-    ctx.rotate(30 * Math.PI / 180);
-    ctx.fillRect(-width, -200, width * 2, 400);
-    ctx.restore();
-
-    // Draw Gold Particle Grid on Canvas
-    ctx.save();
-    ctx.fillStyle = "rgba(232, 165, 0, 0.09)";
-    const dotSpacing = 32;
-    for (let px = 30; px < width - 30; px += dotSpacing) {
-      for (let py = 30; py < height - 30; py += dotSpacing) {
-        ctx.beginPath();
-        ctx.arc(px, py, 1.2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-    ctx.restore();
-
-    ctx.restore();
-
-    // Corner brackets decoration (matching share modal)
-    const bracketLen = 32;
-    const bracketOffset = 26;
-    ctx.strokeStyle = "#E8A500";
-    ctx.lineWidth = 3;
-    // Top-left
-    ctx.beginPath();
-    ctx.moveTo(bracketOffset, bracketOffset + bracketLen);
-    ctx.lineTo(bracketOffset, bracketOffset);
-    ctx.lineTo(bracketOffset + bracketLen, bracketOffset);
-    ctx.stroke();
-    // Top-right
-    ctx.beginPath();
-    ctx.moveTo(width - bracketOffset - bracketLen, bracketOffset);
-    ctx.lineTo(width - bracketOffset, bracketOffset);
-    ctx.lineTo(width - bracketOffset, bracketOffset + bracketLen);
-    ctx.stroke();
-    // Bottom-left
-    ctx.beginPath();
-    ctx.moveTo(bracketOffset, height - bracketOffset - bracketLen);
-    ctx.lineTo(bracketOffset, height - bracketOffset);
-    ctx.lineTo(bracketOffset + bracketLen, height - bracketOffset);
-    ctx.stroke();
-    // Bottom-right
-    ctx.beginPath();
-    ctx.moveTo(width - bracketOffset - bracketLen, height - bracketOffset);
-    ctx.lineTo(width - bracketOffset, height - bracketOffset);
-    ctx.lineTo(width - bracketOffset, height - bracketOffset - bracketLen);
-    ctx.stroke();
-
-    ctx.save();
-    ctx.shadowColor = "rgba(232, 165, 0, 0.65)";
-    ctx.shadowBlur = 35;
-    ctx.lineWidth = 10;
-    const goldFrame = ctx.createLinearGradient(0, 0, width, height);
-    goldFrame.addColorStop(0, "#F7E08B");
-    goldFrame.addColorStop(0.16, "#E8A500");
-    goldFrame.addColorStop(0.36, "#6B4A0E");
-    goldFrame.addColorStop(0.52, "#F4D06A");
-    goldFrame.addColorStop(0.72, "#8A5C10");
-    goldFrame.addColorStop(1, "#F7E08B");
-    ctx.strokeStyle = goldFrame;
-    drawRoundedRectPath(ctx, 5, 5, width - 10, height - 10, 44);
-    ctx.stroke();
-    ctx.restore();
-
-    // Inner decorative card border (matching share modal card-in-card effect)
-    ctx.lineWidth = 1.5;
-    ctx.strokeStyle = "rgba(232, 165, 0, 0.45)";
-    drawRoundedRectPath(ctx, 30, 30, width - 60, height - 60, 34);
-    ctx.stroke();
-
-    ctx.fillStyle = "#E8A500";
-    ctx.font = "900 36px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.title, 62, 92);
-
-    ctx.fillStyle = "#8a8a8a";
-    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText("OFFICIAL AGENT", width - 250, 92);
-
-    // Draw gold shield next to OFFICIAL AGENT
-    ctx.fillStyle = "#E8A500";
-    const sx = width - 75;
-    const sy = 76;
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.lineTo(sx + 8, sy - 4);
-    ctx.lineTo(sx + 16, sy);
-    ctx.lineTo(sx + 16, sy + 10);
-    ctx.quadraticCurveTo(sx + 8, sy + 18, sx, sy + 10);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.strokeStyle = "rgba(255,255,255,0.11)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(52, 122);
-    ctx.lineTo(width - 52, 122);
-    ctx.stroke();
-
-    const leftX = 72;
-    ctx.fillStyle = "#FFFFFF";
-    ctx.font = "900 64px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(profileCard.name, leftX, 230);
-
-    ctx.fillStyle = "#C8922A";
-    ctx.font = "900 32px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(profileCard.tier.toUpperCase(), leftX, 280);
-
-    // Gold accent line under name (matching share modal style)
-    ctx.strokeStyle = "rgba(200, 146, 42, 0.4)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(leftX, 300);
-    ctx.lineTo(leftX + 280, 300);
-    ctx.stroke();
-
-    // Career commission intentionally omitted here to match the share modal (hidden there).
-    // Sections are spread vertically to fill the card height (aligns with the photo).
-
-    const statYTop = 370;
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(leftX, statYTop);
-    ctx.lineTo(960, statYTop);
-    ctx.stroke();
-
-    const statBlockW = 335;
-    const stats = [
-      { label: Lx.levelLabel.toUpperCase(), value: String(profileCard.level) },
-      { label: Lx.listings.toUpperCase(), value: String(profileCard.totalListings) },
-      { label: Lx.prospects.toUpperCase(), value: String(profileCard.totalProspects) },
-    ];
-
-    stats.forEach((s, i) => {
-      const x = leftX + i * statBlockW;
-      ctx.fillStyle = "#8a8a8a";
-      ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.label, x, 430);
-      ctx.fillStyle = "#E8A500";
-      ctx.font = "900 60px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText(s.value, x, 500);
-
-      if (i < stats.length - 1) {
-        ctx.strokeStyle = "rgba(255,255,255,0.12)";
-        ctx.beginPath();
-        ctx.moveTo(x + statBlockW - 18, 430);
-        ctx.lineTo(x + statBlockW - 18, 505);
-        ctx.stroke();
-      }
-    });
-
-    // Draw Divider for Badges & HOF section
-    const badgeHofDividerY = 600;
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.beginPath();
-    ctx.moveTo(leftX, badgeHofDividerY);
-    ctx.lineTo(960, badgeHofDividerY);
-    ctx.stroke();
-
-    // Column 1: Featured Badges
-    ctx.fillStyle = "#8a8a8a";
-    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.featuredBadges.toUpperCase(), leftX, 645);
-
-    const badgeSize = 120;
-    const badgeGap = 20;
-    const badgeY = 665;
-
-    if (featured.length === 0) {
-      ctx.fillStyle = "#5c5a61";
-      ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("None", leftX, badgeY + 45);
-    } else {
-      for (let idx = 0; idx < Math.min(featured.length, 3); idx++) {
-        const badgeName = featured[idx];
-        const asset = inlinedBadges[idx] || BADGE_ASSETS[badgeName];
-        if (asset) {
-          try {
-            const badgeImg = await loadDataImage(asset);
-            ctx.drawImage(badgeImg, leftX + idx * (badgeSize + badgeGap), badgeY, badgeSize, badgeSize);
-          } catch (e) {
-            console.error("Failed to load canvas badge image", e);
-          }
-        }
-      }
-    }
-
-    // Column 2: Hall of Fame Highlights
-    const hofX = 600;
-    ctx.fillStyle = "#8a8a8a";
-    ctx.font = "700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-    ctx.fillText(Lx.hofTitle.toUpperCase(), hofX, 645);
-
-    const hofSize = 120;
-    const hofGap = 20;
-    const hofY = 665;
-
-    if (hofHistory.length === 0) {
-      ctx.fillStyle = "#5c5a61";
-      ctx.font = "italic 700 22px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("None", hofX, hofY + 45);
-    } else {
-      for (let idx = 0; idx < Math.min(hofHistory.length, 3); idx++) {
-        const hof = hofHistory[idx];
-
-        const circleX = hofX + idx * (hofSize + hofGap) + hofSize / 2;
-        const circleY = hofY + hofSize / 2;
-        const radius = 45; // diameter 90px matching HTML card ratio
-
-        ctx.save();
-        ctx.shadowColor = "rgba(232, 165, 0, 0.45)";
-        ctx.shadowBlur = 12;
-
-        // Fill background
-        ctx.fillStyle = "#0B0805";
-        ctx.beginPath();
-        ctx.arc(circleX, circleY, radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Stroke border
-        ctx.strokeStyle = "#E8A500";
-        ctx.lineWidth = 3.5;
-        ctx.stroke();
-        ctx.restore();
-
-        // Draw Rank Text inside Circle
-        ctx.fillStyle = "#E8A500";
-        ctx.font = "900 38px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(hof.rank, circleX, circleY);
-      }
-    }
-
-    try {
-      const proxyPhotoUrl = `${BASE_URL}/public/image-proxy?url=${encodeURIComponent(profileCard.photo)}`;
-      const photo = await loadDataImage(proxyPhotoUrl);
-      const px = 1128;
-      const py = 245;
-      const pw = 380;
-      const ph = 500;
-
-      ctx.save();
-      drawRoundedRectPath(ctx, px, py, pw, ph, 28);
-      ctx.clip();
-      ctx.fillStyle = "#09090b"; // match bg-zinc-950/bg-black
-      ctx.fillRect(px, py, pw, ph);
-
-      const imgWidth = photo.naturalWidth || photo.width || pw;
-      const imgHeight = photo.naturalHeight || photo.height || ph;
-      const ratio = Math.min(pw / imgWidth, ph / imgHeight);
-      const cx = px + (pw - imgWidth * ratio) / 2;
-      const cy = py + (ph - imgHeight * ratio) / 2;
-      const cw = imgWidth * ratio;
-      const ch = imgHeight * ratio;
-      ctx.drawImage(photo, cx, cy, cw, ch);
-
-      const photoShade = ctx.createLinearGradient(0, py + ph * 0.55, 0, py + ph);
-      photoShade.addColorStop(0, "rgba(0,0,0,0)");
-      photoShade.addColorStop(1, "rgba(0,0,0,0.65)");
-      ctx.fillStyle = photoShade;
-      ctx.fillRect(px, py, pw, ph);
-      ctx.restore();
-
-      ctx.save();
-      ctx.shadowColor = "rgba(232, 165, 0, 0.5)";
-      ctx.shadowBlur = 20;
-      ctx.lineWidth = 3.5;
-      ctx.strokeStyle = "#E8A500";
-      drawRoundedRectPath(ctx, px, py, pw, ph, 28);
-      ctx.stroke();
-      ctx.restore();
-
-      const tierImg = await loadDataImage(eliteAgentBase64);
-      const tierSize = 160;
-      ctx.drawImage(tierImg, px + pw - tierSize + 24, py + ph - tierSize + 24, tierSize, tierSize);
-    } catch {
-      ctx.fillStyle = "#171717";
-      drawRoundedRectPath(ctx, 1128, 245, 380, 500, 28);
-      ctx.fill();
-      ctx.fillStyle = "#9ca3af";
-      ctx.font = "700 24px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-      ctx.fillText("Photo unavailable", 1128 + 100, 245 + 250);
-    }
-
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(52, height - 72);
-    ctx.lineTo(width - 52, height - 72);
-    ctx.stroke();
-
-    ctx.fillStyle = "#8a8a8a";
-    ctx.font = "700 18px 'Rajdhani', 'Segoe UI', Arial, sans-serif";
-
-    // Draw home icon
-    ctx.fillStyle = "#E8A500";
-    const hx = 60;
-    const hy = height - 58;
-    ctx.beginPath();
-    ctx.moveTo(hx, hy + 18);
-    ctx.lineTo(hx, hy + 8);
-    ctx.lineTo(hx + 8, hy);
-    ctx.lineTo(hx + 16, hy + 8);
-    ctx.lineTo(hx + 16, hy + 18);
-    ctx.closePath();
-    ctx.fill();
-
-    ctx.fillStyle = "#8a8a8a";
-    ctx.fillText("LOT PROPERTY", 84, height - 40);
-
-    ctx.fillText("CERTIFIED DIGITAL SCOREBOARD", width - 370, height - 40);
-
-    // Draw checkmark icon next to CERTIFIED DIGITAL SCOREBOARD
-    ctx.strokeStyle = "#E8A500";
-    ctx.lineWidth = 2.5;
-    const cx = width - 55;
-    const cy = height - 48;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 10, 0, Math.PI * 2);
-    ctx.stroke();
-
-    ctx.beginPath();
-    ctx.moveTo(cx - 5, cy);
-    ctx.lineTo(cx - 1, cy + 4);
-    ctx.lineTo(cx + 5, cy - 4);
-    ctx.stroke();
-
-    return canvas;
-  };
-
-  // Rasterize the exact scorecard DOM node so the downloaded PNG matches the modal
-  // preview 1:1 (position + spacing). The manual canvas below is only a fallback.
-  const buildScorecardCanvasFromDom = async (): Promise<HTMLCanvasElement> => {
-    const el = document.getElementById("profile-scorecard-card");
-    if (!el) throw new Error("Scorecard element not found");
-    // Get the photo as a data URL NOW; never let a cross-origin URL reach the
-    // capture (Chrome's image cache can serve a non-CORS entry and taint it).
-    const photoData = (cardPhotoSrc.startsWith("data:") ? cardPhotoSrc : null) || (await inlineCardPhoto()) || FALLBACK_PHOTO;
-    const scale = 1580 / (el.offsetWidth || SCORECARD_W); // export at ~1580px wide
-    const canvas = await html2canvas(el, {
-      scale,
-      backgroundColor: null,
-      useCORS: false,
-      logging: false,
-      onclone: (clonedDoc) => {
-        // Undo the responsive shrink so the capture is always full-size.
-        const scaleWrap = clonedDoc.getElementById("profile-scorecard-scale");
-        if (scaleWrap) scaleWrap.style.transform = "none";
-        const photoImg = clonedDoc.querySelector<HTMLImageElement>("img[data-scorecard-photo]");
-        if (photoImg) photoImg.src = photoData;
-      },
-    });
-    // Taint self-check: throws if anything cross-origin slipped in, which
-    // routes the download to the compatibility fallback instead of crashing.
-    canvas.getContext("2d")?.getImageData(0, 0, 1, 1);
-    return canvas;
-  };
-
+  // Capture the exact DOM node at 1050x600 (standard business card proportion)
   const handleDownloadCard = async () => {
     setIsDownloading(true);
     triggerToast("Menyiapkan unduhan gambar kartu profil...");
 
     try {
-      // Small timeout to allow render states to settle
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      let compatibilityCanvas: HTMLCanvasElement;
+      const el = document.getElementById("profile-scorecard-card");
+      if (!el) throw new Error("Scorecard element not found");
+
+      // Replace image SRC temporarily to ensure no CORS issues during capture
+      const photoData = (cardPhotoSrc.startsWith("data:") ? cardPhotoSrc : null) || (await inlineCardPhoto()) || FALLBACK_PHOTO;
+      const photoImg = el.querySelector<HTMLImageElement>("img[data-scorecard-photo]");
+      const originalSrc = photoImg?.src;
+      if (photoImg) photoImg.src = photoData;
+
+      let blob: Blob | null = null;
       try {
-        compatibilityCanvas = await buildScorecardCanvasFromDom();
-      } catch (domErr) {
-        console.error("DOM capture failed, using manual canvas fallback", domErr);
-        compatibilityCanvas = await buildCompatibilityCardCanvas();
+        blob = await htmlToImage.toBlob(el, {
+          pixelRatio: 1050 / (el.offsetWidth || SCORECARD_W),
+          cacheBust: true,
+          style: {
+            transform: "none",
+            margin: "0"
+          }
+        });
+      } finally {
+        if (photoImg && originalSrc) photoImg.src = originalSrc;
       }
 
-      const blob = await new Promise<Blob | null>((resolve) =>
-        compatibilityCanvas.toBlob(resolve, "image/png", 1)
-      );
-
-      if (!blob) throw new Error("Canvas export returned empty blob");
+      if (!blob) throw new Error("Gagal generate gambar");
 
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -1801,7 +1405,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                     <div id="profile-scorecard-card" className="rounded-[22px] relative p-[5px] share-scorecard-card"
                       style={{
                         width: SCORECARD_W,
-                        aspectRatio: "1.58 / 1",
+                        aspectRatio: "1.75 / 1",
                         background: "linear-gradient(135deg, #F7E08B 0%, #E8A500 16%, #6B4A0E 36%, #F4D06A 52%, #8A5C10 72%, #F7E08B 100%)",
                         boxShadow: "0 0 35px rgba(232, 165, 0, 0.35), 0 15px 35px rgba(0,0,0,0.6)",
                       }}>
