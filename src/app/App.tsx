@@ -120,6 +120,17 @@ export default function App() {
     checkAuth();
   }, []);
 
+  // Light client-side polling so the bell badge / reminders feel "live" without
+  // a backend cron: re-check every 60s while the tab is visible and the user
+  // is logged in. Pauses when the tab is hidden to avoid wasted requests.
+  useEffect(() => {
+    if (!loggedIn || isGuest) return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === "visible") fetchUnreadCount();
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [loggedIn, isGuest]);
+
   const prevLevelRef = useRef<number | undefined>(undefined);
 
   // Auto detect Level Up

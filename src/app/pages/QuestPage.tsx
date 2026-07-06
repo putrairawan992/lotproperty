@@ -291,6 +291,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [promoUrl, setPromoUrl] = useState("");
   const [weeklyRank, setWeeklyRank] = useState("#-");
+  const [lastApprovedCommission, setLastApprovedCommission] = useState<{ amount: number; verifiedAt: string } | null>(null);
 
   const activeAgent = isGuest ? {
     name: "Ronald Richy",
@@ -359,11 +360,16 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     }
     try {
       setApiLoading(true);
-      const [statusRes, academyRes, weeklyRes] = await Promise.all([
+      const [statusRes, academyRes, weeklyRes, lastCommRes] = await Promise.all([
         api.quests.getStatus(),
         api.academy.getModules().catch(() => []),
-        api.dashboard.getWeeklyLeaderboard().catch(() => [])
+        api.dashboard.getWeeklyLeaderboard().catch(() => []),
+        api.commissions.getMyLastApproved().catch(() => null)
       ]);
+
+      if (lastCommRes?.has_claim) {
+        setLastApprovedCommission({ amount: Number(lastCommRes.amount || 0), verifiedAt: lastCommRes.verified_at || "" });
+      }
       applyDailyQuestStatus(statusRes?.daily_quest || {});
 
       setWeeklyQuests(prev => prev.map(item => {
@@ -633,9 +639,15 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               <p className="text-xs mt-1" style={{ color: T.text3 }}>
                 Submit bukti transaksi closing untuk verifikasi komisi & bonus XP
               </p>
-              <p className="text-[10px] mt-1 font-semibold" style={{ color: "#D97706" }}>
-                Terakhir disetujui: Rp 12.500.000 · 14 Jun 2025
-              </p>
+              {lastApprovedCommission && (
+                <p className="text-[10px] mt-1 font-semibold" style={{ color: "#D97706" }}>
+                  Terakhir disetujui: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(lastApprovedCommission.amount)}
+                  {" · "}
+                  {lastApprovedCommission.verifiedAt
+                    ? new Date(lastApprovedCommission.verifiedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+                    : "-"}
+                </p>
+              )}
             </div>
           </div>
 

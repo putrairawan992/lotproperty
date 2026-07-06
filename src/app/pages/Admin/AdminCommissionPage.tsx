@@ -12,11 +12,34 @@ interface CommissionItem {
   agentEmail: string;
   type: string;
   property: string;
+  propertyType: string;
   amount: number;
   xp: string;
   submitted: string;
   status: "Pending" | "Approved" | "Rejected";
   details: Record<string, any>;
+}
+
+// Cermin persis dari matriks backend (lihat commissionXP di admin.go) — dipakai
+// untuk menampilkan estimasi XP pada klaim yang masih Pending.
+function estimateCommissionXP(type: string, propertyType: string): number {
+  const t = (propertyType || "").trim();
+  if (type === "RENT") {
+    if (t === "Apartemen") return 2000;
+    if (t === "Rumah") return 3000;
+    return 5000; // Ruko, Office, Gudang, Tanah, Komersial
+  }
+  if (t === "Apartemen") return 5000;
+  if (t === "Rumah") return 7500;
+  return 10000; // Ruko, Office, Gudang, Tanah, Primary, Komersial
+}
+
+// Fallback kalau backend belum mengirim property_type (claim lama): ambil
+// bagian sebelum " - " dari deskripsi properti, mis. "Apartemen - Budi" → "Apartemen".
+function derivePropertyType(propertyType: string, property: string): string {
+  if (propertyType) return propertyType;
+  const idx = property.indexOf(" - ");
+  return idx !== -1 ? property.slice(0, idx).trim() : property.trim();
 }
 
 interface HelpSubmissionItem {
@@ -91,18 +114,31 @@ export default function AdminCommissionPage() {
       ]);
 
       if (Array.isArray(commData)) {
-        setClaims(commData.map((c: any) => ({
+        setClaims(commData.map((c: any) => {
+          const status = String(c.status || "Pending") as "Pending" | "Approved" | "Rejected";
+          const type = String(c.type || "SALE");
+          const property = String(c.property || "-");
+          const propertyType = derivePropertyType(String(c.property_type || ""), property);
+          // XP baru DIHITUNG oleh backend saat status di-approve (matriks Type × PropertyType).
+          // Selagi Pending, xp_earned di database memang 0 — tampilkan estimasi dari matriks
+          // yang sama, bukan "+0 XP" yang terkesan agent tidak dapat apa-apa.
+          const xp = status === "Pending"
+            ? `Estimasi: +${estimateCommissionXP(type, propertyType).toLocaleString("id-ID")} XP`
+            : `+${Number(c.xp_earned || 0).toLocaleString("id-ID")} XP`;
+          return {
           id: String(c.id),
           agent: String(c.agent?.name || c.submitter_name || "Tanpa Agent (email belum terdaftar)"),
           agentEmail: String(c.agent?.email || c.submitter_email || "-"),
-          type: String(c.type || "SALE"),
-          property: String(c.property || "-"),
+          type,
+          property,
+          propertyType,
           amount: Number(c.amount || 0),
-          xp: `+${Number(c.xp_earned || 0)} XP`,
+          xp,
           submitted: formatDate(String(c.submitted_at || c.created_at || "")),
-          status: String(c.status || "Pending") as "Pending" | "Approved" | "Rejected",
+          status,
           details: (() => { try { return c.details ? JSON.parse(c.details) : {}; } catch { return {}; } })(),
-        })));
+          };
+        }));
       }
 
       if (Array.isArray(helpData)) {

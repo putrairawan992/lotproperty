@@ -246,6 +246,11 @@ export const api = {
     getList: () => request<any[]>("/checkouts"),
   },
 
+  commissions: {
+    // Komisi terakhir yang disetujui milik agent yang login (untuk Quest page)
+    getMyLastApproved: () => request<any>("/commissions/mine/last-approved"),
+  },
+
   // Events
   events: {
     getList: () => request<any[]>("/events"),
