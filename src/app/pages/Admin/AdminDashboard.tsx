@@ -41,10 +41,10 @@ export default function AdminDashboard() {
   const loadDashboard = async () => {
     try {
       const [agentsRows, commissionRows, logRows, eventRows, checkoutRows] = await Promise.all([
-        api.admin.getAgents(),
-        api.admin.getCommissions(),
-        api.admin.getLogs(),
-        api.events.getList(),
+        api.admin.getAgents().catch(() => []),
+        api.admin.getCommissions().catch(() => []),
+        api.admin.getLogs().catch(() => []),
+        api.events.getList().catch(() => []),
         api.checkouts.getList().catch(() => []),
       ]);
 

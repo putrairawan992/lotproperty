@@ -44,13 +44,14 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
 
     (async () => {
       try {
+        const canSeeAgents = role === "Super Admin" || role === "Office Manager";
         const [agents, commissions, helpSubmissions] = await Promise.all([
-          api.admin.getAgents(),
+          canSeeAgents ? api.admin.getAgents() : Promise.resolve([]),
           api.admin.getCommissions(),
           api.admin.getHelpSubmissions(),
         ]);
         if (!cancelled) {
-          if (Array.isArray(agents)) {
+          if (canSeeAgents && Array.isArray(agents)) {
             setAgentPendingCount(agents.filter((a: any) => String(a.status || "") === "Pending").length);
           }
           if (Array.isArray(commissions)) {

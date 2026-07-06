@@ -274,11 +274,11 @@ export default function AdminCommissionPage() {
 
       {/* Header & Search */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 text-left">
-        <div>
-          <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>
+        <div className="min-w-0 flex-1">
+          <h1 className="whitespace-nowrap" style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>
             Agent Submissions Management
           </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">Verifikasi klaim komisi, pengajuan pindah DP, dan pantau feedback dari agen</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">Verifikasi klaim komisi, pengajuan pindah DP, dan pantau feedback dari agen</p>
         </div>
 
         <div className="flex items-center gap-2 w-full md:w-auto">
@@ -467,12 +467,12 @@ export default function AdminCommissionPage() {
                           </button>
                         </th>
                       )}
-                      <th className="text-left px-5 py-3.5">AGENT</th>
-                      <th className="text-left px-5 py-3.5">PROPERTI</th>
-                      <th className="text-left px-5 py-3.5">JUMLAH KOMISI</th>
-                      <th className="text-left px-5 py-3.5">XP REWARD</th>
-                      <th className="text-left px-5 py-3.5">DIAJUKAN</th>
-                      <th className="text-right px-5 py-3.5">ACTION</th>
+                      <th className="text-left px-5 py-3.5 whitespace-nowrap">AGENT</th>
+                      <th className="text-left px-5 py-3.5 whitespace-nowrap">PROPERTI</th>
+                      <th className="text-left px-5 py-3.5 whitespace-nowrap">JUMLAH KOMISI</th>
+                      <th className="text-left px-5 py-3.5 whitespace-nowrap">XP REWARD</th>
+                      <th className="text-left px-5 py-3.5 whitespace-nowrap">DIAJUKAN</th>
+                      <th className="text-right px-5 py-3.5 whitespace-nowrap">ACTION</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: T.border }}>
