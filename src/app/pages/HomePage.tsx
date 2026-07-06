@@ -12,7 +12,7 @@ import HofFallingStars from "../components/HofFallingStars";
 import EventBannerSlider from "../components/EventBannerSlider";
 import { T, Page, useTheme } from "../types";
 import { useTabQuery, useLocation } from "../routes";
-import { HOF_TABS, type EventItem } from "../appData";
+import { HOF_TABS, type EventItem, DYNAMIC_PERIODS } from "../appData";
 import { getLevelTierColor, LEVEL_TIERS } from "../badgeAssets";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { api } from "../services/api";
@@ -151,22 +151,9 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const [hofData, setHofData] = useState<Record<string, any[]>>({});
   const [eventData, setEventData] = useState<EventItem[]>([]);
   const [hofRawData, setHofRawData] = useState<any[]>([]);
-  const [availablePeriods, setAvailablePeriods] = useState<string[]>([]);
-  const [selectedPeriod, setSelectedPeriod] = useState<string>("");
+  const [availablePeriods, setAvailablePeriods] = useState<string[]>(DYNAMIC_PERIODS);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(DYNAMIC_PERIODS[0] || "");
   const [completedModulesCount, setCompletedModulesCount] = useState(0);
-
-  useEffect(() => {
-    if (hofRawData.length > 0) {
-      const periods = Array.from(new Set(hofRawData.map(r => r.period).filter(Boolean)));
-      setAvailablePeriods(periods);
-      if (periods.length > 0) {
-        setSelectedPeriod((prev) => prev || periods[0]);
-      }
-    } else {
-      setAvailablePeriods([]);
-      setSelectedPeriod("");
-    }
-  }, [hofRawData]);
 
   useEffect(() => {
     const grouped: Record<string, any[]> = Object.fromEntries(HOF_TABS.map((tab) => [tab, []])) as Record<string, any[]>;

@@ -147,6 +147,25 @@ export const AGENT_PHOTOS: Record<string, string> = {
   "FI": "https://images.unsplash.com/photo-1567532939604-b6b5b0db2604?auto=format&fit=crop&q=80&w=400&h=400", // Woman in suit, grey bg
 };
 
+export function getDynamicPeriods() {
+  const INDO_MONTHS = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const periods = [];
+  const startYear = 2025;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  
+  for (let y = currentYear; y >= startYear; y--) {
+    const maxM = y === currentYear ? currentMonth : 11;
+    for (let m = maxM; m >= 0; m--) {
+      periods.push(`${INDO_MONTHS[m]} ${y}`);
+    }
+  }
+  return periods;
+}
+
+export const DYNAMIC_PERIODS = getDynamicPeriods();
+
 export const HOF_TABS = [
   "Top 5 Commission",
   "Top 5 By Unit",

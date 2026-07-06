@@ -4,12 +4,12 @@ import { Award, ShieldAlert, Check, Save, ToggleLeft, ToggleRight } from "lucide
 import Card from "../../components/Card";
 import { T, useTheme } from "../../types";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
-import { AGENT_DATA_LIST } from "../../appData";
+import { AGENT_DATA_LIST, DYNAMIC_PERIODS } from "../../appData";
 import { api } from "../../services/api";
 import { normalizeHofCategory } from "../../utils/hofCategory";
 
 export default function AdminHoFPage() {
-  const [period, setPeriod] = useState("Juni 2025");
+  const [period, setPeriod] = useState(DYNAMIC_PERIODS[0] || "");
   const [toastMsg, setToastMsg] = useState("");
   const [savingCategory, setSavingCategory] = useState<string | null>(null);
   const [serverAgents, setServerAgents] = useState<Array<{ id: number; name: string; status: string; role: string }>>([]);
@@ -297,10 +297,7 @@ export default function AdminHoFPage() {
         <select value={period} onChange={e => setPeriod(e.target.value)}
           className="px-3 py-2 rounded-xl border outline-none bg-card text-sm cursor-pointer"
           style={{ borderColor: T.border }}>
-          {[
-            "Desember 2026", "November 2026", "Oktober 2026", "September 2026", "Agustus 2026", "Juli 2026", "Juni 2026", "Mei 2026", "April 2026", "Maret 2026", "Februari 2026", "Januari 2026",
-            "Desember 2025", "November 2025", "Oktober 2025", "September 2025", "Agustus 2025", "Juli 2025", "Juni 2025", "Mei 2025", "April 2025", "Maret 2025", "Februari 2025", "Januari 2025"
-          ].map(p => <option key={p} value={p}>{p}</option>)}
+          {DYNAMIC_PERIODS.map(p => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
 
