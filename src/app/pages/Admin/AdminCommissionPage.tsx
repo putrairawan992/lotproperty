@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { Check, Clock, AlertCircle, X, Search, MessageSquare, ArrowRight, User, HelpCircle, CheckCircle2, XCircle, Square, CheckSquare, MinusSquare, MoreVertical } from "lucide-react";
 import Card from "../../components/Card";
+import AdminPagination from "../../components/AdminPagination";
 import { T } from "../../types";
 import { useTabQuery } from "../../routes";
 import { AGENT_PHOTOS } from "../../appData";
@@ -75,13 +76,24 @@ export default function AdminCommissionPage() {
   // Main Category Tab: "Komisi" | "Kritik & Saran"
   const [activeMainTab, setActiveMainTab] = useState<"komisi" | "feedback">("komisi");
 
-  // State arrays
+  // Current page's data ONLY — filtering/sorting/paging all happen server-side
+  // now (this table can hold thousands of historical rental rows).
   const [claims, setClaims] = useState<CommissionItem[]>([]);
+  const [claimsTotal, setClaimsTotal] = useState(0);
   const [helpSubmissions, setHelpSubmissions] = useState<HelpSubmissionItem[]>([]);
+  const [helpTotal, setHelpTotal] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  // Independent of whatever filter/page is active — backs the tab/sub-tab badges.
+  const [commissionCounts, setCommissionCounts] = useState({ pending: 0, approved: 0, rejected: 0 });
+  const [helpPendingCount, setHelpPendingCount] = useState(0);
 
   // Commission Sub-tab ("Pending" | "Approved" | "Rejected")
   const [commissionSubTab, setCommissionSubTab] = useTabQuery("tab", "Pending");
+
+  // Pagination (shared between the two list views — only one is visible at a time)
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // Commission Reject Modal State
   const [rejectId, setRejectId] = useState<string | null>(null);
@@ -95,8 +107,9 @@ export default function AdminCommissionPage() {
   const [bulkRejectMode, setBulkRejectMode] = useState(false);
   const [bulkRejectReason, setBulkRejectReason] = useState("");
 
-  // Search & Filter
+  // Search & Filter — debounced so every keystroke doesn't fire a request.
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [updatingHelpId, setUpdatingHelpId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState("");
 
@@ -105,44 +118,58 @@ export default function AdminCommissionPage() {
   const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  const mapClaim = (c: any): CommissionItem => {
+    const status = String(c.status || "Pending") as "Pending" | "Approved" | "Rejected";
+    const type = String(c.type || "SALE");
+    const property = String(c.property || "-");
+    const propertyType = derivePropertyType(String(c.property_type || ""), property);
+    // XP baru DIHITUNG oleh backend saat status di-approve (matriks Type × PropertyType).
+    // Selagi Pending, xp_earned di database memang 0 — tampilkan estimasi dari matriks
+    // yang sama, bukan "+0 XP" yang terkesan agent tidak dapat apa-apa.
+    // Untuk Approved juga: klaim lama yang disetujui sebelum matriks XP diterapkan
+    // mungkin masih menyimpan xp_earned = 0 — tampilkan estimasi agar tidak "+0 XP".
+    const earned = Number(c.xp_earned || 0);
+    const xp = (status === "Pending" || (status === "Approved" && earned === 0))
+      ? `Estimasi: +${estimateCommissionXP(type, propertyType).toLocaleString("id-ID")} XP`
+      : `+${earned.toLocaleString("id-ID")} XP`;
+    return {
+      id: String(c.id),
+      agent: String(c.agent?.name || c.submitter_name || "Tanpa Agent (email belum terdaftar)"),
+      agentEmail: String(c.agent?.email || c.submitter_email || "-"),
+      type,
+      property,
+      propertyType,
+      amount: Number(c.amount || 0),
+      xp,
+      submitted: formatDate(String(c.submitted_at || c.created_at || "")),
+      status,
+      details: (() => { try { return c.details ? JSON.parse(c.details) : {}; } catch { return {}; } })(),
+    };
+  };
+
   const loadData = async () => {
     setLoading(true);
     try {
-      const [commData, helpData] = await Promise.all([
-        api.admin.getCommissions(),
-        api.admin.getHelpSubmissions(),
+      const [countsRes, helpCountsRes] = await Promise.all([
+        api.admin.getCommissionCounts().catch(() => null),
+        api.admin.getHelpSubmissionCounts().catch(() => null),
       ]);
+      if (countsRes) setCommissionCounts({ pending: countsRes.pending, approved: countsRes.approved, rejected: countsRes.rejected });
+      if (helpCountsRes) setHelpPendingCount(helpCountsRes.pending_feedback || 0);
 
-      if (Array.isArray(commData)) {
-        setClaims(commData.map((c: any) => {
-          const status = String(c.status || "Pending") as "Pending" | "Approved" | "Rejected";
-          const type = String(c.type || "SALE");
-          const property = String(c.property || "-");
-          const propertyType = derivePropertyType(String(c.property_type || ""), property);
-          // XP baru DIHITUNG oleh backend saat status di-approve (matriks Type × PropertyType).
-          // Selagi Pending, xp_earned di database memang 0 — tampilkan estimasi dari matriks
-          // yang sama, bukan "+0 XP" yang terkesan agent tidak dapat apa-apa.
-          const xp = status === "Pending"
-            ? `Estimasi: +${estimateCommissionXP(type, propertyType).toLocaleString("id-ID")} XP`
-            : `+${Number(c.xp_earned || 0).toLocaleString("id-ID")} XP`;
-          return {
-          id: String(c.id),
-          agent: String(c.agent?.name || c.submitter_name || "Tanpa Agent (email belum terdaftar)"),
-          agentEmail: String(c.agent?.email || c.submitter_email || "-"),
-          type,
-          property,
-          propertyType,
-          amount: Number(c.amount || 0),
-          xp,
-          submitted: formatDate(String(c.submitted_at || c.created_at || "")),
-          status,
-          details: (() => { try { return c.details ? JSON.parse(c.details) : {}; } catch { return {}; } })(),
-          };
-        }));
-      }
-
-      if (Array.isArray(helpData)) {
-        setHelpSubmissions(helpData);
+      if (activeMainTab === "komisi") {
+        const res = await api.admin.getCommissions({ status: commissionSubTab, search: debouncedSearch, page, pageSize });
+        setClaims((res?.data || []).map(mapClaim));
+        setClaimsTotal(res?.total || 0);
+      } else {
+        const res = await api.admin.getHelpSubmissions({ formType: "feedback", search: debouncedSearch, page, pageSize });
+        setHelpSubmissions(res?.data || []);
+        setHelpTotal(res?.total || 0);
       }
     } catch (err) {
       console.error("Failed to load claims and submissions", err);
@@ -151,9 +178,16 @@ export default function AdminCommissionPage() {
     }
   };
 
+  // Reset to page 1 whenever the active view/filter changes, so the user
+  // never lands on a now-empty page — then (re)load from the server.
+  useEffect(() => {
+    setPage(1);
+  }, [activeMainTab, commissionSubTab, debouncedSearch, pageSize]);
+
   useEffect(() => {
     loadData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMainTab, commissionSubTab, debouncedSearch, page, pageSize]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -175,9 +209,9 @@ export default function AdminCommissionPage() {
   const approveCommission = async (id: string) => {
     try {
       await api.admin.reviewCommission(id, "Approved");
-      setClaims(p => p.map(c => c.id === id ? { ...c, status: "Approved" } : c));
       setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
       triggerToast("Klaim komisi disetujui!");
+      await loadData();
     } catch {
       triggerToast("Gagal menyetujui klaim");
     }
@@ -186,9 +220,9 @@ export default function AdminCommissionPage() {
   const rejectCommission = async (id: string, reason: string) => {
     try {
       await api.admin.reviewCommission(id, "Rejected", reason);
-      setClaims(p => p.map(c => c.id === id ? { ...c, status: "Rejected" } : c));
       setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
       triggerToast("Klaim komisi ditolak");
+      await loadData();
     } catch {
       triggerToast("Gagal menolak klaim");
     }
@@ -196,17 +230,17 @@ export default function AdminCommissionPage() {
     setRejectReason("");
   };
 
-  // Bulk actions
-
+  // Bulk actions — one backend request each (server loops internally), instead
+  // of the frontend firing N sequential/chunked HTTP calls.
   const approveAllCommissions = async () => {
-    const pending = claims.filter(c => c.status === "Pending");
-    for (const row of pending) {
-      try {
-        await api.admin.reviewCommission(row.id, "Approved");
-      } catch {}
+    try {
+      const res = await api.admin.approveAllPendingCommissions();
+      setPage(1);
+      await loadData();
+      triggerToast(`${res.succeeded} klaim pending disetujui!${res.failed ? ` (${res.failed} gagal)` : ""}`);
+    } catch {
+      triggerToast("Gagal menyetujui semua klaim");
     }
-    await loadData();
-    triggerToast("Semua klaim pending disetujui!");
   };
 
   // Help Submissions Actions
@@ -238,33 +272,13 @@ export default function AdminCommissionPage() {
     }
   };
 
-  // Filters logic
-  const searchLower = searchTerm.toLowerCase();
+  const totalListItems = activeMainTab === "komisi" ? claimsTotal : helpTotal;
 
-  const filteredClaims = claims.filter(c => {
-    const matchesSubTab = c.status === commissionSubTab;
-    const matchesSearch =
-      c.agent.toLowerCase().includes(searchLower) ||
-      c.property.toLowerCase().includes(searchLower) ||
-      c.type.toLowerCase().includes(searchLower);
-    return matchesSubTab && matchesSearch;
-  });
-
-  const filteredHelp = helpSubmissions.filter(s => {
-    const matchesFormType = s.form_type === activeMainTab;
-    const matchesSearch =
-      (s.agent?.name || "").toLowerCase().includes(searchLower) ||
-      (s.client_name || "").toLowerCase().includes(searchLower) ||
-      (s.subject || "").toLowerCase().includes(searchLower) ||
-      (s.reason || "").toLowerCase().includes(searchLower) ||
-      (s.message || "").toLowerCase().includes(searchLower);
-    return matchesFormType && matchesSearch;
-  });
-
-  // Bulk actions
+  // Bulk actions (select-all) — scoped to the currently visible page, which is
+  // already exactly what the backend returned for the current sub-tab/search.
   const pendingFiltered = useMemo(
-    () => filteredClaims.filter(c => c.status === "Pending"),
-    [filteredClaims]
+    () => (commissionSubTab === "Pending" ? claims : []),
+    [claims, commissionSubTab]
   );
 
   const isAllSelected = pendingFiltered.length > 0 && pendingFiltered.every(c => selectedIds.has(c.id));
@@ -288,29 +302,33 @@ export default function AdminCommissionPage() {
 
   const approveSelected = async () => {
     const ids = [...selectedIds];
-    for (const id of ids) {
-      try { await api.admin.reviewCommission(id, "Approved"); } catch {}
+    try {
+      const res = await api.admin.bulkReviewCommissions(ids, "Approved");
+      setSelectedIds(new Set());
+      await loadData();
+      triggerToast(`${res.succeeded} klaim disetujui!${res.failed ? ` (${res.failed} gagal)` : ""}`);
+    } catch {
+      triggerToast("Gagal menyetujui klaim terpilih");
     }
-    setSelectedIds(new Set());
-    await loadData();
-    triggerToast(`${ids.length} klaim disetujui!`);
   };
 
   const rejectSelected = async (reason: string) => {
     const ids = [...selectedIds];
-    for (const id of ids) {
-      try { await api.admin.reviewCommission(id, "Rejected", reason); } catch {}
+    try {
+      const res = await api.admin.bulkReviewCommissions(ids, "Rejected", reason);
+      setSelectedIds(new Set());
+      setBulkRejectMode(false);
+      setBulkRejectReason("");
+      await loadData();
+      triggerToast(`${res.succeeded} klaim ditolak!${res.failed ? ` (${res.failed} gagal)` : ""}`);
+    } catch {
+      triggerToast("Gagal menolak klaim terpilih");
     }
-    setSelectedIds(new Set());
-    setBulkRejectMode(false);
-    setBulkRejectReason("");
-    await loadData();
-    triggerToast(`${ids.length} klaim ditolak!`);
   };
 
-  // Badge counts
-  const pendingClaimsCount = claims.filter(c => c.status === "Pending").length;
-  const pendingFeedbackCount = helpSubmissions.filter(s => s.form_type === "feedback" && (s.status === "Menunggu Verifikasi" || s.status === "Terkirim")).length;
+  // Badge counts — independent of the current sub-tab/page, from the counts endpoint.
+  const pendingClaimsCount = commissionCounts.pending;
+  const pendingFeedbackCount = helpPendingCount;
 
   const typeBg: Record<string, string> = { SALE: "#EEF5FC", RENT: "#DCFCE7", PRIMARY: "#F5F0FD" };
   const typeColor: Record<string, string> = { SALE: "#1A6FC4", RENT: "#16A34A", PRIMARY: "#7B2FBE" };
@@ -412,21 +430,21 @@ export default function AdminCommissionPage() {
                     borderBottom: commissionSubTab === t ? "2px solid #E8A500" : "2px solid transparent",
                   }}
                 >
-                  {t} ({claims.filter(c => c.status === t).length})
+                  {t} ({t === "Pending" ? commissionCounts.pending : t === "Approved" ? commissionCounts.approved : commissionCounts.rejected})
                 </button>
               ))}
             </div>
 
             {loading && <div className="py-20 text-center text-sm text-muted-foreground">Memuat data komisi...</div>}
 
-            {!loading && filteredClaims.length === 0 && (
+            {!loading && claims.length === 0 && (
               <div className="py-20 text-center text-sm text-muted-foreground">Tidak ada klaim komisi {commissionSubTab.toLowerCase()}</div>
             )}
 
             {/* Mobile Claims Layout */}
-            {!loading && filteredClaims.length > 0 && (
+            {!loading && claims.length > 0 && (
               <div className="md:hidden divide-y" style={{ borderColor: T.border }}>
-                {filteredClaims.map(c => {
+                {claims.map(c => {
                   const initials = c.agent.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
                   const avatar = AGENT_PHOTOS[initials];
                   return (
@@ -484,7 +502,7 @@ export default function AdminCommissionPage() {
             )}
 
             {/* Desktop Claims Table */}
-            {!loading && filteredClaims.length > 0 && (
+            {!loading && claims.length > 0 && (
               <div className="hidden md:block overflow-x-auto">
                 {/* Bulk Action Bar — only for Pending tab */}
                 {commissionSubTab === "Pending" && selectedIds.size > 0 && (
@@ -528,7 +546,7 @@ export default function AdminCommissionPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y" style={{ borderColor: T.border }}>
-                    {filteredClaims.map(c => {
+                    {claims.map(c => {
                       const initials = c.agent.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
                       const avatar = AGENT_PHOTOS[initials];
                       const isChecked = selectedIds.has(c.id);
@@ -616,6 +634,10 @@ export default function AdminCommissionPage() {
                 </table>
               </div>
             )}
+
+            {!loading && claims.length > 0 && (
+              <AdminPagination page={page} pageSize={pageSize} totalItems={totalListItems} onPageChange={setPage} onPageSizeChange={setPageSize} />
+            )}
           </div>
         )}
 
@@ -624,15 +646,15 @@ export default function AdminCommissionPage() {
           <div>
             {loading && <div className="py-20 text-center text-sm text-muted-foreground">Memuat data pengajuan...</div>}
 
-            {!loading && filteredHelp.length === 0 && (
+            {!loading && helpSubmissions.length === 0 && (
               <div className="py-20 text-center text-sm text-muted-foreground">
                 Tidak ada pengajuan kritik & saran yang cocok.
               </div>
             )}
 
-            {!loading && filteredHelp.length > 0 && (
+            {!loading && helpSubmissions.length > 0 && (
               <div className="divide-y" style={{ borderColor: T.border }}>
-                {filteredHelp.map(item => {
+                {helpSubmissions.map(item => {
                   const badge = getHelpStatusBadge(item.status);
 
                   return (
@@ -697,6 +719,10 @@ export default function AdminCommissionPage() {
                   );
                 })}
               </div>
+            )}
+
+            {!loading && helpSubmissions.length > 0 && (
+              <AdminPagination page={page} pageSize={pageSize} totalItems={totalListItems} onPageChange={setPage} onPageSizeChange={setPageSize} />
             )}
           </div>
         )}

@@ -291,13 +291,30 @@ export default function AcademyPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {shown.map((m, i) => {
                   const isCompleted = m.status === "done";
+                  const thumbVideoId = m.video_url ? parseYouTube(m.video_url).videoId : undefined;
                   return (
-                    <Card key={i} className="p-5 flex flex-col transition-all hover:scale-[1.01] hover:shadow-md" style={{ borderTop: `3px solid ${m.color}` }}>
+                    <Card key={i} className="p-5 flex flex-col transition-all hover:scale-[1.01] hover:shadow-md">
+                      <div className="-mx-5 -mt-5 mb-3.5 aspect-video bg-muted/40 overflow-hidden relative flex items-center justify-center" style={{ borderTop: `3px solid ${m.color}` }}>
+                        {thumbVideoId ? (
+                          <img
+                            src={`https://img.youtube.com/vi/${thumbVideoId}/hqdefault.jpg`}
+                            alt={m.title}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center gap-1.5" style={{ color: T.text3 }}>
+                            <Video size={28} />
+                            <span className="text-[10px] font-semibold uppercase tracking-wider">Tidak ada thumbnail</span>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="flex items-center justify-between mb-3">
                         <span className="text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider" style={{ backgroundColor: `${m.color}15`, color: m.color }}>{m.cat}</span>
                         {isCompleted && <CheckCircle size={16} style={{ color: "#16A34A" }} />}
                       </div>
-                      
+
                       <h3 className="font-bold mb-3 flex-1 text-base text-foreground leading-snug" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
                         {m.title}
                       </h3>

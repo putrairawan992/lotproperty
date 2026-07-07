@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Home, Users, DollarSign, Trophy, GraduationCap, Zap, TrendingUp, BookOpen, X, Menu, LifeBuoy } from "lucide-react";
+import { Home, Users, DollarSign, Trophy, GraduationCap, Zap, TrendingUp, BookOpen, X, Menu, LifeBuoy, CalendarClock } from "lucide-react";
 import Logo from "../../components/Logo";
 import { T, useTheme, AdminRole, AdminPage, ROLE_COLOR } from "../../types";
 import { useLocation } from "../../routes";
@@ -13,11 +13,13 @@ import AdminXPPage from "./AdminXPPage";
 import AdminLogPage from "./AdminLogPage";
 import AdminEventsPage from "./AdminEventsPage";
 import AdminAcademyPage from "./AdminAcademyPage";
+import AdminCheckoutPage from "./AdminCheckoutPage";
 
 const ADMIN_NAV: { id: AdminPage; label: string; icon: React.ElementType; badge?: number }[] = [
   { id: "dashboard",  label: "Dashboard",         icon: Home },
   { id: "agents",     label: "Agent Management",  icon: Users,        badge: 3 },
   { id: "commission", label: "Agent Submissions", icon: DollarSign,   badge: 7 },
+  { id: "checkout",   label: "Reminder Checkout", icon: CalendarClock },
   { id: "hof",        label: "Hall of Fame",       icon: Trophy },
   { id: "academy",    label: "Academy",            icon: GraduationCap },
   { id: "events",     label: "Events",             icon: Zap },
@@ -29,7 +31,7 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
   const { isDark, toggle } = useTheme();
   const { path, navigate } = useLocation();
   const rawPage = path.replace(/^\/admin\//, "");
-  const page: AdminPage = ["dashboard", "agents", "commission", "hof", "academy", "events", "xp", "log"].includes(rawPage)
+  const page: AdminPage = ["dashboard", "agents", "commission", "checkout", "hof", "academy", "events", "xp", "log"].includes(rawPage)
     ? (rawPage as AdminPage)
     : "dashboard";
 
@@ -45,21 +47,19 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
     (async () => {
       try {
         const canSeeAgents = role === "Super Admin" || role === "Office Manager";
-        const [agents, commissions, helpSubmissions] = await Promise.all([
+        // Badges only need counts — hit the lightweight counts endpoints
+        // instead of downloading the full (potentially thousands-of-rows) lists.
+        const [agents, commissionCounts, helpCounts] = await Promise.all([
           canSeeAgents ? api.admin.getAgents() : Promise.resolve([]),
-          api.admin.getCommissions(),
-          api.admin.getHelpSubmissions(),
+          api.admin.getCommissionCounts(),
+          api.admin.getHelpSubmissionCounts(),
         ]);
         if (!cancelled) {
           if (canSeeAgents && Array.isArray(agents)) {
             setAgentPendingCount(agents.filter((a: any) => String(a.status || "") === "Pending").length);
           }
-          if (Array.isArray(commissions)) {
-            setCommissionPendingCount(commissions.filter((c: any) => String(c.status || "") === "Pending").length);
-          }
-          if (Array.isArray(helpSubmissions)) {
-            setHelpPendingCount(helpSubmissions.filter((h: any) => String(h.status || "") === "Menunggu Verifikasi" || String(h.status || "") === "Terkirim").length);
-          }
+          setCommissionPendingCount(commissionCounts?.pending || 0);
+          setHelpPendingCount(helpCounts?.pending_feedback || 0);
         }
       } catch {
         // Keep default badges when API fails.
@@ -76,6 +76,7 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
       case "dashboard":  return <AdminDashboard />;
       case "agents":     return <AdminAgentsPage />;
       case "commission": return <AdminCommissionPage role={role} />;
+      case "checkout":   return <AdminCheckoutPage />;
       case "hof":        return <AdminHoFPage />;
       case "academy":    return <AdminAcademyPage />;
       case "events":     return <AdminEventsPage />;
@@ -101,8 +102,8 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
         {ADMIN_NAV.map(({ id, label, icon: Icon, badge }) => {
           const resolvedBadge = id === "agents" ? agentPendingCount : id === "commission" ? (commissionPendingCount + helpPendingCount) : badge;
           const canSee = role === "Super Admin" ? true
-            : role === "Office Manager" ? ["dashboard","agents","commission","hof","events","academy","log"].includes(id)
-            : role === "Finance" ? ["dashboard","commission","log"].includes(id)
+            : role === "Office Manager" ? ["dashboard","agents","commission","checkout","hof","events","academy","log"].includes(id)
+            : role === "Finance" ? ["dashboard","commission","checkout","log"].includes(id)
             : false;
           if (!canSee) return null;
           const active = page === id;
@@ -148,7 +149,7 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
   );
 
   const pageTitles: Record<AdminPage, string> = {
-    dashboard: "Dashboard", agents: "Agent Management", commission: "Commission",
+    dashboard: "Dashboard", agents: "Agent Management", commission: "Commission", checkout: "Reminder Checkout",
     hof: "Hall of Fame", academy: "Academy", events: "Events", xp: "XP Adjustment", log: "System Log",
   };
 

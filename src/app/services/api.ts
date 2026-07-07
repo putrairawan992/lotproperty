@@ -243,7 +243,14 @@ export const api = {
 
   checkouts: {
     // Rental checkout reminders (≤45 hari). Agent: milik sendiri; admin: semua.
-    getList: () => request<any[]>("/checkouts"),
+    // Search & pagination dihitung di server (tabel bisa berisi ribuan baris historis).
+    getList: (opts: { search?: string; page?: number; pageSize?: number } = {}) => {
+      const params = new URLSearchParams();
+      if (opts.search) params.set("search", opts.search);
+      params.set("page", String(opts.page || 1));
+      params.set("page_size", String(opts.pageSize || 20));
+      return request<{ data: any[]; total: number; urgent_count: number; upcoming_count: number }>(`/checkouts?${params}`);
+    },
   },
 
   commissions: {
@@ -304,11 +311,27 @@ export const api = {
 
   // Admin Panel
   admin: {
-    getHelpSubmissions: () => request<any[]>("/admin/help/submissions"),
+    // Search & pagination dihitung di server.
+    getHelpSubmissions: (opts: { formType?: string; search?: string; page?: number; pageSize?: number } = {}) => {
+      const params = new URLSearchParams();
+      if (opts.formType) params.set("form_type", opts.formType);
+      if (opts.search) params.set("search", opts.search);
+      params.set("page", String(opts.page || 1));
+      params.set("page_size", String(opts.pageSize || 20));
+      return request<{ data: any[]; total: number }>(`/admin/help/submissions?${params}`);
+    },
+    getHelpSubmissionCounts: () => request<{ pending_feedback: number }>("/admin/help/submissions/counts"),
     updateHelpSubmissionStatus: (id: number | string, status: string) => {
       return request<any>(`/admin/help/submissions/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) });
     },
-    getAgents: () => request<any[]>("/admin/agents"),
+    getAgents: (opts: { status?: string; search?: string; page?: number; pageSize?: number } = {}) => {
+      const params = new URLSearchParams();
+      if (opts.status && opts.status !== "All") params.set("status", opts.status);
+      if (opts.search) params.set("search", opts.search);
+      params.set("page", String(opts.page || 1));
+      params.set("page_size", String(opts.pageSize || 10));
+      return request<{ data: any[]; total: number }>(`/admin/agents?${params}`);
+    },
     createAgent: (payload: { name: string; email: string; phone?: string; password: string; role: string; photo_url?: string; mentor_id?: number | null }) => {
       return request<any>("/admin/agents", { method: "POST", body: JSON.stringify(payload) });
     },
@@ -400,12 +423,34 @@ export const api = {
         body: JSON.stringify({ status, reject_reason: rejectReason }),
       });
     },
-    getCommissions: () => request<any[]>("/admin/commissions"),
+    // Search & pagination dihitung di server (tabel bisa berisi ribuan baris historis).
+    getCommissions: (opts: { status?: string; search?: string; page?: number; pageSize?: number } = {}) => {
+      const params = new URLSearchParams();
+      if (opts.status) params.set("status", opts.status);
+      if (opts.search) params.set("search", opts.search);
+      params.set("page", String(opts.page || 1));
+      params.set("page_size", String(opts.pageSize || 20));
+      return request<{ data: any[]; total: number }>(`/admin/commissions?${params}`);
+    },
+    // Hitungan cepat Pending/Approved/Rejected — untuk badge sidebar & dashboard,
+    // supaya tidak perlu download seluruh daftar cuma untuk sebuah angka.
+    getCommissionCounts: () => request<{ pending: number; approved: number; rejected: number; xp_earned_approved: number }>("/admin/commissions/counts"),
     reviewCommission: (id: number | string, status: "Approved" | "Rejected", rejectReason: string = "") => {
       return request<any>(`/admin/commissions/${id}/review`, {
         method: "PUT",
         body: JSON.stringify({ status, reject_reason: rejectReason }),
       });
+    },
+    // Approve/reject sekumpulan klaim dalam SATU request (server loop di
+    // backend) — bukan N request berurutan/paralel dari browser.
+    bulkReviewCommissions: (ids: (number | string)[], status: "Approved" | "Rejected", rejectReason: string = "") => {
+      return request<{ succeeded: number; failed: number }>("/admin/commissions/bulk-review", {
+        method: "PUT",
+        body: JSON.stringify({ ids, status, reject_reason: rejectReason }),
+      });
+    },
+    approveAllPendingCommissions: () => {
+      return request<{ succeeded: number; failed: number }>("/admin/commissions/approve-all", { method: "POST" });
     },
     xpAdjust: (agentId: number | string, amount: number, reason: string) => {
       return request<any>("/admin/xp-adjust", {

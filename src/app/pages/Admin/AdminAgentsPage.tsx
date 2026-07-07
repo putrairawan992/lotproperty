@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail, MoreVertical, Trash2, Edit3, ImagePlus } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
+import AdminPagination from "../../components/AdminPagination";
 import LevelBadge from "../../components/LevelBadge";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T, useTheme } from "../../types";
@@ -288,6 +289,9 @@ export default function AdminAgentsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [agents, setAgents] = useState<AgentItem[]>([]);
+  const [agentsTotal, setAgentsTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [recruitsModal, setRecruitsModal] = useState<TreeNodeData | null>(null);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
@@ -335,9 +339,11 @@ export default function AdminAgentsPage() {
     let cancelled = false;
 
     (async () => {
+      setLoadingAgents(true);
       try {
-        const rows = await api.admin.getAgents();
-        if (cancelled || !Array.isArray(rows)) return;
+        const res = await api.admin.getAgents({ status: statusFilter, search, page, pageSize });
+        if (cancelled) return;
+        const rows = res?.data || [];
         setAgents(rows.map((r: any) => ({
           id: Number(r.id),
           name: String(r.name || ""),
@@ -351,6 +357,7 @@ export default function AdminAgentsPage() {
           role: String(r.role || "Agent"),
           photo_url: String(r.photo_url || ""),
         })));
+        setAgentsTotal(res?.total || 0);
       } catch {
         // Keep empty list when API fails.
       } finally {
@@ -373,12 +380,13 @@ export default function AdminAgentsPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, statusFilter, page, pageSize]);
 
-  const filtered = agents.filter(a =>
-    (statusFilter === "All" || a.status === statusFilter) &&
-    (a.name.toLowerCase().includes(search.toLowerCase()) || (a.email || "").toLowerCase().includes(search.toLowerCase()))
-  );
+  // Reset to page 1 when search or status filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
 
   const triggerToast = (msg: string, isErr = false) => {
     setToastMsg(msg);
@@ -530,22 +538,22 @@ export default function AdminAgentsPage() {
       setShowCreateModal(false);
       triggerToast("Agent berhasil ditambahkan!");
       // Reload agent list
-      const rows = await api.admin.getAgents();
-      if (Array.isArray(rows)) {
-        setAgents(rows.map((r: any) => ({
-          id: Number(r.id),
-          name: String(r.name || ""),
-          email: String(r.email || ""),
-          phone: String(r.phone || ""),
-          office: String(r.office || "-"),
-          level: String(r.title || "Rookie Agent"),
-          status: String(r.status || "Pending"),
-          joined: formatJoined(r.created_at),
-          mentor_id: r.mentor_id ? Number(r.mentor_id) : null,
-          role: String(r.role || "Agent"),
-          photo_url: String(r.photo_url || ""),
-        })));
-      }
+      const res = await api.admin.getAgents({ status: statusFilter, search, page, pageSize });
+      const rows = res?.data || [];
+      setAgents(rows.map((r: any) => ({
+        id: Number(r.id),
+        name: String(r.name || ""),
+        email: String(r.email || ""),
+        phone: String(r.phone || ""),
+        office: String(r.office || "-"),
+        level: String(r.title || "Rookie Agent"),
+        status: String(r.status || "Pending"),
+        joined: formatJoined(r.created_at),
+        mentor_id: r.mentor_id ? Number(r.mentor_id) : null,
+        role: String(r.role || "Agent"),
+        photo_url: String(r.photo_url || ""),
+      })));
+      setAgentsTotal(res?.total || 0);
       // Reload tree
       try {
         const treeData = await api.admin.getAgentsTree();
@@ -699,7 +707,7 @@ export default function AdminAgentsPage() {
                         </td>
                       </tr>
                     )}
-                    {filtered.map(a => (
+                    {agents.map(a => (
                       <tr key={a.id} className="border-b transition-colors" style={{ borderColor: "var(--border)" }}
                         onMouseEnter={e => (e.currentTarget.style.backgroundColor = T.muted)}
                         onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}>
@@ -818,10 +826,10 @@ export default function AdminAgentsPage() {
 
               {/* Mobile Card List View (visible only on mobile) */}
               <div className="block sm:hidden p-4 space-y-4 bg-muted/10">
-                {filtered.length === 0 ? (
+                {agents.length === 0 ? (
                   <div className="p-8 text-center text-sm" style={{ color: T.text3 }}>Tidak ada agen ditemukan</div>
                 ) : (
-                  filtered.map(a => {
+                  agents.map(a => {
                     const statusBorderColor = a.status === "Active" ? "#10B981" : a.status === "Pending" ? "#F59E0B" : "#EF4444";
                     const lvlColor = getLevelColor(a.level);
                     const isCardMatch = search && (a.name.toLowerCase().includes(search.toLowerCase()) || a.email.toLowerCase().includes(search.toLowerCase()));
@@ -953,6 +961,10 @@ export default function AdminAgentsPage() {
                   })
                 )}
               </div>
+
+              {!loadingAgents && agents.length > 0 && (
+                <AdminPagination page={page} pageSize={pageSize} totalItems={agentsTotal} onPageChange={setPage} onPageSizeChange={setPageSize} />
+              )}
             </Card>
           </motion.div>
         )}

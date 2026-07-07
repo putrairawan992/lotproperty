@@ -18,8 +18,7 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
   const [toastMsg, setToastMsg] = useState("");
   const [toastType, setToastType] = useState<"error" | "success">("error");
   const [loading, setLoading] = useState(false);
-  const [agentsMinimal, setAgentsMinimal] = useState<Array<{ id: number; name: string }>>([]);
-  const [mentorId, setMentorId] = useState("");
+
 
   const [showCamera, setShowCamera] = useState(false);
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
@@ -37,16 +36,7 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
     };
   }, [cameraStream]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const list = await api.public.getAgentsMinimal();
-        setAgentsMinimal(list || []);
-      } catch (err) {
-        console.error("Failed to load public agents", err);
-      }
-    })();
-  }, []);
+
 
   const startCamera = async () => {
     try {
@@ -147,7 +137,6 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
         phone: form.phone,
         password: form.password,
         photo_url: photoUrl,
-        mentor_id: mentorId ? Number(mentorId) : null,
       });
       sessionStorage.setItem("lotproperty-pending-email", form.email);
       showToast("Pendaftaran berhasil! Menunggu persetujuan admin.", "success");
@@ -249,28 +238,7 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
             <AuthInput label="Nomor HP" type="tel" placeholder="08xx-xxxx-xxxx"
               icon={<Phone size={17} />} value={form.phone} onChange={set("phone")} />
 
-            {/* Mentor / Upline */}
-            <div>
-              <label className="text-sm font-medium block text-left mb-1.5" style={{ color: T.text2 }}>
-                Mentor / Upline (Siapa yang mengajak Anda?)
-              </label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: "#9CA3AF" }}>
-                  <User size={17} />
-                </div>
-                <select
-                  value={mentorId}
-                  onChange={e => setMentorId(e.target.value)}
-                  className="w-full pl-10 pr-4 rounded-xl border outline-none bg-card cursor-pointer font-medium"
-                  style={{ height: 48, borderColor: "var(--border)", fontSize: 14, fontFamily: "'Inter', sans-serif" }}
-                >
-                  <option value="">— Tidak ada (Mandiri / No Mentor) —</option>
-                  {agentsMinimal.map(a => (
-                    <option key={a.id} value={a.id}>{a.name}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
+
 
             {/* Office removed as requested by user */}
 

@@ -43,8 +43,9 @@ export default function NotificationsPage() {
       // Keep empty list
     }
     try {
-      const co = await api.checkouts.getList();
-      if (Array.isArray(co)) setCheckouts(co);
+      // An agent's own upcoming checkouts are naturally few — one generous page is enough here.
+      const co = await api.checkouts.getList({ pageSize: 100 });
+      setCheckouts(co?.data || []);
     } catch {
       // Keep empty list
     }

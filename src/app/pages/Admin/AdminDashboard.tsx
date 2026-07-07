@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Users, AlertCircle, DollarSign, Zap, TrendingUp, CheckCircle } from "lucide-react";
 import Card from "../../components/Card";
 import { T, useTheme } from "../../types";
@@ -33,22 +33,22 @@ export default function AdminDashboard() {
   const { isDark } = useTheme();
 
   const [agents, setAgents] = useState<AgentDataItem[]>([]);
-  const [commissions, setCommissions] = useState<CommissionDataItem[]>([]);
+  // Preview only (4 most recent Pending) — the true totals come from the
+  // counts endpoint below, not from downloading the whole claims table.
+  const [recentPendingCommissions, setRecentPendingCommissions] = useState<CommissionDataItem[]>([]);
+  const [commissionCounts, setCommissionCounts] = useState({ pending: 0, approved: 0, xpEarnedApproved: 0 });
   const [logs, setLogs] = useState<LogDataItem[]>([]);
   const [eventsCount, setEventsCount] = useState(0);
-  const [checkouts, setCheckouts] = useState<any[]>([]);
 
   const loadDashboard = async () => {
     try {
-      const [agentsRows, commissionRows, logRows, eventRows, checkoutRows] = await Promise.all([
+      const [agentsRows, pendingCommData, counts, logRows, eventRows] = await Promise.all([
         api.admin.getAgents().catch(() => []),
-        api.admin.getCommissions().catch(() => []),
+        api.admin.getCommissions({ status: "Pending", pageSize: 4 }).catch(() => ({ data: [], total: 0 })),
+        api.admin.getCommissionCounts().catch(() => ({ pending: 0, approved: 0, rejected: 0, xp_earned_approved: 0 })),
         api.admin.getLogs().catch(() => []),
         api.events.getList().catch(() => []),
-        api.checkouts.getList().catch(() => []),
       ]);
-
-      if (Array.isArray(checkoutRows)) setCheckouts(checkoutRows);
 
       if (Array.isArray(agentsRows)) {
         setAgents(agentsRows.map((a: any) => ({
@@ -62,8 +62,8 @@ export default function AdminDashboard() {
         })));
       }
 
-      if (Array.isArray(commissionRows)) {
-        setCommissions(commissionRows.map((c: any) => ({
+      if (Array.isArray(pendingCommData?.data)) {
+        setRecentPendingCommissions(pendingCommData.data.map((c: any) => ({
           id: Number(c.id),
           agent: String(c.agent?.name || c.submitter_name || "Unknown Agent"),
           property: String(c.property || "-"),
@@ -72,6 +72,11 @@ export default function AdminDashboard() {
           status: String(c.status || "Pending"),
         })));
       }
+      setCommissionCounts({
+        pending: Number(counts?.pending || 0),
+        approved: Number(counts?.approved || 0),
+        xpEarnedApproved: Number(counts?.xp_earned_approved || 0),
+      });
 
       if (Array.isArray(logRows)) {
         setLogs(logRows.map((l: any) => ({
@@ -96,17 +101,11 @@ export default function AdminDashboard() {
     loadDashboard();
   }, []);
 
-  const monthlyXP = useMemo(() => {
-    const total = commissions
-      .filter(c => c.status === "Approved")
-      .reduce((sum, c) => sum + c.xpEarned, 0);
-    return `${(total / 1_000_000).toFixed(1)}M`;
-  }, [commissions]);
-
-  const approvedTransactions = commissions.filter(c => c.status === "Approved").length;
+  const monthlyXP = `${(commissionCounts.xpEarnedApproved / 1_000_000).toFixed(1)}M`;
+  const approvedTransactions = commissionCounts.approved;
   const activeAgentsCount = agents.filter(a => a.status === "Active").length;
   const pendingAgents = agents.filter(a => a.status === "Pending");
-  const pendingCommissions = commissions.filter(c => c.status === "Pending");
+  const pendingCommissionsCount = commissionCounts.pending;
 
   const formatIDR = (amount: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount || 0);
@@ -128,7 +127,7 @@ export default function AdminDashboard() {
   const stats = [
     { label: "Total Agent Aktif", value: String(activeAgentsCount),  icon: Users,       color: isDark ? "#60A5FA" : "#1A6FC4", bg: isDark ? "rgba(96, 165, 250, 0.15)" : "#EEF5FC" },
     { label: "Pendaftaran Pending", value: String(pendingAgents.length),  icon: AlertCircle, color: isDark ? "#F59E0B" : "#D97706", bg: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7" },
-    { label: "Klaim Komisi Pending", value: String(pendingCommissions.length), icon: DollarSign,  color: isDark ? "#FBBF24" : "#E8A500", bg: isDark ? "rgba(251, 191, 36, 0.15)" : "#FFFAED" },
+    { label: "Klaim Komisi Pending", value: String(pendingCommissionsCount), icon: DollarSign,  color: isDark ? "#FBBF24" : "#E8A500", bg: isDark ? "rgba(251, 191, 36, 0.15)" : "#FFFAED" },
     { label: "Event Aktif",         value: String(eventsCount),  icon: Zap,         color: isDark ? "#A78BFA" : "#7B2FBE", bg: isDark ? "rgba(167, 139, 250, 0.15)" : "#F5F0FD" },
     { label: "Total XP Bulan Ini",  value: monthlyXP,icon: TrendingUp, color: isDark ? "#34D399" : "#16A34A", bg: isDark ? "rgba(52, 211, 153, 0.15)" : "#DCFCE7" },
     { label: "Transaksi Disetujui", value: String(approvedTransactions), icon: CheckCircle, color: isDark ? "#FBBF24" : "#C8922A", bg: isDark ? "rgba(251, 191, 36, 0.15)" : "#FEF3C7" },
@@ -162,55 +161,6 @@ export default function AdminDashboard() {
           </Card>
         ))}
       </div>
-
-      {/* Rental checkout reminders (≤45 hari) */}
-      <Card className="p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 16, color: T.text1 }}>
-            Reminder Checkout Sewa <span className="text-xs font-normal" style={{ color: T.text3 }}>(≤45 hari)</span>
-          </h3>
-          {checkouts.length > 0 && (
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: "rgba(232,165,0,0.12)", color: "#C8922A" }}>{checkouts.length}</span>
-          )}
-        </div>
-        {checkouts.length === 0 ? (
-          <p className="text-sm text-center py-6" style={{ color: T.text3 }}>Tidak ada sewa yang akan checkout dalam 45 hari ke depan.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-wider" style={{ color: T.text3 }}>
-                  <th className="text-left font-semibold px-2 py-2">Nama Customer</th>
-                  <th className="text-left font-semibold px-2 py-2">Unit</th>
-                  <th className="text-left font-semibold px-2 py-2">Marketing</th>
-                  <th className="text-left font-semibold px-2 py-2">Tanggal Checkout</th>
-                  <th className="text-right font-semibold px-2 py-2">Sisa</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y" style={{ borderColor: T.border }}>
-                {checkouts.map((co, i) => {
-                  const urgent = co.urgency === "urgent";
-                  const d = new Date(co.checkout_date);
-                  const dateStr = Number.isNaN(d.getTime()) ? co.checkout_date : d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
-                  return (
-                    <tr key={i}>
-                      <td className="px-2 py-2.5 font-semibold" style={{ color: T.text1 }}>{co.customer_name || "—"}</td>
-                      <td className="px-2 py-2.5" style={{ color: T.text2 }}>{co.unit || co.property || "—"}</td>
-                      <td className="px-2 py-2.5" style={{ color: T.text2 }}>{co.agent_name || "—"}</td>
-                      <td className="px-2 py-2.5" style={{ color: T.text2 }}>{dateStr}</td>
-                      <td className="px-2 py-2.5 text-right">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase" style={{ backgroundColor: urgent ? "rgba(220,38,38,0.12)" : "rgba(232,165,0,0.12)", color: urgent ? "#DC2626" : "#C8922A" }}>
-                          {co.days_remaining <= 0 ? "Hari ini" : `${co.days_remaining} hari`}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </Card>
 
       {/* Pending actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -273,11 +223,11 @@ export default function AdminDashboard() {
                 backgroundColor: isDark ? "rgba(251, 191, 36, 0.15)" : "#FFFAED", 
                 color: isDark ? "#FBBF24" : "#E8A500" 
               }}>
-              {pendingCommissions.length} pending
+              {pendingCommissionsCount} pending
             </span>
           </div>
           <div className="space-y-2.5">
-            {pendingCommissions.slice(0, 4).map(c => (
+            {recentPendingCommissions.map(c => (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: T.muted }}>
                 <div className="flex-1 min-w-0">
                   <EllipsisTooltip 
