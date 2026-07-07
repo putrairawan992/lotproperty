@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { GraduationCap, BookOpen, Clock, Award, Plus, Trash2, CheckCircle, AlertCircle, Play, Users, Pencil, X } from "lucide-react";
+import { GraduationCap, BookOpen, Clock, Award, Plus, Trash2, CheckCircle, AlertCircle, Play, Users, Pencil, X, Video } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
@@ -16,6 +16,15 @@ const CAT_COLORS: Record<string, string> = {
   "Marketing": "#E8A500",
   "Product Knowledge": "#1A6FC4",
 };
+
+// Pull a single video ID (any URL form) or a playlist ID from a YouTube URL.
+function parseYouTube(url: string): { videoId?: string; list?: string } {
+  if (!url) return {};
+  const id = url.match(/(?:\/embed\/|[?&]v=|youtu\.be\/)([A-Za-z0-9_-]{11})/);
+  if (id) return { videoId: id[1] };
+  const l = url.match(/[?&]list=([^#&?]+)/);
+  return l ? { list: l[1] } : {};
+}
 
 // Standar URL video Academy — HARUS YouTube, dan formatnya harus salah satu yang
 // bisa diputar player (lihat parseYouTube di AcademyPage): mengandung ID video
@@ -324,81 +333,84 @@ export default function AdminAcademyPage() {
       </AnimatePresence>
 
       {/* MODULE LIST */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         <h3 className="font-bold text-xs text-muted-foreground uppercase tracking-wider text-left">Daftar Modul Pembelajaran</h3>
 
-        {modules.map((m, idx) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+        {modules.map((m, idx) => {
+          const thumbVideoId = m.videoUrl ? parseYouTube(m.videoUrl).videoId : undefined;
+          return (
           <motion.div
             key={m.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.05 }}
           >
-            <Card className="p-5 flex flex-col justify-between overflow-hidden relative hover:shadow-md transition-shadow duration-200" style={{ borderLeft: `4px solid ${m.color}` }}>
-              <div className="flex flex-col sm:flex-row gap-4">
-                
-                {/* Info detail */}
-                <div className="flex-1 space-y-3 text-left">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex flex-col gap-1.5 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-bold text-base text-foreground leading-tight" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{m.title}</h4>
-                        <span className="text-[9px] font-mono px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border" style={{ borderColor: T.border }}>{m.id}</span>
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full flex-shrink-0 tracking-wider" style={{ backgroundColor: `${m.color}15`, color: m.color }}>
-                      {m.cat}
-                    </span>
+            <Card className="p-3 overflow-hidden hover:shadow-md transition-shadow duration-200" style={{ borderLeft: `4px solid ${m.color}` }}>
+              {/* Thumbnail */}
+              <div className="aspect-video rounded-xl bg-muted/40 overflow-hidden relative flex items-center justify-center mb-2.5">
+                {thumbVideoId ? (
+                  <img
+                    src={`https://img.youtube.com/vi/${thumbVideoId}/hqdefault.jpg`}
+                    alt={m.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-1" style={{ color: T.text3 }}>
+                    <Video size={18} />
+                    <span className="text-[9px] font-semibold uppercase tracking-wider">No thumbnail</span>
                   </div>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-2 pb-1 text-xs border-t border-b border-border/40" style={{ borderColor: T.border }}>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock size={14} className="text-[#E8A500]" />
-                      <span className="font-medium text-foreground">{m.dur}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground font-semibold">
-                      <span className="w-4 h-4 rounded bg-[#E8A500]/10 border border-[#E8A500]/20 text-[#E8A500] text-[8px] flex items-center justify-center font-bold">XP</span>
-                      <span className="text-[#E8A500]">+{m.xp} XP</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <CheckCircle size={14} className="text-[#16A34A]" />
-                      <span className="font-medium text-foreground">{m.completers} Selesai</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Users size={14} className="text-[#1A6FC4]" />
-                      <span className="font-medium text-foreground">{m.inProgress} Belajar</span>
-                    </div>
-                  </div>
-
-                  {m.videoUrl && (
-                    <div className="text-[10px] text-muted-foreground bg-muted/20 px-3 py-2 rounded-xl flex items-center gap-2 border w-full sm:w-max min-w-0" style={{ borderColor: T.border }}>
-                      <Play size={11} className="text-red-500 fill-red-500 flex-shrink-0" />
-                      <EllipsisTooltip 
-                        text={m.videoUrl} 
-                        className="font-mono text-muted-foreground/80 truncate block" 
-                        containerClassName="flex-1 min-w-0"
-                      />
-                    </div>
-                  )}
-                </div>
-
+                )}
               </div>
 
-              <div className="flex justify-end gap-2 border-t mt-4 pt-3" style={{ borderColor: T.border }}>
+              {/* Title + Category */}
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h4 className="font-bold text-sm leading-tight line-clamp-2" style={{ fontFamily: "'Rajdhani', sans-serif", color: T.text1 }}>{m.title}</h4>
+                <span className="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full flex-shrink-0 tracking-wider" style={{ backgroundColor: `${m.color}15`, color: m.color }}>
+                  {m.cat}
+                </span>
+              </div>
+
+              {/* Stats row */}
+              <div className="flex items-center gap-3 text-[10px] mb-2 flex-wrap" style={{ color: T.text3 }}>
+                <span className="flex items-center gap-1"><Clock size={11} className="text-[#E8A500]" />{m.dur}</span>
+                <span className="flex items-center gap-1 font-semibold text-[#E8A500]"><Award size={11} />+{m.xp} XP</span>
+                <span className="flex items-center gap-1"><CheckCircle size={11} className="text-[#16A34A]" />{m.completers}</span>
+                <span className="flex items-center gap-1"><Users size={11} className="text-[#1A6FC4]" />{m.inProgress}</span>
+              </div>
+
+              {/* Video URL */}
+              {m.videoUrl && (
+                <div className="text-[9px] text-muted-foreground bg-muted/20 px-2 py-1.5 rounded-lg flex items-center gap-1.5 border mb-2.5" style={{ borderColor: T.border }}>
+                  <Play size={10} className="text-red-500 fill-red-500 flex-shrink-0" />
+                  <EllipsisTooltip 
+                    text={m.videoUrl} 
+                    className="font-mono text-muted-foreground/80 truncate block" 
+                    containerClassName="flex-1 min-w-0"
+                  />
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex justify-end gap-1.5 border-t pt-2" style={{ borderColor: T.border }}>
                 <button onClick={() => handleEditClick(m)}
-                  className="p-2 text-[#1A6FC4] hover:bg-[#1A6FC4]/10 rounded-xl transition-all border border-transparent hover:border-[#1A6FC4]/20 cursor-pointer"
+                  className="p-1.5 text-[#1A6FC4] hover:bg-[#1A6FC4]/10 rounded-lg transition-all cursor-pointer"
                   title="Edit Modul">
-                  <Pencil size={15} />
+                  <Pencil size={13} />
                 </button>
                 <button onClick={() => handleDeleteModule(m.id)}
-                  className="p-2 text-red-500 hover:bg-red-500/10 rounded-xl transition-all border border-transparent hover:border-red-500/20 cursor-pointer"
+                  className="p-1.5 text-red-500 hover:bg-red-500/10 rounded-lg transition-all cursor-pointer"
                   title="Hapus Modul">
-                  <Trash2 size={15} />
+                  <Trash2 size={13} />
                 </button>
               </div>
             </Card>
           </motion.div>
-        ))}
+        );
+        })}
+        </div>
 
         {modules.length === 0 && (
           <div className="text-center py-12 text-muted-foreground text-sm border border-dashed rounded-2xl" style={{ borderColor: T.border }}>
