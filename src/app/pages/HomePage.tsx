@@ -506,6 +506,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
                     <EllipsisTooltip
                       text={agent.isMe ? "Anda" : agent.name}
                       className="text-sm font-medium truncate block"
+                      containerClassName="min-w-0 flex-shrink"
                       style={{ color: T.text1 }}
                     />
                     {agent.isMe && <span className="text-xs px-1.5 py-0.5 rounded-full font-bold flex-shrink-0" style={{ backgroundColor: "#E8A500", color: "white", fontSize: 9 }}>You</span>}

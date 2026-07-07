@@ -17,9 +17,31 @@ interface CommissionDataItem {
   id: number;
   agent: string;
   property: string;
+  propertyType: string;
+  type: string;
   amount: number;
   xpEarned: number;
   status: string;
+}
+
+// Cermin persis dari matriks backend (lihat commissionXP di admin.go) —
+// dipakai untuk menampilkan estimasi XP pada klaim yang masih Pending.
+function estimateCommissionXP(type: string, propertyType: string): number {
+  const t = (propertyType || "").trim();
+  if (type === "RENT") {
+    if (t === "Apartemen") return 2000;
+    if (t === "Rumah") return 3000;
+    return 5000;
+  }
+  if (t === "Apartemen") return 5000;
+  if (t === "Rumah") return 7500;
+  return 10000;
+}
+
+function derivePropertyType(propertyType: string, property: string): string {
+  if (propertyType) return propertyType;
+  const idx = property.indexOf(" - ");
+  return idx !== -1 ? property.slice(0, idx).trim() : property.trim();
 }
 
 interface LogDataItem {
@@ -63,14 +85,20 @@ export default function AdminDashboard() {
       }
 
       if (Array.isArray(pendingCommData?.data)) {
-        setRecentPendingCommissions(pendingCommData.data.map((c: any) => ({
-          id: Number(c.id),
-          agent: String(c.agent?.name || c.submitter_name || "Unknown Agent"),
-          property: String(c.property || "-"),
-          amount: Number(c.amount || 0),
-          xpEarned: Number(c.xp_earned || 0),
-          status: String(c.status || "Pending"),
-        })));
+        setRecentPendingCommissions(pendingCommData.data.map((c: any) => {
+          const property = String(c.property || "-");
+          const propertyType = derivePropertyType(String(c.property_type || ""), property);
+          return {
+            id: Number(c.id),
+            agent: String(c.agent?.name || c.submitter_name || "Unknown Agent"),
+            property,
+            propertyType,
+            type: String(c.type || "SALE"),
+            amount: Number(c.amount || 0),
+            xpEarned: Number(c.xp_earned || 0),
+            status: String(c.status || "Pending"),
+          };
+        }));
       }
       setCommissionCounts({
         pending: Number(counts?.pending || 0),
@@ -227,7 +255,9 @@ export default function AdminDashboard() {
             </span>
           </div>
           <div className="space-y-2.5">
-            {recentPendingCommissions.map(c => (
+            {recentPendingCommissions.map(c => {
+              const estimatedXP = estimateCommissionXP(c.type, c.propertyType);
+              return (
               <div key={c.id} className="flex items-center gap-3 p-3 rounded-xl" style={{ backgroundColor: T.muted }}>
                 <div className="flex-1 min-w-0">
                   <EllipsisTooltip 
@@ -243,10 +273,11 @@ export default function AdminDashboard() {
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-sm font-bold" style={{ color: T.text1, fontFamily: "'Rajdhani', sans-serif" }}>{formatIDR(c.amount)}</p>
-                  <p className="text-xs font-bold" style={{ color: isDark ? "#FBBF24" : "#C8922A" }}>{`+${c.xpEarned} XP`}</p>
+                  <p className="text-xs font-bold" style={{ color: isDark ? "#FBBF24" : "#C8922A" }}>Estimasi: +{estimatedXP.toLocaleString("id-ID")} XP</p>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </Card>
       </div>
