@@ -94,6 +94,7 @@ export default function AdminCheckoutPage() {
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider" style={{ color: T.text3 }}>
                   <th className="text-left font-semibold px-2 py-2">Nama Customer</th>
+                    <th className="text-left font-semibold px-2 py-2">Properti</th>
                   <th className="text-left font-semibold px-2 py-2">Unit</th>
                   <th className="text-left font-semibold px-2 py-2">Marketing</th>
                   <th className="text-left font-semibold px-2 py-2">Tanggal Checkout</th>
@@ -108,7 +109,8 @@ export default function AdminCheckoutPage() {
                   return (
                     <tr key={i}>
                       <td className="px-2 py-2.5 font-semibold" style={{ color: T.text1 }}>{co.customer_name || "—"}</td>
-                      <td className="px-2 py-2.5" style={{ color: T.text2 }}>{co.unit || co.property || "—"}</td>
+                                            <td className="px-2 py-2.5" style={{ color: T.text2 }}>{co.property || "—"}</td>
+                      <td className="px-2 py-2.5" style={{ color: T.text2 }}>{co.unit || "—"}</td>
                       <td className="px-2 py-2.5" style={{ color: T.text2 }}>{co.agent_name || "—"}</td>
                       <td className="px-2 py-2.5" style={{ color: T.text2 }}>{dateStr}</td>
                       <td className="px-2 py-2.5 text-right whitespace-nowrap">

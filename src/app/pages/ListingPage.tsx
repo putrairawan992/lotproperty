@@ -18,6 +18,7 @@ interface Listing {
   id: string;
   title: string;
   type: string;
+  listingType: string;
   owner: string;
   phone: string;
   address: string;
@@ -44,6 +45,7 @@ const EMPTY_FORM = {
   address: "",
   price: "",
   type: "",
+  listingType: "Dijual",
   landArea: "",
   buildingArea: "",
   floors: "",
@@ -67,6 +69,7 @@ type ListingApiRow = {
   address: string;
   price: number;
   property_type: string;
+  listing_type?: string;
   status: "Active" | "Inactive" | "Closed";
   luas_tanah?: number;
   luas_bangunan?: number;
@@ -92,6 +95,7 @@ function listingFromApi(item: ListingApiRow): Listing {
     id: String(item.id),
     title: `${item.property_type} — ${loc}`,
     type: item.property_type,
+    listingType: item.listing_type || "Dijual",
     owner: item.owner_name,
     phone: item.phone,
     address: item.address,
@@ -254,6 +258,7 @@ export default function ListingPage() {
         address: form.address.trim(),
         price: parseNumber(form.price),
         property_type: form.type,
+        listing_type: form.listingType,
         luas_tanah: form.landArea.trim() ? parseNumber(form.landArea) : 0,
         luas_bangunan: form.buildingArea.trim() ? parseNumber(form.buildingArea) : 0,
         jumlah_lantai: form.floors.trim() ? parseNumber(form.floors) : 0,
@@ -647,6 +652,15 @@ export default function ListingPage() {
                           style={{ borderColor: T.border, color: form.type ? T.text1 : T.text3 }}>
                           <option value="">Pilih tipe property</option>
                           {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <FieldLabel>Status Listing</FieldLabel>
+                        <select value={form.listingType} onChange={e => setForm(f => ({ ...f, listingType: e.target.value }))}
+                          className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
+                          style={{ borderColor: T.border, color: T.text1 }}>
+                          <option value="Dijual">Dijual</option>
+                          <option value="Disewa">Disewa</option>
                         </select>
                       </div>
                     </div>

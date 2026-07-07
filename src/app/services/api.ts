@@ -175,10 +175,11 @@ export const api = {
 
   // Listings CRM
   listings: {
-    getList: (filters: { status?: string; property_type?: string; search?: string } = {}) => {
+    getList: (filters: { status?: string; property_type?: string; listing_type?: string; search?: string } = {}) => {
       const params = new URLSearchParams();
       if (filters.status) params.append("status", filters.status);
       if (filters.property_type) params.append("property_type", filters.property_type);
+      if (filters.listing_type) params.append("listing_type", filters.listing_type);
       if (filters.search) params.append("search", filters.search);
       
       const query = params.toString() ? `?${params.toString()}` : "";

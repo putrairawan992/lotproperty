@@ -14,6 +14,7 @@ interface CommissionItem {
   type: string;
   property: string;
   propertyType: string;
+  unit: string;
   amount: number;
   xp: string;
   submitted: string;
@@ -144,6 +145,7 @@ export default function AdminCommissionPage() {
       type,
       property,
       propertyType,
+      unit: String(c.unit || "—"),
       amount: Number(c.amount || 0),
       xp,
       submitted: formatDate(String(c.submitted_at || c.created_at || "")),
@@ -539,6 +541,7 @@ export default function AdminCommissionPage() {
                       )}
                       <th className="text-left px-5 py-3.5 whitespace-nowrap">AGENT</th>
                       <th className="text-left px-5 py-3.5 whitespace-nowrap">PROPERTI</th>
+                      <th className="text-left px-5 py-3.5 whitespace-nowrap">UNIT</th>
                       <th className="text-left px-5 py-3.5 whitespace-nowrap">JUMLAH KOMISI</th>
                       <th className="text-left px-5 py-3.5 whitespace-nowrap">XP REWARD</th>
                       <th className="text-left px-5 py-3.5 whitespace-nowrap">DIAJUKAN</th>
@@ -577,6 +580,7 @@ export default function AdminCommissionPage() {
                             </div>
                           </td>
                           <td className="px-5 py-4 text-sm text-left whitespace-nowrap" style={{ color: T.text2 }}>{c.property}</td>
+                          <td className="px-5 py-4 text-sm text-left whitespace-nowrap" style={{ color: T.text2 }}>{c.unit}</td>
                           <td className="px-5 py-4 text-sm font-bold text-left text-[#E8A500] whitespace-nowrap" style={{ fontFamily: "'Rajdhani', sans-serif" }}>{formatIDR(c.amount)}</td>
                           <td className="px-5 py-4 text-sm font-semibold text-left text-[#C8922A] whitespace-nowrap">{c.xp}</td>
                           <td className="px-5 py-4 text-xs text-left whitespace-nowrap" style={{ color: T.text3 }}>{c.submitted}</td>
@@ -791,6 +795,7 @@ export default function AdminCommissionPage() {
                   { l: "Agent", v: detailClaim.agent, sub: detailClaim.agentEmail },
                   { l: "Status", v: detailClaim.status },
                   { l: "Properti", v: detailClaim.property },
+                  { l: "Unit", v: detailClaim.unit },
                   { l: "Jenis", v: detailClaim.type },
                   { l: "Jumlah Komisi", v: formatIDR(detailClaim.amount), color: "#E8A500" },
                   { l: "Reward XP", v: detailClaim.xp, color: "#C8922A" },

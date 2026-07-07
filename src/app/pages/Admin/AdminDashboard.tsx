@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Users, AlertCircle, DollarSign, Zap, TrendingUp, CheckCircle } from "lucide-react";
 import Card from "../../components/Card";
 import { T, useTheme } from "../../types";
@@ -62,27 +62,26 @@ export default function AdminDashboard() {
   const [logs, setLogs] = useState<LogDataItem[]>([]);
   const [eventsCount, setEventsCount] = useState(0);
 
-  const loadDashboard = async () => {
+  const loadDashboard = useCallback(async () => {
     try {
-      const [agentsRows, pendingCommData, counts, logRows, eventRows] = await Promise.all([
-        api.admin.getAgents().catch(() => []),
+      const [agentsRes, pendingCommData, counts, logRows, eventRows] = await Promise.all([
+        api.admin.getAgents({ pageSize: 100 }).catch(() => ({ data: [], total: 0 })),
         api.admin.getCommissions({ status: "Pending", pageSize: 4 }).catch(() => ({ data: [], total: 0 })),
         api.admin.getCommissionCounts().catch(() => ({ pending: 0, approved: 0, rejected: 0, xp_earned_approved: 0 })),
         api.admin.getLogs().catch(() => []),
         api.events.getList().catch(() => []),
       ]);
 
-      if (Array.isArray(agentsRows)) {
-        setAgents(agentsRows.map((a: any) => ({
-          id: Number(a.id),
-          name: String(a.name || ""),
-          office: String(a.office || "-"),
-          status: String(a.status || "Pending"),
-          joined: a.created_at
-            ? new Date(a.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
-            : "-",
-        })));
-      }
+      const agentsRows = agentsRes?.data || [];
+      setAgents(agentsRows.map((a: any) => ({
+        id: Number(a.id),
+        name: String(a.name || ""),
+        office: String(a.office || "-"),
+        status: String(a.status || "Pending"),
+        joined: a.created_at
+          ? new Date(a.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
+          : "-",
+      })));
 
       if (Array.isArray(pendingCommData?.data)) {
         setRecentPendingCommissions(pendingCommData.data.map((c: any) => {
@@ -123,11 +122,14 @@ export default function AdminDashboard() {
     } catch {
       // Keep dashboard empty when API fails.
     }
-  };
+  }, []);
 
+  // Auto-refresh dashboard setiap 60 detik agar statistik tetap real-time
   useEffect(() => {
     loadDashboard();
-  }, []);
+    const interval = setInterval(loadDashboard, 60_000);
+    return () => clearInterval(interval);
+  }, [loadDashboard]);
 
   const monthlyXP = `${(commissionCounts.xpEarnedApproved / 1_000_000).toFixed(1)}M`;
   const approvedTransactions = commissionCounts.approved;
