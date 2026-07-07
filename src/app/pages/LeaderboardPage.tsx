@@ -8,6 +8,7 @@ import BadgeShield from "../components/BadgeShield";
 import { LeaderboardPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import HofSection from "../components/HofSection";
+import AgentProfileSheet from "../components/AgentProfileSheet";
 import { T, Rarity, useTheme } from "../types";
 import { useTabQuery } from "../routes";
 import { HOF_TABS } from "../appData";
@@ -42,6 +43,7 @@ export default function LeaderboardPage() {
   const [hofCat, setHofCat] = useTabQuery("hofCat", "Top 5 Commission");
   const [slideDir, setSlideDir] = useState(0);
   const { isDark, isGuest, user } = useTheme();
+  const [sheetAgentId, setSheetAgentId] = useState<string | null>(null);
 
   const [weeklyData, setWeeklyData] = useState<WeeklyAgent[]>([]);
   const [hofData, setHofData] = useState<Record<string, any[]>>({});
@@ -287,11 +289,13 @@ export default function LeaderboardPage() {
                   <motion.div key={agent.rank}
                     initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.06, duration: 0.3 }}
+                    onClick={() => { if (agent.id != null) setSheetAgentId(String(agent.id)); }}
                     className="flex items-center gap-3 px-4 py-3.5 bg-card rounded-2xl border"
                     style={{
                       borderColor: agent.isMe ? "#E8A500" : "var(--border)",
                       backgroundColor: agent.isMe ? "var(--accent)" : "var(--card)",
                       boxShadow: agent.isMe ? "0 0 0 1.5px #E8A50040" : "0 1px 3px rgba(0,0,0,0.05)",
+                      cursor: agent.id != null ? "pointer" : "default",
                     }}>
 
                     {/* Rank badge */}
@@ -379,6 +383,8 @@ export default function LeaderboardPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AgentProfileSheet agentId={sheetAgentId} onClose={() => setSheetAgentId(null)} />
     </div>
   );
 }

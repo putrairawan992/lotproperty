@@ -215,13 +215,15 @@ import { api, BASE_URL } from "../services/api";
 
 const FALLBACK_PHOTO = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='250' viewBox='0 0 200 250'%3E%3Crect width='200' height='250' fill='%2317111a'/%3E%3Ccircle cx='100' cy='85' r='40' fill='%23332b3d'/%3E%3Ccircle cx='100' cy='85' r='32' fill='%234a3f5c'/%3E%3Cellipse cx='100' cy='190' rx='60' ry='45' fill='%23332b3d'/%3E%3C/svg%3E";
 
-export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
+export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => void; agentId?: string }) {
   const loadingTime = useLoading(1200);
   const { isDark, isGuest } = useContext(ThemeCtx);
   const [profileLoading, setProfileLoading] = useState(true);
 
   const loading = loadingTime || (isGuest ? false : profileLoading);
-  const { getQueryParam, navigate, search } = useLocation();
+  const { getQueryParam: getUrlQueryParam, navigate, search } = useLocation();
+  // agentId (bottom-sheet view) takes precedence over the ?id= URL param
+  const getQueryParam = (key: string) => (key === "id" && agentId ? agentId : getUrlQueryParam(key));
 
   const [profile, setProfile] = useState<any>(null);
   const [hofHistory, setHofHistory] = useState<any[]>([]);
@@ -317,7 +319,7 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
       }
     };
     loadProfile();
-  }, [search, isGuest]);
+  }, [search, isGuest, agentId]);
 
   const [showManageBadges, setShowManageBadges] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -1001,23 +1003,25 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                 </div>
               </div>
 
-              <div className="w-full space-y-2 pt-2 border-t border-border/40">
-                <button onClick={() => setShowShareModal(true)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border border-[#C8922A]/40 text-[#C8922A] bg-[#C8922A]/5 hover:bg-[#C8922A]/10 transition-all uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                  <Share2 size={13} /> Share Profile
-                </button>
-
-                {onLogout && (
-                  <button
-                    onClick={onLogout}
-                    className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-all border border-red-500/20 text-red-500 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/30"
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
-                    </svg>
-                    Logout
+              {!getQueryParam("id") && (
+                <div className="w-full space-y-2 pt-2 border-t border-border/40">
+                  <button onClick={() => setShowShareModal(true)} className="w-full flex items-center justify-center gap-2 py-2 text-xs font-bold rounded-xl border border-[#C8922A]/40 text-[#C8922A] bg-[#C8922A]/5 hover:bg-[#C8922A]/10 transition-all uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                    <Share2 size={13} /> Share Profile
                   </button>
-                )}
-              </div>
+
+                  {onLogout && (
+                    <button
+                      onClick={onLogout}
+                      className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl transition-all border border-red-500/20 text-red-500 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/30"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" />
+                      </svg>
+                      Logout
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </Card>
 
@@ -1030,10 +1034,12 @@ export default function ProfilePage({ onLogout }: { onLogout?: () => void }) {
                   FEATURED BADGES
                 </h3>
               </div>
-              <button onClick={() => setShowManageBadges(true)}
-                className="text-xs font-bold text-[#E8A500] hover:opacity-80 transition-all uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                Kelola
-              </button>
+              {!getQueryParam("id") && (
+                <button onClick={() => setShowManageBadges(true)}
+                  className="text-xs font-bold text-[#E8A500] hover:opacity-80 transition-all uppercase tracking-wider" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                  Kelola
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-3 gap-2 justify-items-center">

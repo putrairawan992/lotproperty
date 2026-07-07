@@ -50,13 +50,14 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
         // Badges only need counts — hit the lightweight counts endpoints
         // instead of downloading the full (potentially thousands-of-rows) lists.
         const [agents, commissionCounts, helpCounts] = await Promise.all([
-          canSeeAgents ? api.admin.getAgents() : Promise.resolve([]),
+          canSeeAgents ? api.admin.getAgents({ pageSize: 200 }) : Promise.resolve({ data: [], total: 0 }),
           api.admin.getCommissionCounts(),
           api.admin.getHelpSubmissionCounts(),
         ]);
         if (!cancelled) {
-          if (canSeeAgents && Array.isArray(agents)) {
-            setAgentPendingCount(agents.filter((a: any) => String(a.status || "") === "Pending").length);
+          if (canSeeAgents) {
+            const agentList = agents?.data || [];
+            setAgentPendingCount(agentList.filter((a: any) => String(a.status || "") === "Pending").length);
           }
           setCommissionPendingCount(commissionCounts?.pending || 0);
           setHelpPendingCount(helpCounts?.pending_feedback || 0);

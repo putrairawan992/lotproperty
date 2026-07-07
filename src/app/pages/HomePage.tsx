@@ -15,6 +15,7 @@ import { useTabQuery, useLocation } from "../routes";
 import { HOF_TABS, type EventItem, DYNAMIC_PERIODS } from "../appData";
 import { getLevelTierColor, LEVEL_TIERS } from "../badgeAssets";
 import EllipsisTooltip from "../components/EllipsisTooltip";
+import AgentProfileSheet from "../components/AgentProfileSheet";
 import { api } from "../services/api";
 import { normalizeHofCategory } from "../utils/hofCategory";
 
@@ -144,6 +145,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const loadingTime = useLoading(1400);
   const { isDark, isGuest, onLoginRequest, user } = useTheme();
   const { navigate } = useLocation();
+  const [sheetAgentId, setSheetAgentId] = useState<string | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
   const [slideDir, setSlideDir] = useState(0);
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
@@ -481,7 +483,8 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
           <div className="space-y-1">
             {weeklyData.map((agent, i) => (
               <motion.div key={agent.rank} className="flex items-center gap-3 px-2.5 py-2.5 rounded-xl"
-                style={{ backgroundColor: agent.isMe ? "rgba(232,165,0,0.1)" : "transparent" }}
+                onClick={() => { if (agent.id != null) setSheetAgentId(String(agent.id)); }}
+                style={{ backgroundColor: agent.isMe ? "rgba(232,165,0,0.1)" : "transparent", cursor: agent.id != null ? "pointer" : "default" }}
                 initial={{ opacity: 0, x: -14 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04, duration: 0.25 }}>
                 <div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0"
@@ -595,6 +598,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         </div>
       </div>
 
+      <AgentProfileSheet agentId={sheetAgentId} onClose={() => setSheetAgentId(null)} />
     </div>
   );
 }

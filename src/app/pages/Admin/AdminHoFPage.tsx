@@ -39,15 +39,14 @@ export default function AdminHoFPage() {
   useEffect(() => {
     const loadAgents = async () => {
       try {
-        const rows = await api.admin.getAgents();
-        if (Array.isArray(rows)) {
-          setServerAgents(rows.map((r: any) => ({
-            id: Number(r.id),
-            name: String(r.name || ""),
-            status: String(r.status || ""),
-            role: String(r.role || ""),
-          })));
-        }
+        const res = await api.admin.getAgents({ pageSize: 200 });
+        const rows = res?.data || [];
+        setServerAgents(rows.map((r: any) => ({
+          id: Number(r.id),
+          name: String(r.name || ""),
+          status: String(r.status || ""),
+          role: String(r.role || ""),
+        })));
       } catch {
         // Keep fallback static agents when API is unavailable.
       }

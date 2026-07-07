@@ -31,18 +31,17 @@ export default function AdminXPPage() {
 
   const loadAgents = async () => {
     try {
-      const rows = await api.admin.getAgents();
-      if (Array.isArray(rows)) {
-        setAgents(rows
-          .filter((a: any) => String(a.role || "") === "Agent" && String(a.status || "") === "Active")
-          .map((a: any) => ({
-            id: Number(a.id),
-            name: String(a.name || ""),
-            level: String(a.title || "Rookie Agent"),
-            status: String(a.status || "Pending"),
-            role: String(a.role || ""),
-          })));
-      }
+      const res = await api.admin.getAgents({ pageSize: 200 }); // ambil semua agent aktif
+      const rows = res?.data || [];
+      setAgents(rows
+        .filter((a: any) => String(a.role || "") === "Agent" && String(a.status || "") === "Active")
+        .map((a: any) => ({
+          id: Number(a.id),
+          name: String(a.name || ""),
+          level: String(a.title || "Rookie Agent"),
+          status: String(a.status || "Pending"),
+          role: String(a.role || ""),
+        })));
     } catch {
       // Keep empty options on API failure.
     }
