@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail, MoreVertical, Trash2, Edit3 } from "lucide-react";
+import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail, MoreVertical, Trash2, Edit3, ImagePlus } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import LevelBadge from "../../components/LevelBadge";
@@ -300,6 +300,21 @@ export default function AdminAgentsPage() {
   const [editMentorId, setEditMentorId] = useState<number | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  // Create Agent modal
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState("Agent");
+  const [newMentorId, setNewMentorId] = useState<number | null>(null);
+  const [savingCreate, setSavingCreate] = useState(false);
+  // Photo for Create
+  const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null);
+  const [newPhotoPreview, setNewPhotoPreview] = useState("");
+  // Photo for Edit
+  const [editPhotoFile, setEditPhotoFile] = useState<File | null>(null);
+  const [editPhotoPreview, setEditPhotoPreview] = useState("");
   const [toastMsg, setToastMsg] = useState("");
   const [toastError, setToastError] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -405,7 +420,27 @@ export default function AdminAgentsPage() {
     setEditPassword("");
     setEditRole(a.role || "");
     setEditMentorId(a.mentor_id || 0);
+    setEditPhotoFile(null);
+    setEditPhotoPreview(a.photo_url || "");
     setOpenDropdownId(null);
+  };
+
+  const handlePhotoPick = (file: File | null, setFile: (f: File | null) => void, setPreview: (p: string) => void) => {
+    if (!file) {
+      setFile(null);
+      setPreview("");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      triggerToast("File harus berupa gambar", true);
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      triggerToast("Ukuran foto maksimal 5MB", true);
+      return;
+    }
+    setFile(file);
+    setPreview(URL.createObjectURL(file));
   };
 
   const handleSaveEdit = async () => {
@@ -417,6 +452,15 @@ export default function AdminAgentsPage() {
       if (editEmail !== editModal.email) payload.email = editEmail;
       if (editPassword) payload.password = editPassword;
       if (editRole) payload.role = editRole;
+
+      // Upload photo if changed
+      if (editPhotoFile) {
+        const uploaded = await api.auth.uploadProfilePhoto(editPhotoFile);
+        payload.photo_url = uploaded.photo_url;
+      } else if (editPhotoPreview === "" && editModal.photo_url) {
+        // Photo was explicitly removed
+        payload.photo_url = "";
+      }
 
       const prevMentorId = editModal.mentor_id || 0;
       const nextMentorId = editMentorId || 0;
@@ -431,6 +475,7 @@ export default function AdminAgentsPage() {
         email: editEmail || a.email,
         mentor_id: nextMentorId > 0 ? nextMentorId : null,
         role: editRole || a.role,
+        photo_url: payload.photo_url !== undefined ? payload.photo_url : a.photo_url,
       } : a));
 
       // Rebuild tree root representation immediately
@@ -449,6 +494,67 @@ export default function AdminAgentsPage() {
       triggerToast(err?.message || "Gagal memperbarui agent", true);
     } finally {
       setSavingEdit(false);
+    }
+  };
+
+  const handleCreateAgent = async () => {
+    if (!newName || !newEmail || !newPassword) {
+      triggerToast("Nama, email, dan password wajib diisi", true);
+      return;
+    }
+    setSavingCreate(true);
+    try {
+      let photoUrl = "";
+      if (newPhotoFile) {
+        const uploaded = await api.auth.uploadProfilePhoto(newPhotoFile);
+        photoUrl = uploaded.photo_url;
+      }
+      await api.admin.createAgent({
+        name: newName,
+        email: newEmail,
+        phone: newPhone || undefined,
+        password: newPassword,
+        role: newRole,
+        photo_url: photoUrl || undefined,
+        mentor_id: newMentorId && newMentorId > 0 ? newMentorId : null,
+      });
+      // Reset form
+      setNewName("");
+      setNewEmail("");
+      setNewPhone("");
+      setNewPassword("");
+      setNewRole("Agent");
+      setNewMentorId(null);
+      setNewPhotoFile(null);
+      setNewPhotoPreview("");
+      setShowCreateModal(false);
+      triggerToast("Agent berhasil ditambahkan!");
+      // Reload agent list
+      const rows = await api.admin.getAgents();
+      if (Array.isArray(rows)) {
+        setAgents(rows.map((r: any) => ({
+          id: Number(r.id),
+          name: String(r.name || ""),
+          email: String(r.email || ""),
+          phone: String(r.phone || ""),
+          office: String(r.office || "-"),
+          level: String(r.title || "Rookie Agent"),
+          status: String(r.status || "Pending"),
+          joined: formatJoined(r.created_at),
+          mentor_id: r.mentor_id ? Number(r.mentor_id) : null,
+          role: String(r.role || "Agent"),
+          photo_url: String(r.photo_url || ""),
+        })));
+      }
+      // Reload tree
+      try {
+        const treeData = await api.admin.getAgentsTree();
+        if (treeData && treeData?.name) setTreeRoot(treeData);
+      } catch {}
+    } catch (err: any) {
+      triggerToast(err?.message || "Gagal menambahkan agent", true);
+    } finally {
+      setSavingCreate(false);
     }
   };
 
@@ -532,6 +638,16 @@ export default function AdminAgentsPage() {
             <Network size={13} /> Pohon Rekrutmen
           </button>
         </div>
+
+        {/* Add Agent Button */}
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#16A34A] text-white transition-all hover:bg-[#15803D] cursor-pointer"
+          style={{ fontFamily: "'Rajdhani', sans-serif" }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Tambah Agent
+        </button>
       </div>
 
       <AnimatePresence mode="wait">
@@ -1011,6 +1127,26 @@ export default function AdminAgentsPage() {
               </div>
 
               <div className="p-6 space-y-4">
+                {/* Foto Profil (Opsional) */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Foto Profil (Opsional)</label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border flex-shrink-0 bg-muted flex items-center justify-center" style={{ borderColor: T.border }}>
+                      {editPhotoPreview ? (
+                        <img src={editPhotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: T.text3 }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      )}
+                    </div>
+                    <label className="px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-all hover:bg-muted/30" style={{ borderColor: T.border, color: T.text2 }}>
+                      <ImagePlus size={14} /> Pilih Foto
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoPick(e.target.files?.[0] || null, setEditPhotoFile, setEditPhotoPreview)} />
+                    </label>
+                    {editPhotoPreview && (
+                      <button onClick={() => { setEditPhotoFile(null); setEditPhotoPreview(""); }} className="text-xs underline" style={{ color: T.text3 }}>Hapus</button>
+                    )}
+                  </div>
+                </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Nama</label>
                   <input value={editName} onChange={e => setEditName(e.target.value)} autoComplete="off"
@@ -1058,6 +1194,98 @@ export default function AdminAgentsPage() {
                 <button onClick={handleSaveEdit} disabled={savingEdit}
                   className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#E8A500] text-white transition-all hover:bg-[#CC9200] disabled:opacity-60 disabled:cursor-not-allowed">
                   {savingEdit ? "MENYIMPAN..." : "SIMPAN"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* CREATE AGENT MODAL */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCreateModal(false)} className="absolute inset-0 bg-black/60" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden relative z-10 max-h-[90vh] overflow-y-auto" style={{ borderColor: T.border }}>
+              
+              <div className="px-6 py-4 border-b flex justify-between items-center sticky top-0 bg-card z-10" style={{ borderColor: T.border }}>
+                <h3 className="font-bold font-display text-lg" style={{ color: T.text1 }}>Tambah Agent Baru</h3>
+                <button onClick={() => setShowCreateModal(false)} style={{ color: T.text3 }}><X size={20} /></button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                {/* Foto Profil (Opsional) */}
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Foto Profil (Opsional)</label>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden border flex-shrink-0 bg-muted flex items-center justify-center" style={{ borderColor: T.border }}>
+                      {newPhotoPreview ? (
+                        <img src={newPhotoPreview} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" style={{ color: T.text3 }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      )}
+                    </div>
+                    <label className="px-3 py-2 rounded-xl border text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 transition-all hover:bg-muted/30" style={{ borderColor: T.border, color: T.text2 }}>
+                      <ImagePlus size={14} /> Pilih Foto
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => handlePhotoPick(e.target.files?.[0] || null, setNewPhotoFile, setNewPhotoPreview)} />
+                    </label>
+                    {newPhotoPreview && (
+                      <button onClick={() => { setNewPhotoFile(null); setNewPhotoPreview(""); }} className="text-xs underline" style={{ color: T.text3 }}>Hapus</button>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Nama Lengkap *</label>
+                  <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Nama sesuai KTP" autoComplete="off"
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Email *</label>
+                  <input value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="email@contoh.com" autoComplete="off" type="email"
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Nomor HP</label>
+                  <input value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="08xx-xxxx-xxxx" autoComplete="off" type="tel"
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Password *</label>
+                  <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Min. 6 karakter" autoComplete="new-password"
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Role *</label>
+                  <select value={newRole} onChange={e => setNewRole(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card font-medium" style={{ borderColor: T.border, color: T.text1 }}>
+                    <option value="Agent">Agent</option>
+                    <option value="Office Manager">Office Manager</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Super Admin">Super Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Mentor / Upline</label>
+                  <select value={newMentorId || 0} onChange={e => setNewMentorId(Number(e.target.value) || null)}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card font-medium" style={{ borderColor: T.border, color: T.text1 }}>
+                    <option value={0}>— Tidak ada (Mandiri / No Mentor) —</option>
+                    {agents
+                      .filter(a => a.role === "Agent" || a.role === "Office Manager")
+                      .map(a => (
+                        <option key={a.id} value={a.id}>{a.name} ({a.email})</option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="px-6 py-4 border-t flex justify-end gap-3 bg-muted/10 sticky bottom-0 bg-card" style={{ borderColor: T.border }}>
+                <button onClick={() => setShowCreateModal(false)}
+                  className="px-5 py-2.5 rounded-xl text-xs font-semibold border transition-all"
+                  style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
+                <button onClick={handleCreateAgent} disabled={savingCreate || !newName || !newEmail || !newPassword}
+                  className="px-5 py-2.5 rounded-xl text-xs font-bold bg-[#16A34A] text-white transition-all hover:bg-[#15803D] disabled:opacity-60 disabled:cursor-not-allowed">
+                  {savingCreate ? "MENAMBAHKAN..." : "TAMBAH AGENT"}
                 </button>
               </div>
             </motion.div>

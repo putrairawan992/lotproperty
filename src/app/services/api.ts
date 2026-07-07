@@ -309,6 +309,9 @@ export const api = {
       return request<any>(`/admin/help/submissions/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) });
     },
     getAgents: () => request<any[]>("/admin/agents"),
+    createAgent: (payload: { name: string; email: string; phone?: string; password: string; role: string; photo_url?: string; mentor_id?: number | null }) => {
+      return request<any>("/admin/agents", { method: "POST", body: JSON.stringify(payload) });
+    },
     getAgentsTree: () => request<any>("/admin/agents/tree"),
     getHof: (period?: string) => {
       const params = new URLSearchParams();
@@ -319,7 +322,7 @@ export const api = {
     updateAgentStatus: (id: number | string, action: "approve" | "suspend" | "reactivate") => {
       return request<any>(`/admin/agents/${id}/status?action=${action}`, { method: "POST" });
     },
-    updateAgent: (id: number | string, payload: { name?: string; email?: string; password?: string; role?: string; mentor_id?: number | null }) => {
+    updateAgent: (id: number | string, payload: { name?: string; email?: string; password?: string; role?: string; photo_url?: string; mentor_id?: number | null }) => {
       return request<any>(`/admin/agents/${id}`, { method: "PUT", body: JSON.stringify(payload) });
     },
     deleteAgent: (id: number | string) => {
