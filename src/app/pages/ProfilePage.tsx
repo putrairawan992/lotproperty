@@ -688,37 +688,50 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
 
 
   // Capture the exact DOM node at 1050x600 (standard business card proportion)
+  const generateCardBlob = async (): Promise<Blob> => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const el = document.getElementById("profile-scorecard-card");
+    if (!el) throw new Error("Scorecard element not found");
+
+    // Replace image SRC temporarily to ensure no CORS issues during capture
+    const photoData = (cardPhotoSrc.startsWith("data:") ? cardPhotoSrc : null) || (await inlineCardPhoto()) || FALLBACK_PHOTO;
+    const photoImg = el.querySelector<HTMLImageElement>("img[data-scorecard-photo]");
+    const originalSrc = photoImg?.src;
+    if (photoImg) {
+      photoImg.src = photoData;
+      // ponytail: wait for the swapped src to actually decode before snapshotting the
+      // DOM — on mobile the browser hadn't painted it yet, so the exported PNG was blank.
+      await photoImg.decode().catch(() => new Promise(resolve => {
+        photoImg.onload = resolve;
+        photoImg.onerror = resolve;
+      }));
+    }
+
+    let blob: Blob | null = null;
+    try {
+      blob = await htmlToImage.toBlob(el, {
+        pixelRatio: 1050 / (el.offsetWidth || SCORECARD_W),
+        cacheBust: true,
+        style: {
+          transform: "none",
+          margin: "0"
+        }
+      });
+    } finally {
+      if (photoImg && originalSrc) photoImg.src = originalSrc;
+    }
+
+    if (!blob) throw new Error("Gagal generate gambar");
+    return blob;
+  };
+
   const handleDownloadCard = async () => {
     setIsDownloading(true);
     triggerToast("Menyiapkan unduhan gambar kartu profil...");
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 300));
-
-      const el = document.getElementById("profile-scorecard-card");
-      if (!el) throw new Error("Scorecard element not found");
-
-      // Replace image SRC temporarily to ensure no CORS issues during capture
-      const photoData = (cardPhotoSrc.startsWith("data:") ? cardPhotoSrc : null) || (await inlineCardPhoto()) || FALLBACK_PHOTO;
-      const photoImg = el.querySelector<HTMLImageElement>("img[data-scorecard-photo]");
-      const originalSrc = photoImg?.src;
-      if (photoImg) photoImg.src = photoData;
-
-      let blob: Blob | null = null;
-      try {
-        blob = await htmlToImage.toBlob(el, {
-          pixelRatio: 1050 / (el.offsetWidth || SCORECARD_W),
-          cacheBust: true,
-          style: {
-            transform: "none",
-            margin: "0"
-          }
-        });
-      } finally {
-        if (photoImg && originalSrc) photoImg.src = originalSrc;
-      }
-
-      if (!blob) throw new Error("Gagal generate gambar");
+      const blob = await generateCardBlob();
 
       const objectUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -744,10 +757,11 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
 
     if (navigator.share) {
       try {
+        // Only pass `text`, not `url` too — receiving apps (WhatsApp, etc.) append
+        // `url` after `text` themselves, and payload already ends with shareUrl.
         await navigator.share({
           title: `${profileCard.name} — LOT Property`,
           text: payload,
-          url: shareUrl,
         });
         triggerToast("Link profil berhasil dibagikan!");
         return;
@@ -768,6 +782,27 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
     const text = buildShareText(activeLang, featured, profileCard, hofHistory, { unlocked: unlockedBadges, total: totalBadges });
     const payload = `${text}\n\n🔗 ${shareUrl}`;
 
+    // Instagram Story/Post have no web share-target URL that opens the composer
+    // with an image pre-filled. The one thing that actually does that is the
+    // native OS share sheet with a file attached (Instagram registers as a
+    // target there) — so hand off the generated card image via Web Share L2
+    // instead of just opening instagram.com.
+    if (platform === "Instagram Story" || platform === "Instagram Post") {
+      try {
+        const blob = await generateCardBlob();
+        const file = new File([blob], `LOT-Scorecard-${profileCard.slug}.png`, { type: blob.type || "image/png" });
+        if (navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: `${profileCard.name} — LOT Property`, text: payload });
+          triggerToast("Pilih Instagram di menu share untuk langsung post ke Story!");
+          return;
+        }
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+      }
+      triggerError("Perangkat ini tidak mendukung share gambar langsung. Silakan download kartu lalu upload manual ke Instagram.");
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(payload);
     } catch (e) {
@@ -775,9 +810,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
     }
 
     let url = "";
-    if (platform === "Instagram Story" || platform === "Instagram Post") {
-      url = "https://instagram.com";
-    } else if (platform === "Facebook") {
+    if (platform === "Facebook") {
       url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
     } else if (platform === "Threads") {
       url = `https://threads.net/intent/post?text=${encodeURIComponent(payload)}`;

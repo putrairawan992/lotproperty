@@ -75,7 +75,7 @@ type ListingApiRow = {
   luas_bangunan?: number;
   jumlah_lantai?: number;
   certificate?: string;
-  commission_percent?: number;
+  commission_percent?: string;
   notes?: string;
   created_at: string;
 };
@@ -108,7 +108,7 @@ function listingFromApi(item: ListingApiRow): Listing {
     buildingArea: item.luas_bangunan ? `${item.luas_bangunan} m²` : "—",
     floors: item.jumlah_lantai ? String(item.jumlah_lantai) : "—",
     certificate: item.certificate || "—",
-    commission: item.commission_percent ? `${item.commission_percent}%` : "—",
+    commission: item.commission_percent || "—",
     notes: item.notes || "—",
     createdAt,
   };
@@ -117,11 +117,6 @@ function listingFromApi(item: ListingApiRow): Listing {
 function parseNumber(input: string) {
   const digits = input.replace(/[^0-9]/g, "");
   return Number(digits || "0");
-}
-
-function parseFloatLocalized(input: string) {
-  const normalized = input.replace(",", ".").replace(/[^0-9.]/g, "");
-  return Number(normalized || "0");
 }
 
 function FieldLabel({ children, required }: { children: ReactNode; required?: boolean }) {
@@ -161,19 +156,32 @@ export default function ListingPage() {
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [typeFilter, setTypeFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, closed: 0 });
+  const PAGE_SIZE = 10;
 
   const loadListings = async () => {
     if (isGuest) {
       setListings(INITIAL_LISTINGS);
+      setStats({
+        total: INITIAL_LISTINGS.length,
+        active: INITIAL_LISTINGS.filter(l => l.status === "Active").length,
+        inactive: INITIAL_LISTINGS.filter(l => l.status === "Inactive").length,
+        closed: INITIAL_LISTINGS.filter(l => l.status === "Closed").length,
+      });
       setApiLoading(false);
       return;
     }
     try {
       setApiLoading(true);
       const statusFilter = tab === "All" ? undefined : tab;
-      const payload = await api.listings.getList({ status: statusFilter, search });
+      const payload = await api.listings.getList({ status: statusFilter, search, property_type: typeFilter || undefined, page, page_size: PAGE_SIZE });
       const rows: ListingApiRow[] = Array.isArray(payload?.listings) ? payload.listings : [];
       setListings(rows.map(listingFromApi));
+      setTotalPages(Math.max(1, payload?.pagination?.total_pages || 1));
+      if (payload?.stats) setStats(payload.stats);
     } catch (error) {
       setSuccessToast(error instanceof Error ? error.message : "Gagal memuat listing");
       setTimeout(() => setSuccessToast(""), 3000);
@@ -213,15 +221,22 @@ export default function ListingPage() {
     }
   }, [urlSearch]);
 
+  // Tab/type/search changes jump back to page 1 (they invalidate the current page).
+  useEffect(() => { setPage(1); }, [tab, typeFilter, search]);
+
+  // Debounce so typing in search doesn't hit the API on every keystroke.
   useEffect(() => {
-    loadListings();
+    const t = setTimeout(loadListings, 300);
+    return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab]);
+  }, [tab, typeFilter, search, page]);
 
   if (loading) return <ListingPageSkeleton />;
 
   const detailListing = detailId ? listings.find(l => l.id === detailId) : null;
 
+  // ponytail: exports only the currently loaded page now that listings are paginated.
+  // Full-dataset export would need a dedicated unpaginated endpoint — add if requested.
   const handleExportExcel = () => {
     setSuccessToast("Mengekspor data listing ke Excel...");
     setTimeout(() => {
@@ -263,7 +278,7 @@ export default function ListingPage() {
         luas_bangunan: form.buildingArea.trim() ? parseNumber(form.buildingArea) : 0,
         jumlah_lantai: form.floors.trim() ? parseNumber(form.floors) : 0,
         certificate: form.certificate.trim(),
-        commission_percent: form.commission.trim() ? parseFloatLocalized(form.commission) : 0,
+        commission_percent: form.commission.trim(),
         notes: form.notes.trim(),
       });
 
@@ -303,20 +318,21 @@ export default function ListingPage() {
     setTimeout(() => setSuccessToast(""), 3000);
   };
 
-  const deleteListing = (id: string) => {
-    setListings(prev => prev.filter(l => l.id !== id));
+  const deleteListing = async (id: string) => {
     setOpenMenuId(null);
-    if (detailId === id) closeDetail();
-    setSuccessToast("Listing dihapus hanya di UI (endpoint delete belum tersedia)");
+    try {
+      await api.listings.delete(id);
+      if (detailId === id) closeDetail();
+      setSuccessToast("Listing berhasil dihapus");
+      await loadListings();
+    } catch (error) {
+      setSuccessToast(error instanceof Error ? error.message : "Gagal menghapus listing");
+    }
     setTimeout(() => setSuccessToast(""), 3000);
   };
 
-  const filtered = listings.filter(l =>
-    (tab === "All" || l.status === tab) &&
-    (l.title.toLowerCase().includes(search.toLowerCase()) ||
-      l.loc.toLowerCase().includes(search.toLowerCase()) ||
-      l.owner.toLowerCase().includes(search.toLowerCase()))
-  );
+  // Filtering (status/type/search) and pagination now happen server-side in loadListings.
+  const filtered = listings;
 
   const StatusChip = ({ s }: { s: string }) => {
     const cfg = s === "Active" ? { bg: "#DCFCE7", c: "#16A34A" } : s === "Inactive" ? { bg: "#FEF3C7", c: "#D97706" } : { bg: "#FEE2E2", c: "#DC2626" };
@@ -418,10 +434,10 @@ export default function ListingPage() {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-4 gap-1.5 sm:gap-2 lg:gap-3 mb-3 sm:mb-5">
           {[
-            { l: "Total Listing", short: "Total", v: listings.length, c: T.text2 },
-            { l: "Active", short: "Active", v: listings.filter(l => l.status === "Active").length, c: "#16A34A" },
-            { l: "Inactive", short: "Inactive", v: listings.filter(l => l.status === "Inactive").length, c: "#D97706" },
-            { l: "Closed", short: "Closed", v: listings.filter(l => l.status === "Closed").length, c: "#DC2626" },
+            { l: "Total Listing", short: "Total", v: stats.total, c: T.text2 },
+            { l: "Active", short: "Active", v: stats.active, c: "#16A34A" },
+            { l: "Inactive", short: "Inactive", v: stats.inactive, c: "#D97706" },
+            { l: "Closed", short: "Closed", v: stats.closed, c: "#DC2626" },
           ].map(s => (
             <Card key={s.l} className="px-2 py-2 sm:p-3 lg:p-4 text-center min-w-0">
               <p
@@ -447,9 +463,10 @@ export default function ListingPage() {
                 style={{ borderColor: T.border, backgroundColor: T.card, color: T.text1 }} />
             </div>
             <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <select className="flex-1 sm:flex-none px-3 py-2 rounded-xl border text-sm outline-none bg-card min-w-0" style={{ borderColor: T.border, color: T.text2 }}>
-                <option>Semua Tipe</option>
-                {PROPERTY_TYPES.map(t => <option key={t}>{t}</option>)}
+              <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
+                className="flex-1 sm:flex-none px-3 py-2 rounded-xl border text-sm outline-none bg-card min-w-0" style={{ borderColor: T.border, color: T.text2 }}>
+                <option value="">Semua Tipe</option>
+                {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
               <button onClick={handleExportExcel}
                 className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-sm font-bold transition-all border flex-shrink-0"
@@ -570,6 +587,22 @@ export default function ListingPage() {
                   </tbody>
                 </table>
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 px-4 py-3 border-t" style={{ borderColor: T.border }}>
+                  <button type="button" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium border disabled:opacity-40"
+                    style={{ borderColor: T.border, color: T.text2 }}>
+                    Sebelumnya
+                  </button>
+                  <span className="text-sm" style={{ color: T.text3 }}>Halaman {page} dari {totalPages}</span>
+                  <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium border disabled:opacity-40"
+                    style={{ borderColor: T.border, color: T.text2 }}>
+                    Berikutnya
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <div className="py-8">
@@ -710,13 +743,10 @@ export default function ListingPage() {
                       </div>
                       <div>
                         <FieldLabel>Komisi</FieldLabel>
-                        <div className="relative">
-                          <input type="text" placeholder="Contoh: 2,5" value={form.commission}
-                            onChange={e => setForm(f => ({ ...f, commission: e.target.value }))}
-                            className="w-full pl-3.5 pr-8 py-2.5 rounded-xl border bg-card text-sm outline-none"
-                            style={{ borderColor: T.border, color: T.text1 }} />
-                          <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs" style={{ color: T.text3 }}>%</span>
-                        </div>
+                        <input type="text" placeholder="Contoh: 2,5% atau Nego" value={form.commission}
+                          onChange={e => setForm(f => ({ ...f, commission: e.target.value }))}
+                          className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
+                          style={{ borderColor: T.border, color: T.text1 }} />
                       </div>
                       <div>
                         <FieldLabel>Catatan</FieldLabel>

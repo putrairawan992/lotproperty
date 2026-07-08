@@ -175,13 +175,15 @@ export const api = {
 
   // Listings CRM
   listings: {
-    getList: (filters: { status?: string; property_type?: string; listing_type?: string; search?: string } = {}) => {
+    getList: (filters: { status?: string; property_type?: string; listing_type?: string; search?: string; page?: number; page_size?: number } = {}) => {
       const params = new URLSearchParams();
       if (filters.status) params.append("status", filters.status);
       if (filters.property_type) params.append("property_type", filters.property_type);
       if (filters.listing_type) params.append("listing_type", filters.listing_type);
       if (filters.search) params.append("search", filters.search);
-      
+      if (filters.page) params.append("page", String(filters.page));
+      if (filters.page_size) params.append("page_size", String(filters.page_size));
+
       const query = params.toString() ? `?${params.toString()}` : "";
       return request<any>(`/listings${query}`);
     },
@@ -196,18 +198,23 @@ export const api = {
         method: "PUT",
         body: JSON.stringify({ status }),
       });
+    },
+    delete: (id: number | string) => {
+      return request<any>(`/listings/${id}`, { method: "DELETE" });
     }
   },
 
   // Prospects CRM
   prospects: {
-    getList: (filters: { next_action?: string; search?: string } = {}) => {
+    getList: (filters: { next_action?: string; search?: string; page?: number; page_size?: number } = {}) => {
       const params = new URLSearchParams();
       if (filters.next_action) params.append("next_action", filters.next_action);
       if (filters.search) params.append("search", filters.search);
-      
+      if (filters.page) params.append("page", String(filters.page));
+      if (filters.page_size) params.append("page_size", String(filters.page_size));
+
       const query = params.toString() ? `?${params.toString()}` : "";
-      return request<any[]>(`/prospects${query}`);
+      return request<any>(`/prospects${query}`);
     },
     create: (payload: any) => {
       return request<any>("/prospects", {

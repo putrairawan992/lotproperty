@@ -268,7 +268,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   ]);
 
   const [weeklyQuests, setWeeklyQuests] = useState<QuestItem[]>([
-    { name: "New Prospect", progress: 4, total: 25, xp: 100, note: "Max 2.500 XP/minggu (100 XP per Prospect)", id: "new_prospect" },
+    { name: "New Prospect", progress: 4, total: 10, xp: 100, note: "Max 1.000 XP/minggu (100 XP per Prospect)", id: "new_prospect" },
     { name: "Prospect Clearance", progress: 0, total: 1, xp: 1000, note: "Tidak ada reminder overdue", id: "prospect_clearance" },
   ]);
 

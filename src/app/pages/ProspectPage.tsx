@@ -148,6 +148,10 @@ export default function ProspectPage() {
 
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [editForm, setEditForm] = useState<Prospect | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const PAGE_SIZE = 10;
 
   const [newForm, setNewForm] = useState({
     name: "", phone: "", note: "",
@@ -231,14 +235,20 @@ export default function ProspectPage() {
   const loadProspects = async () => {
     if (isGuest) {
       setProspects(INITIAL_PROSPECTS);
+      const counts: Record<string, number> = {};
+      for (const p of INITIAL_PROSPECTS) counts[p.nextAction] = (counts[p.nextAction] || 0) + 1;
+      setStatusCounts(counts);
       setApiLoading(false);
       return;
     }
     try {
       setApiLoading(true);
       const next_action = filter === "All" ? undefined : filter;
-      const rows = await api.prospects.getList({ next_action });
-      setProspects(Array.isArray(rows) ? rows.map(mapProspect) : []);
+      const payload = await api.prospects.getList({ next_action, page, page_size: PAGE_SIZE });
+      const rows = Array.isArray(payload?.prospects) ? payload.prospects : [];
+      setProspects(rows.map(mapProspect));
+      setTotalPages(Math.max(1, payload?.pagination?.total_pages || 1));
+      if (payload?.status_counts) setStatusCounts(payload.status_counts);
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal memuat prospects");
     } finally {
@@ -246,10 +256,13 @@ export default function ProspectPage() {
     }
   };
 
+  // Switching the status filter invalidates the current page.
+  useEffect(() => { setPage(1); }, [filter]);
+
   useEffect(() => {
     loadProspects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter]);
+  }, [filter, page]);
 
   if (loading) return <ProspectPageSkeleton />;
 
@@ -705,6 +718,22 @@ export default function ProspectPage() {
                   </tbody>
                 </table>
               </div>
+
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 px-4 py-3 border-t" style={{ borderColor: T.border }}>
+                  <button type="button" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium border disabled:opacity-40"
+                    style={{ borderColor: T.border, color: T.text2 }}>
+                    Sebelumnya
+                  </button>
+                  <span className="text-sm" style={{ color: T.text3 }}>Halaman {page} dari {totalPages}</span>
+                  <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    className="px-3 py-1.5 rounded-lg text-sm font-medium border disabled:opacity-40"
+                    style={{ borderColor: T.border, color: T.text2 }}>
+                    Berikutnya
+                  </button>
+                </div>
+              )}
             </>
           ) : (
             <div className="py-8">
@@ -729,7 +758,7 @@ export default function ProspectPage() {
           <div className="flex items-center gap-1 min-w-max">
             {PIPELINE.map((step, i) => {
               const Icon = step.icon;
-              const count = prospects.filter(p => p.status === step.status).length;
+              const count = statusCounts[step.status] ?? 0;
               return (
                 <div key={step.status} className="flex items-center">
                   <div className="flex flex-col items-center" style={{ width: 72 }}>
