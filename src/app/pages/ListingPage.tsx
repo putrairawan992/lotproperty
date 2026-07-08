@@ -6,6 +6,7 @@ import {
   ChevronRight, Eye, ToggleLeft, Archive, Trash2, MessageCircle, Home
 } from "lucide-react";
 import Card from "../components/Card";
+import AdminPagination from "../components/AdminPagination";
 import { ListingPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { T, useTheme } from "../types";
@@ -158,13 +159,14 @@ export default function ListingPage() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [typeFilter, setTypeFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, closed: 0 });
-  const PAGE_SIZE = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   const loadListings = async () => {
     if (isGuest) {
       setListings(INITIAL_LISTINGS);
+      setTotalItems(INITIAL_LISTINGS.length);
       setStats({
         total: INITIAL_LISTINGS.length,
         active: INITIAL_LISTINGS.filter(l => l.status === "Active").length,
@@ -177,10 +179,10 @@ export default function ListingPage() {
     try {
       setApiLoading(true);
       const statusFilter = tab === "All" ? undefined : tab;
-      const payload = await api.listings.getList({ status: statusFilter, search, property_type: typeFilter || undefined, page, page_size: PAGE_SIZE });
+      const payload = await api.listings.getList({ status: statusFilter, search, property_type: typeFilter || undefined, page, page_size: pageSize });
       const rows: ListingApiRow[] = Array.isArray(payload?.listings) ? payload.listings : [];
       setListings(rows.map(listingFromApi));
-      setTotalPages(Math.max(1, payload?.pagination?.total_pages || 1));
+      setTotalItems(payload?.pagination?.total || 0);
       if (payload?.stats) setStats(payload.stats);
     } catch (error) {
       setSuccessToast(error instanceof Error ? error.message : "Gagal memuat listing");
@@ -221,15 +223,15 @@ export default function ListingPage() {
     }
   }, [urlSearch]);
 
-  // Tab/type/search changes jump back to page 1 (they invalidate the current page).
-  useEffect(() => { setPage(1); }, [tab, typeFilter, search]);
+  // Tab/type/search/pageSize changes jump back to page 1 (they invalidate the current page).
+  useEffect(() => { setPage(1); }, [tab, typeFilter, search, pageSize]);
 
   // Debounce so typing in search doesn't hit the API on every keystroke.
   useEffect(() => {
     const t = setTimeout(loadListings, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, typeFilter, search, page]);
+  }, [tab, typeFilter, search, page, pageSize]);
 
   if (loading) return <ListingPageSkeleton />;
 
@@ -588,21 +590,7 @@ export default function ListingPage() {
                 </table>
               </div>
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-3 px-4 py-3 border-t" style={{ borderColor: T.border }}>
-                  <button type="button" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium border disabled:opacity-40"
-                    style={{ borderColor: T.border, color: T.text2 }}>
-                    Sebelumnya
-                  </button>
-                  <span className="text-sm" style={{ color: T.text3 }}>Halaman {page} dari {totalPages}</span>
-                  <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium border disabled:opacity-40"
-                    style={{ borderColor: T.border, color: T.text2 }}>
-                    Berikutnya
-                  </button>
-                </div>
-              )}
+              <AdminPagination page={page} pageSize={pageSize} totalItems={totalItems} onPageChange={setPage} onPageSizeChange={setPageSize} />
             </>
           ) : (
             <div className="py-8">

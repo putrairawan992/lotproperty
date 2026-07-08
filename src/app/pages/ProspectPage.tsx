@@ -6,6 +6,7 @@ import {
   MoreHorizontal, Eye, Trash2, Check, Home, FileText, Trophy, XCircle, Clock,
 } from "lucide-react";
 import Card from "../components/Card";
+import AdminPagination from "../components/AdminPagination";
 import { DateInput, TimeInput } from "../components/DateTimeInput";
 import { ProspectPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
@@ -149,9 +150,9 @@ export default function ProspectPage() {
   const [prospects, setProspects] = useState<Prospect[]>([]);
   const [editForm, setEditForm] = useState<Prospect | null>(null);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
-  const PAGE_SIZE = 10;
 
   const [newForm, setNewForm] = useState({
     name: "", phone: "", note: "",
@@ -235,6 +236,7 @@ export default function ProspectPage() {
   const loadProspects = async () => {
     if (isGuest) {
       setProspects(INITIAL_PROSPECTS);
+      setTotalItems(INITIAL_PROSPECTS.length);
       const counts: Record<string, number> = {};
       for (const p of INITIAL_PROSPECTS) counts[p.nextAction] = (counts[p.nextAction] || 0) + 1;
       setStatusCounts(counts);
@@ -244,10 +246,10 @@ export default function ProspectPage() {
     try {
       setApiLoading(true);
       const next_action = filter === "All" ? undefined : filter;
-      const payload = await api.prospects.getList({ next_action, page, page_size: PAGE_SIZE });
+      const payload = await api.prospects.getList({ next_action, page, page_size: pageSize });
       const rows = Array.isArray(payload?.prospects) ? payload.prospects : [];
       setProspects(rows.map(mapProspect));
-      setTotalPages(Math.max(1, payload?.pagination?.total_pages || 1));
+      setTotalItems(payload?.pagination?.total || 0);
       if (payload?.status_counts) setStatusCounts(payload.status_counts);
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal memuat prospects");
@@ -256,13 +258,13 @@ export default function ProspectPage() {
     }
   };
 
-  // Switching the status filter invalidates the current page.
-  useEffect(() => { setPage(1); }, [filter]);
+  // Switching the status filter or page size invalidates the current page.
+  useEffect(() => { setPage(1); }, [filter, pageSize]);
 
   useEffect(() => {
     loadProspects();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, page]);
+  }, [filter, page, pageSize]);
 
   if (loading) return <ProspectPageSkeleton />;
 
@@ -719,21 +721,7 @@ export default function ProspectPage() {
                 </table>
               </div>
 
-              {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-3 px-4 py-3 border-t" style={{ borderColor: T.border }}>
-                  <button type="button" disabled={page <= 1} onClick={() => setPage(p => Math.max(1, p - 1))}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium border disabled:opacity-40"
-                    style={{ borderColor: T.border, color: T.text2 }}>
-                    Sebelumnya
-                  </button>
-                  <span className="text-sm" style={{ color: T.text3 }}>Halaman {page} dari {totalPages}</span>
-                  <button type="button" disabled={page >= totalPages} onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium border disabled:opacity-40"
-                    style={{ borderColor: T.border, color: T.text2 }}>
-                    Berikutnya
-                  </button>
-                </div>
-              )}
+              <AdminPagination page={page} pageSize={pageSize} totalItems={totalItems} onPageChange={setPage} onPageSizeChange={setPageSize} />
             </>
           ) : (
             <div className="py-8">
