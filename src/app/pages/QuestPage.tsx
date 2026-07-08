@@ -232,6 +232,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const loadingTime = useLoading(1200);
   const { isDark, isGuest, user, refreshUser } = useTheme();
   const [apiLoading, setApiLoading] = useState(true);
+  const [completedQuest, setCompletedQuest] = useState<{name: string, xp: number} | null>(null);
 
   const loading = loadingTime || (isGuest ? false : apiLoading);
   const { navigate } = useLocation();
@@ -273,7 +274,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   const [skillQuests, setSkillQuests] = useState<QuestItem[]>([
     { name: "New Recruit", progress: 0, total: 1, xp: 5000, note: "Input nama & nomor KTM untuk verifikasi Admin", id: "new_recruit", status: "not_submitted" },
-    { name: "Komplet Modul Akademi", progress: 2, total: 5, xp: 200, note: "Otomatis setelah menyelesaikan video", id: "academy" },
+    { name: "Complete Modul Akademi", progress: 2, total: 5, xp: 200, note: "Otomatis setelah menyelesaikan video", id: "academy" },
     { name: "Event Participation", progress: 0, total: 1, xp: 1000, note: "Scan barcode event atau input kode manual", id: "event_participation", status: "not_submitted" },
   ]);
 
@@ -421,7 +422,11 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       api.quests.markAttendance()
         .then((res: any) => {
           const xp = Number(res?.xp_earned || 0);
-          triggerToast(xp > 0 ? `Attendance sukses! +${xp} XP` : "Attendance hari ini sudah tercatat.");
+          if (xp > 0) {
+            setCompletedQuest({ name: "Daily Login", xp });
+          } else {
+            triggerToast("Attendance hari ini sudah tercatat.");
+          }
           loadQuestStatus();
           refreshUser();
         })
@@ -461,7 +466,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     setSkillQuests(prev => prev.map(q => q.id === "event_participation" ? { ...q, progress: 1, done: true } : q));
     setShowEventModal(false);
     setEventCode("");
-    triggerToast("Kode event berhasil diverifikasi! +1.000 XP ditambahkan.");
+    setCompletedQuest({ name: "Event Participation", xp: 1000 });
   };
 
   const handleContentSubmit = async () => {
@@ -471,7 +476,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowContentModal(false);
       setContentUrl("");
-      triggerToast(`Link konten berhasil disubmit! +${xp || 300} XP ditambahkan.`);
+      setCompletedQuest({ name: "Upload Konten Sosmed", xp: xp || 300 });
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
@@ -486,7 +491,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowPromoModal(false);
       setPromoUrl("");
-      triggerToast(`Link promosi listing berhasil disubmit! +${xp || 100} XP ditambahkan.`);
+      setCompletedQuest({ name: "Listing Promotion", xp: xp || 100 });
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
@@ -952,6 +957,67 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
                   Klaim XP
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Quest Complete Modal ── */}
+      <AnimatePresence>
+        {completedQuest && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setCompletedQuest(null)} />
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.8, opacity: 0, y: 20 }}
+              className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center p-8 text-center"
+              style={{ backgroundColor: T.card, border: `1px solid ${T.border}` }}
+            >
+              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: "radial-gradient(circle at center, #E8A500 0%, transparent 70%)" }} />
+              
+              <motion.div 
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", bounce: 0.6, duration: 0.8 }}
+                className="w-24 h-24 mb-6 rounded-full flex items-center justify-center relative z-10"
+                style={{ background: "linear-gradient(135deg, #FFD700 0%, #E8A500 100%)", boxShadow: "0 10px 25px -5px rgba(232, 165, 0, 0.5)" }}
+              >
+                <TreasureChestIcon size={48} className="text-white" />
+              </motion.div>
+
+              <motion.h3 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+                className="text-2xl font-black mb-2 tracking-tight relative z-10"
+                style={{ color: T.text1 }}
+              >
+                Quest Selesai!
+              </motion.h3>
+              
+              <motion.p 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                className="text-sm mb-6 font-medium relative z-10"
+                style={{ color: T.text2 }}
+              >
+                Anda berhasil menyelesaikan <br/>
+                <strong style={{ color: T.text1 }}>{completedQuest.name}</strong>
+              </motion.p>
+
+              <motion.div 
+                initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.5, type: "spring" }}
+                className="px-6 py-3 rounded-2xl flex items-center gap-2 mb-8 relative z-10"
+                style={{ backgroundColor: "rgba(232, 165, 0, 0.1)", border: "1px solid rgba(232, 165, 0, 0.3)" }}
+              >
+                <span className="text-xl font-black text-[#E8A500]">+{completedQuest.xp.toLocaleString("id-ID")} XP</span>
+              </motion.div>
+
+              <button
+                onClick={() => setCompletedQuest(null)}
+                className="w-full py-4 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 relative z-10"
+                style={{ backgroundColor: "#E8A500" }}
+              >
+                Lanjutkan
+              </button>
             </motion.div>
           </div>
         )}

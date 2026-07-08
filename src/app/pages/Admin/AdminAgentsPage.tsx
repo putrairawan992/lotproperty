@@ -1283,7 +1283,7 @@ export default function AdminAgentsPage() {
                     className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card font-medium" style={{ borderColor: T.border, color: T.text1 }}>
                     <option value={0}>— Tidak ada (Mandiri / No Mentor) —</option>
                     {agents
-                      .filter(a => a.role === "Agent" || a.role === "Office Manager")
+                      .filter(a => a.role === "Agent")
                       .map(a => (
                         <option key={a.id} value={a.id}>{a.name} ({a.email})</option>
                       ))}
