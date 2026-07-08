@@ -355,15 +355,21 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
     const params = new URLSearchParams(search);
     const shareCard = params.get("shareCard");
     const lang = params.get("lang") as "ID" | "EN" | "CN" | null;
-    if (shareCard === "1") {
+    // Only auto-open the Share modal for the agent's own profile — a link recipient
+    // (viewed here via the `agentId` prop from AgentProfileSheet) should just see the
+    // card, not immediately be prompted to share it further themselves.
+    if (shareCard === "1" && !agentId) {
       setShowShareModal(true);
-      if (lang && ["ID", "EN", "CN"].includes(lang)) setActiveLang(lang);
     }
-  }, [search]);
+    if (lang && ["ID", "EN", "CN"].includes(lang)) setActiveLang(lang);
+  }, [search, agentId]);
 
+  // Include the agent's own id so recipients who open this link see THIS agent's
+  // public card (via api.public.getProfile), not their own profile if they're logged
+  // into a different account — previously the link had no id at all.
   const shareUrl = useMemo(
-    () => `${typeof window !== "undefined" ? window.location.origin : ""}/profile?shareCard=1&lang=${activeLang}`,
-    [activeLang]
+    () => `${typeof window !== "undefined" ? window.location.origin : ""}/profile?id=${profile?.id ?? ""}`,
+    [activeLang, profile?.id]
   );
 
   const allBadgesData = useMemo(() => {
@@ -867,7 +873,10 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
   const L = SHARE_LANG[activeLang];
 
   return (
-    <div className="p-4 lg:p-6 transition-colors duration-300 relative">
+    <div className="p-4 lg:p-6 transition-colors duration-300 relative @container">
+      {/* ponytail: this section uses @sm/@md/@lg (container queries) instead of viewport
+          breakpoints below — when embedded in AgentProfileSheet's narrow modal on a wide
+          desktop screen, viewport breakpoints fired anyway and squished the 3-col grid. */}
       {/* Toast Notif */}
       <AnimatePresence>
         {successToast && (
@@ -888,7 +897,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
         )}
       </AnimatePresence>
 
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 @lg:grid-cols-3 gap-6">
 
         {/* ==================== LEFT COLUMN ==================== */}
         <div className="space-y-6">
@@ -1097,11 +1106,11 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
         </div>
 
         {/* ==================== RIGHT COLUMN ==================== */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="@lg:col-span-2 space-y-6">
 
           {/* ==================== HALL OF FAME HISTORY ==================== */}
           <div
-            className="relative overflow-hidden rounded-[28px] p-6 sm:p-8"
+            className="relative overflow-hidden rounded-[28px] p-6 @sm:p-8"
             style={{
               background: isDark
                 ? "radial-gradient(ellipse 1000px 300px at 50% -20%, rgba(255,255,255,0.035), transparent 70%), linear-gradient(165deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.015) 45%, rgba(0,0,0,0.25) 100%)"
@@ -1117,16 +1126,16 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
               }}
             />
 
-            <div className="relative z-[1] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div className="relative z-[1] flex flex-col @sm:flex-row @sm:items-center @sm:justify-between gap-3 mb-6">
               <div>
                 <p
-                  className="text-[10px] sm:text-[11px] tracking-[0.35em] sm:tracking-[0.45em] uppercase font-semibold mb-1.5 m-0"
+                  className="text-[10px] @sm:text-[11px] tracking-[0.35em] @sm:tracking-[0.45em] uppercase font-semibold mb-1.5 m-0"
                   style={{ color: "#87858d", fontFamily: "'Inter', sans-serif" }}
                 >
                   Official Selection
                 </p>
                 <h3
-                  className="m-0 font-normal text-[22px] sm:text-[30px] tracking-[0.06em] uppercase leading-none"
+                  className="m-0 font-normal text-[22px] @sm:text-[30px] tracking-[0.06em] uppercase leading-none"
                   style={{ fontFamily: "'Bebas Neue', 'Rajdhani', sans-serif", color: "#f3f2ee" }}
                 >
                   Hall of Fame History
@@ -1155,7 +1164,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
                 />
               </div>
             ) : (
-              <div className="relative z-[1] grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-x-4 gap-y-6 lg:gap-x-8 justify-items-center">
+              <div className="relative z-[1] grid grid-cols-3 @sm:grid-cols-4 @md:grid-cols-5 @lg:grid-cols-6 gap-x-4 gap-y-6 @lg:gap-x-8 justify-items-center">
                 {visibleHof.map((h, i) => (
                   <motion.div
                     key={`${h.cat}-${h.period}-${i}`}
@@ -1173,7 +1182,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
             {hofHistory.length > 6 && (
               <>
                 <div
-                  className="relative z-[1] h-px my-6 sm:my-8"
+                  className="relative z-[1] h-px my-6 @sm:my-8"
                   style={{
                     background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.06) 15%, rgba(255,255,255,0.06) 85%, transparent)",
                   }}
@@ -1208,7 +1217,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 @sm:grid-cols-3 gap-3">
               {[
                 { l: "Total Commission", v: profileCard.commission, icon: DollarSign, color: "#E8A500" },
                 { l: "Total Transactions", v: profileCard.totalTransactions, icon: TrendingUp, color: "#16A34A" },
@@ -1219,7 +1228,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
               ].map((s, i) => (
                 <div
                   key={i}
-                  className={`flex items-center gap-3.5 p-3.5 rounded-2xl border border-border/30 bg-muted/10 hover:bg-muted/20 transition-all ${i === 0 ? "col-span-2 sm:col-span-1" : ""}`}
+                  className={`flex items-center gap-3.5 p-3.5 rounded-2xl border border-border/30 bg-muted/10 hover:bg-muted/20 transition-all ${i === 0 ? "col-span-2 @sm:col-span-1" : ""}`}
                 >
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: s.color + "15" }}>
                     <s.icon size={18} style={{ color: s.color }} />
@@ -1227,7 +1236,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
                   <div className="min-w-0 flex-1">
                     <EllipsisTooltip
                       text={s.v}
-                      className="font-extrabold leading-tight text-[15px] sm:text-[17px] text-foreground whitespace-nowrap truncate block w-full text-left"
+                      className="font-extrabold leading-tight text-[15px] @sm:text-[17px] text-foreground whitespace-nowrap truncate block w-full text-left"
                       style={{ fontFamily: "'Rajdhani', sans-serif" }}
                     />
                     <EllipsisTooltip
@@ -1259,7 +1268,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
             </div>
 
             {/* circular ring + progress bars layout */}
-            <div className="flex flex-col md:flex-row items-center justify-between border border-border/30 rounded-2xl p-5 bg-muted/10 gap-6 md:gap-12">
+            <div className="flex flex-col @md:flex-row items-center justify-between border border-border/30 rounded-2xl p-5 bg-muted/10 gap-6 @md:gap-12">
 
               {/* Progress Circle (Left) */}
               <div className="flex items-center gap-5 justify-center flex-shrink-0">
@@ -1303,7 +1312,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
               </div>
 
               {/* Divider for desktop */}
-              <div className="hidden md:block w-px h-24 bg-border/20 self-center" />
+              <div className="hidden @md:block w-px h-24 bg-border/20 self-center" />
 
               {/* Rarity breakdown bars (Right) */}
               <div className="flex-1 w-full max-w-sm space-y-2.5">
@@ -1316,7 +1325,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
 
                   return (
                     <div key={r} className="flex items-center gap-3 w-full">
-                      <span className="w-20 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest text-left" style={{ color: activeColor, fontFamily: "'Rajdhani', sans-serif" }}>
+                      <span className="w-20 text-[10px] @sm:text-[11px] font-extrabold uppercase tracking-widest text-left" style={{ color: activeColor, fontFamily: "'Rajdhani', sans-serif" }}>
                         {c.label}
                       </span>
                       <div className="flex-1 h-1.5 rounded-full relative bg-zinc-800/40 dark:bg-zinc-900/60 overflow-hidden border border-zinc-700/10">
@@ -1340,7 +1349,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
             {/* Expandable all badges view */}
             {showAllBadges && (
               <div className="mt-5 pt-5 border-t border-border/30 animate-fade-in">
-                <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 gap-x-3.5 gap-y-5 sm:gap-4 justify-items-center">
+                <div className="grid grid-cols-3 @sm:grid-cols-5 @md:grid-cols-6 @lg:grid-cols-8 gap-x-3.5 gap-y-5 @sm:gap-4 justify-items-center">
                   {allBadgesData.map((b, i) => (
                     <BadgeShield key={i} rarity={b.rarity} name={b.name} locked={b.locked} size="md" />
                   ))}

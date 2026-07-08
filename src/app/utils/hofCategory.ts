@@ -8,12 +8,13 @@ export const HOF_CATEGORY_KEY_MAP: Record<string, string> = {
   "top unit": "Top 5 By Unit",
   "unit": "Top 5 By Unit",
 
-  "top 5 primary": "Top 5 Primary",
-  "top primary": "Top 5 Primary",
-  "top primary kpr": "Top 5 Primary",
-  "top primary and kpr": "Top 5 Primary",
-  "top primary  kpr": "Top 5 Primary",
-  "primary kpr": "Top 5 Primary",
+  "top 5 primary": "Top Primary dan KPR",
+  "top primary": "Top Primary dan KPR",
+  "top primary kpr": "Top Primary dan KPR",
+  "top primary and kpr": "Top Primary dan KPR",
+  "top primary  kpr": "Top Primary dan KPR",
+  "primary kpr": "Top Primary dan KPR",
+  "top primary dan kpr": "Top Primary dan KPR",
 
   "rising star": "Rising Star",
 

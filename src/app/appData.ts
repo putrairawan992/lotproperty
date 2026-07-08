@@ -8,7 +8,7 @@ export type Rarity = "mythic" | "legendary" | "epic" | "rare" | "common";
 export const FAQ_DATA = [
   { 
     q: "Bagaimana cara mendapatkan XP dan apa saja batas maksimumnya?", 
-    a: "XP diperoleh dari berbagai aktivitas produktif agen: Daily Login (+100 XP), input New Listing (+100 XP, Cap 500 XP/hari), upload New Content (+300 XP, Cap 300 XP/hari), Listing Promotion (+100 XP, Cap 300 XP/hari), input New Prospect (+100 XP, Cap 2.500 XP/minggu), menyelesaikan video Academy (+200 XP/video), dan New Recruit (+5.000 XP). Detail lengkap dapat dilihat di XP Guide." 
+    a: "XP diperoleh dari berbagai aktivitas produktif agen: Daily Login (+100 XP), input New Listing (+100 XP, Cap 300 XP/hari), upload New Content (+300 XP, Cap 300 XP/hari), Listing Promotion (+100 XP, Cap 300 XP/hari), input New Prospect (+100 XP, Cap 2.500 XP/minggu), menyelesaikan video Academy (+200 XP/video), dan New Recruit (+5.000 XP). Detail lengkap dapat dilihat di XP Guide."
   },
   { 
     q: "Mengapa input New Prospect dibatasi maksimal 2.500 XP per minggu?", 
@@ -169,7 +169,7 @@ export const DYNAMIC_PERIODS = getDynamicPeriods();
 export const HOF_TABS = [
   "Top 5 Commission",
   "Top 5 By Unit",
-  "Top 5 Primary",
+  "Top Primary dan KPR",
   "Rising Star",
   "Content Creator",
   "Listing Hunter",
@@ -198,7 +198,7 @@ export const HOF_CAT_DATA: Record<string, any[]> = {
     { rank:7, name:"Budi S.",       initials:"BS", photo:AGENT_PHOTOS["BS"], level:"Senior Agent", subtitle:"Senior Agent · Lv 51", value:"13 Unit" },
     { rank:8, name:"Putri A.",      initials:"PA", photo:AGENT_PHOTOS["PA"], level:"Junior Agent", subtitle:"Junior Agent · Lv 29", value:"11 Unit" },
   ],
-  "Top 5 Primary": [
+  "Top Primary dan KPR": [
     { rank:1, name:"Budi S.",       initials:"BS", photo:AGENT_PHOTOS["BS"], level:"Senior Agent", subtitle:"Senior Agent · Lv 51", value:"12 Unit KPR", badges:[["epic","Listing Distributor"],["rare","Listing Supplier"]] },
     { rank:2, name:"Rizki P.",      initials:"RP", photo:AGENT_PHOTOS["RP"], level:"Elite Agent", subtitle:"Elite Agent · Lv 67",  value:"9 Unit KPR",  badges:[["legendary","100M Club"],["epic","Dedicated Agent"]] },
     { rank:3, name:"Siti F.",       initials:"SF", photo:AGENT_PHOTOS["SF"], level:"Elite Agent", subtitle:"Elite Agent · Lv 62",  value:"8 Unit KPR",  badges:[["epic","Certified Agent"],["rare","Prospect Hunter"]] },

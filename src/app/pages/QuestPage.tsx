@@ -13,25 +13,6 @@ import { useLocation } from "../routes";
 import { api } from "../services/api";
 import petiHartaKarun from "../../imports/peti-harta-karun.png";
 
-const TreasureChestIcon = ({ size = 22, className = "" }: { size?: number; className?: string }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-    className={className}
-  >
-    <path d="M2 10s3-3 10-3 10 3 10 3" />
-    <path d="M2 10h20" />
-    <path d="M4 10v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-9" />
-    <rect x="10.5" y="10" width="3" height="4" rx="0.5" fill="currentColor" stroke="none" />
-  </svg>
-);
-
 function Quest3DCoins({ isDark }: { isDark: boolean }) {
   const mountRef = useRef<HTMLDivElement>(null);
 
@@ -230,9 +211,8 @@ interface QuestItem {
 
 export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const loadingTime = useLoading(1200);
-  const { isDark, isGuest, user, refreshUser } = useTheme();
+  const { isDark, isGuest, user, refreshUser, showQuestComplete } = useTheme();
   const [apiLoading, setApiLoading] = useState(true);
-  const [completedQuest, setCompletedQuest] = useState<{name: string, xp: number} | null>(null);
 
   const loading = loadingTime || (isGuest ? false : apiLoading);
   const { navigate } = useLocation();
@@ -262,7 +242,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   // Quest states
   const [dailyQuests, setDailyQuests] = useState<QuestItem[]>([
     { name: "Daily Login", progress: 0, total: 1, xp: 100, id: "daily_login" },
-    { name: "New Listing", progress: 0, total: 5, xp: 100, note: "Max 500 XP/hari", id: "new_listing" },
+    { name: "New Listing", progress: 0, total: 3, xp: 100, note: "Max 300 XP/hari", id: "new_listing" },
     { name: "New Content (IG/TikTok/YT)", progress: 0, total: 1, xp: 300, note: "Max 300 XP/hari", id: "new_content" },
     { name: "Listing Promotion", progress: 0, total: 3, xp: 100, note: "Max 300 XP/hari", id: "listing_promo" },
   ]);
@@ -423,7 +403,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
         .then((res: any) => {
           const xp = Number(res?.xp_earned || 0);
           if (xp > 0) {
-            setCompletedQuest({ name: "Daily Login", xp });
+            showQuestComplete({ name: "Daily Login", xp });
           } else {
             triggerToast("Attendance hari ini sudah tercatat.");
           }
@@ -466,7 +446,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     setSkillQuests(prev => prev.map(q => q.id === "event_participation" ? { ...q, progress: 1, done: true } : q));
     setShowEventModal(false);
     setEventCode("");
-    setCompletedQuest({ name: "Event Participation", xp: 1000 });
+    showQuestComplete({ name: "Event Participation", xp: 1000 });
   };
 
   const handleContentSubmit = async () => {
@@ -476,7 +456,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowContentModal(false);
       setContentUrl("");
-      setCompletedQuest({ name: "Upload Konten Sosmed", xp: xp || 300 });
+      showQuestComplete({ name: "Upload Konten Sosmed", xp: xp || 300 });
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
@@ -491,7 +471,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowPromoModal(false);
       setPromoUrl("");
-      setCompletedQuest({ name: "Listing Promotion", xp: xp || 100 });
+      showQuestComplete({ name: "Listing Promotion", xp: xp || 100 });
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
@@ -962,66 +942,6 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
         )}
       </AnimatePresence>
 
-      {/* ── Quest Complete Modal ── */}
-      <AnimatePresence>
-        {completedQuest && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setCompletedQuest(null)} />
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 20 }}
-              className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center p-8 text-center"
-              style={{ backgroundColor: T.card, border: `1px solid ${T.border}` }}
-            >
-              <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ background: "radial-gradient(circle at center, #E8A500 0%, transparent 70%)" }} />
-              
-              <motion.div 
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", bounce: 0.6, duration: 0.8 }}
-                className="w-24 h-24 mb-6 rounded-full flex items-center justify-center relative z-10"
-                style={{ background: "linear-gradient(135deg, #FFD700 0%, #E8A500 100%)", boxShadow: "0 10px 25px -5px rgba(232, 165, 0, 0.5)" }}
-              >
-                <TreasureChestIcon size={48} className="text-white" />
-              </motion.div>
-
-              <motion.h3 
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
-                className="text-2xl font-black mb-2 tracking-tight relative z-10"
-                style={{ color: T.text1 }}
-              >
-                Quest Selesai!
-              </motion.h3>
-              
-              <motion.p 
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                className="text-sm mb-6 font-medium relative z-10"
-                style={{ color: T.text2 }}
-              >
-                Anda berhasil menyelesaikan <br/>
-                <strong style={{ color: T.text1 }}>{completedQuest.name}</strong>
-              </motion.p>
-
-              <motion.div 
-                initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.5, type: "spring" }}
-                className="px-6 py-3 rounded-2xl flex items-center gap-2 mb-8 relative z-10"
-                style={{ backgroundColor: "rgba(232, 165, 0, 0.1)", border: "1px solid rgba(232, 165, 0, 0.3)" }}
-              >
-                <span className="text-xl font-black text-[#E8A500]">+{completedQuest.xp.toLocaleString("id-ID")} XP</span>
-              </motion.div>
-
-              <button
-                onClick={() => setCompletedQuest(null)}
-                className="w-full py-4 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 relative z-10"
-                style={{ backgroundColor: "#E8A500" }}
-              >
-                Lanjutkan
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

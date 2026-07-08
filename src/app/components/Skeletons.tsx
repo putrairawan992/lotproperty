@@ -218,10 +218,13 @@ export function LeaderboardPageSkeleton() {
 }
 
 export function ProfilePageSkeleton() {
+  // @container: matches ProfilePage's real layout — sized off the actual rendered
+  // width (narrow when embedded in AgentProfileSheet) instead of the viewport, so the
+  // loading skeleton doesn't render a squished desktop grid inside the sheet modal.
   return (
-    <div className="p-4 lg:p-6 max-w-5xl mx-auto">
+    <div className="p-4 lg:p-6 max-w-5xl mx-auto @container">
       <SkeletonStyles />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 @lg:grid-cols-3 gap-5">
         <div className="space-y-5">
           <div className="bg-card rounded-2xl border overflow-hidden" style={{ borderColor: T.border }}>
             <Sk h={280} w="100%" r={0} />
@@ -236,7 +239,7 @@ export function ProfilePageSkeleton() {
             ))}
           </div>
         </div>
-        <div className="lg:col-span-2 space-y-5">
+        <div className="@lg:col-span-2 space-y-5">
           <div className="bg-card rounded-2xl border p-5 space-y-4" style={{ borderColor: T.border }}>
             <div className="flex justify-between"><div className="space-y-2"><Sk h={26} w={180} /><Sk h={14} w={220} /></div><div className="flex gap-2"><Sk h={36} w={110} r={12} /><Sk h={36} w={36} r={18} /></div></div>
             <div className="grid grid-cols-3 gap-4 py-4 border-y" style={{ borderColor: T.border }}>
@@ -247,13 +250,13 @@ export function ProfilePageSkeleton() {
           </div>
           <div className="bg-card rounded-2xl border p-5" style={{ borderColor: T.border }}>
             <Sk h={16} w={140} className="mb-4" />
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 @sm:grid-cols-3 gap-3">
               {[1,2,3,4,5,6].map(i => <div key={i} className="p-3 rounded-xl space-y-2" style={{ backgroundColor: T.muted }}><Sk h={24} w={60} /><Sk h={11} w={80} /></div>)}
             </div>
           </div>
           <div className="bg-card rounded-2xl border p-5" style={{ borderColor: T.border }}>
             <div className="flex justify-between mb-4"><Sk h={16} w={140} /><div className="flex gap-1">{[1,2,3,4,5,6].map(i=><Sk key={i} h={26} w={60} r={8} />)}</div></div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-3">
+            <div className="grid grid-cols-3 @sm:grid-cols-4 @lg:grid-cols-5 gap-3">
               {[...Array(15)].map((_, i) => <Sk key={i} h={96} w="100%" r={14} />)}
             </div>
           </div>

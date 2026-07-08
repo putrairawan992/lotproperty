@@ -10,6 +10,7 @@ export const ThemeCtx = createContext<{
   refreshUser: () => Promise<void>;
   unreadNotifCount: number;
   setUnreadNotifCount: React.Dispatch<React.SetStateAction<number>>;
+  showQuestComplete: (quest: { name: string; xp: number } | null) => void;
 }>({
   isDark: true,
   toggle: () => {},
@@ -19,6 +20,7 @@ export const ThemeCtx = createContext<{
   refreshUser: async () => {},
   unreadNotifCount: 0,
   setUnreadNotifCount: (_value: number | ((prev: number) => number)) => {},
+  showQuestComplete: () => {},
 });
 export const useTheme = () => useContext(ThemeCtx);
 

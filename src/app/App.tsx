@@ -12,6 +12,8 @@ import { useLocation, getPageFromUrl } from "./routes";
 import TopHeader from "./components/TopHeader";
 import BottomTabs from "./components/BottomTabs";
 import LevelUpModal from "./components/LevelUpModal";
+import QuestCompleteModal from "./components/QuestCompleteModal";
+import AgentProfileSheet from "./components/AgentProfileSheet";
 
 // Pages (Agent)
 import LoginPage from "./pages/LoginPage";
@@ -216,6 +218,7 @@ export default function App() {
   const [authView, setAuthView] = useState<"login" | "register" | "pending" | "forgot" | "admin">("login");
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const [levelUpData, setLevelUpData] = useState<{ level: number; tier: string; xp: string } | null>(null);
+  const [completedQuest, setCompletedQuest] = useState<{ name: string; xp: number } | null>(null);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [attendanceXp, setAttendanceXp] = useState(0);
   const [appLoading, setAppLoading] = useState(true);
@@ -342,8 +345,19 @@ export default function App() {
     return true;
   });
 
-  const { path, navigate } = useLocation();
+  const { path, search, navigate } = useLocation();
   const page = getPageFromUrl();
+
+  // A shared profile-card link (?shareCard=1&id=X) should show that agent's public
+  // card even to a visitor who has never logged in — fall back to guest mode instead
+  // of the login wall so ProfilePage's existing api.public.getProfile(id) path runs.
+  useEffect(() => {
+    if (appLoading || loggedIn || isGuest) return;
+    const params = new URLSearchParams(search);
+    if (page === "profile" && params.get("shareCard") === "1" && params.get("id")) {
+      setIsGuest(true);
+    }
+  }, [appLoading, loggedIn, isGuest, search, page]);
 
   const toggleDark = () => setIsDark(d => {
     document.documentElement.classList.add('theme-transitioning');
@@ -414,7 +428,7 @@ export default function App() {
   // Admin flow
   if (adminRole) {
     return (
-      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount }}>
+      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: setCompletedQuest }}>
         <AdminApp role={adminRole} onLogout={handleLogout} />
       </ThemeCtx.Provider>
     );
@@ -469,7 +483,7 @@ export default function App() {
       }} onRegister={() => setAuthView("register")} onForgotPassword={() => setAuthView("forgot")} onAdminLogin={() => { setAuthView("admin"); navigate("/admin"); }} onGuest={() => setIsGuest(true)} />;
     };
     return (
-      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount }}>
+      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: setCompletedQuest }}>
         {renderAuth()}
       </ThemeCtx.Provider>
     );
@@ -496,7 +510,16 @@ export default function App() {
       case "prospect": return guestBlock(<ProspectPage />);
       case "academy": return <AcademyPage />;
       case "leaderboard": return <LeaderboardPage />;
-      case "profile": return guestBlock(<ProfilePage />);
+      case "profile": {
+        // A shared-card link (?id=X) opens the read-only AgentProfileSheet card view —
+        // same modal chrome used when viewing another agent from Leaderboard/Home —
+        // instead of the full editable "my profile" page. Only "my own profile" is gated.
+        const idParam = new URLSearchParams(search).get("id");
+        if (idParam) {
+          return <AgentProfileSheet agentId={idParam} onClose={() => navigate("/")} />;
+        }
+        return guestBlock(<ProfilePage />);
+      }
       case "notifications": return guestBlock(<NotificationsPage />);
       case "board": return <BoardPage />;
       case "event": return <EventDetailPage onBack={() => handlePageChange("home")} />;
@@ -507,7 +530,7 @@ export default function App() {
   };
 
   return (
-    <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount }}>
+    <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: setCompletedQuest }}>
       <div className="flex flex-col h-screen overflow-hidden animate-fade-in" style={{ backgroundColor: T.bg, fontFamily: "'Inter', sans-serif" }}>
         {/* Top Header */}
         <TopHeader page={page} onNav={handlePageChange} onLogout={handleLogout} />
@@ -537,6 +560,9 @@ export default function App() {
             onClose={() => setLevelUpData(null)}
           />
         )}
+
+        {/* Quest Complete Modal — global so it can fire from any page, not just Quest */}
+        <QuestCompleteModal quest={completedQuest} onClose={() => setCompletedQuest(null)} />
 
         {/* 3D Celebration Popup Modal — non-guest only */}
         <AnimatePresence>

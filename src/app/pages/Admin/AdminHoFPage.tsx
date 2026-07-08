@@ -24,7 +24,7 @@ export default function AdminHoFPage() {
     { cat: "Listing Hunter",       type: "auto",   overridden: false, visibleCount: 3, autoList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama", "", "", "", "", ""], overrideList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama", "", "", "", "", ""] },
     { cat: "Prospecting Master",   type: "auto",   overridden: false, visibleCount: 3, autoList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo", "", "", "", "", ""], overrideList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo", "", "", "", "", ""] },
     { cat: "Content Creator",      type: "auto",   overridden: false, visibleCount: 3, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""] },
-    { cat: "Top 5 Primary",        type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""] },
+    { cat: "Top Primary dan KPR",        type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""] },
     { cat: "Rising Star",          type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Linda Kusuma", "Rendi Setiawan", "Maya Putri", "", "", "", "", ""] },
     { cat: "Top Recruiter",        type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Rizki Pratama", "Budi Santoso", "Siti Fatimah", "", "", "", "", ""] },
   ]);
@@ -95,7 +95,7 @@ export default function AdminHoFPage() {
         .filter(r => normalizeHofCategory(r.category, [
           "Top 5 Commission",
           "Top 5 By Unit",
-          "Top 5 Primary",
+          "Top Primary dan KPR",
           "Rising Star",
           "Content Creator",
           "Listing Hunter",
@@ -137,7 +137,7 @@ export default function AdminHoFPage() {
       .filter((r) => normalizeHofCategory(r.category, [
         "Top 5 Commission",
         "Top 5 By Unit",
-        "Top 5 Primary",
+        "Top Primary dan KPR",
         "Rising Star",
         "Content Creator",
         "Listing Hunter",
@@ -220,7 +220,7 @@ export default function AdminHoFPage() {
     const canonicalCategory = normalizeHofCategory(section.cat, [
       "Top 5 Commission",
       "Top 5 By Unit",
-      "Top 5 Primary",
+      "Top Primary dan KPR",
       "Rising Star",
       "Content Creator",
       "Listing Hunter",
