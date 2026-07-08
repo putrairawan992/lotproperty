@@ -261,14 +261,14 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   // Quest states
   const [dailyQuests, setDailyQuests] = useState<QuestItem[]>([
-    { name: "Daily Login", progress: 0, total: 1, xp: 100, done: false, id: "daily_login" },
-    { name: "New Listing", progress: 0, total: 3, xp: 100, note: "Max 300 XP/hari", id: "new_listing" },
-    { name: "New Content (IG/TikTok/YT)", progress: 0, total: 1, xp: 300, id: "new_content" },
+    { name: "Daily Login", progress: 0, total: 1, xp: 100, id: "daily_login" },
+    { name: "New Listing", progress: 0, total: 5, xp: 100, note: "Max 500 XP/hari", id: "new_listing" },
+    { name: "New Content (IG/TikTok/YT)", progress: 0, total: 1, xp: 300, note: "Max 300 XP/hari", id: "new_content" },
     { name: "Listing Promotion", progress: 0, total: 3, xp: 100, note: "Max 300 XP/hari", id: "listing_promo" },
   ]);
 
   const [weeklyQuests, setWeeklyQuests] = useState<QuestItem[]>([
-    { name: "New Prospect", progress: 4, total: 10, xp: 100, note: "Max 1.000 XP/minggu (100 XP per Prospect)", id: "new_prospect" },
+    { name: "New Prospect", progress: 4, total: 25, xp: 100, note: "Max 2.500 XP/minggu (100 XP per Prospect)", id: "new_prospect" },
     { name: "Prospect Clearance", progress: 0, total: 1, xp: 1000, note: "Tidak ada reminder overdue", id: "prospect_clearance" },
   ]);
 
@@ -375,7 +375,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
       setWeeklyQuests(prev => prev.map(item => {
         if (item.id === "new_prospect") {
-          const progress = Math.min(Number(activeAgent?.total_prospects || 0), 10);
+          const progress = Math.min(Number(activeAgent?.total_prospects || 0), item.total);
           return { ...item, progress, done: progress >= item.total };
         }
         return item;
