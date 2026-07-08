@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Card from "../../components/Card";
+import SearchableSelect, { type SelectOption } from "../../components/SearchableSelect";
 import { T } from "../../types";
 import { api } from "../../services/api";
 
@@ -79,6 +80,18 @@ export default function AdminXPPage() {
     loadHistory();
   }, []);
 
+  // Agent options sorted alphabetically for the dropdown
+  const agentOptions = useMemo<SelectOption[]>(() => {
+    return agents
+      .filter(a => a.status === "Active")
+      .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }))
+      .map(a => ({
+        value: String(a.id),
+        label: a.name,
+        sub: a.level,
+      }));
+  }, [agents]);
+
   const handleSubmit = async () => {
     if (!selectedAgent || !amount || !reason) return;
 
@@ -117,14 +130,13 @@ export default function AdminXPPage() {
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: T.text2 }}>Agent</label>
-            <select value={selectedAgent} onChange={e => setSelectedAgent(e.target.value)}
-              className="w-full px-3.5 rounded-xl border outline-none bg-card"
-              style={{ height: 48, borderColor: T.border, fontSize: 14 }}>
-              <option value="">Pilih agent...</option>
-              {agents.filter(a => a.status === "Active").map(a => (
-                <option key={a.id} value={String(a.id)}>{a.name} — {a.level}</option>
-              ))}
-            </select>
+            <SearchableSelect
+              options={agentOptions}
+              value={selectedAgent}
+              onChange={setSelectedAgent}
+              placeholder="Pilih agent..."
+              emptyLabel="Agent tidak ditemukan"
+            />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

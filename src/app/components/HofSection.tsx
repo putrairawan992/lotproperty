@@ -218,11 +218,13 @@ function PortraitCard({
   rank,
   isMobile,
   category = "Top 5 Commission",
+  onAgentClick,
 }: {
   agent: any;
   rank: number;
   isMobile: boolean;
   category?: string;
+  onAgentClick?: (agentId: string) => void;
 }) {
   const [hovered, setHovered] = useState(false);
   const w = isMobile ? 200 : rank === 1 ? 190 : rank <= 3 ? 170 : 150;
@@ -234,11 +236,12 @@ function PortraitCard({
   return (
     <motion.div
       className="flex flex-col items-center flex-shrink-0"
-      style={{ width: w }}
+      style={{ width: w, cursor: agent.id && onAgentClick ? "pointer" : "default" }}
       whileHover={isMobile ? {} : { y: -6, scale: 1.03 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => { if (agent.id && onAgentClick) onAgentClick(String(agent.id)); }}
     >
       {/* Portrait card wrapper */}
       <motion.div
@@ -269,7 +272,7 @@ function PortraitCard({
             <img
               src={agent.photo}
               alt={agent.name}
-              className="w-full h-full object-contain object-center transition-transform duration-500 hover:scale-105"
+              className="w-full h-full object-cover object-top transition-transform duration-500 hover:scale-105"
               style={{
                 filter: "brightness(1.05) contrast(1.02)",
               }}
@@ -485,7 +488,7 @@ function EmptyPodiumState({ category, color }: { category: string; color: string
 }
 
 /** All 5 agents in a single podium row layout (Desktop: [Rank 5, Rank 3, Rank 1, Rank 2, Rank 4]) or auto-sliding slideshow (Mobile) */
-function PortraitPodium({ agents, isMobile, category }: { agents: any[]; isMobile: boolean; category: string }) {
+function PortraitPodium({ agents, isMobile, category, onAgentClick }: { agents: any[]; isMobile: boolean; category: string; onAgentClick?: (agentId: string) => void }) {
   const lineup = agents.slice(0, 5); // Slice up to 5 slots
   const categoryTheme = getCategoryTheme(category);
 
@@ -543,7 +546,7 @@ function PortraitPodium({ agents, isMobile, category }: { agents: any[]; isMobil
               transition={{ duration: 0.38, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="flex justify-center w-full"
             >
-              <PortraitCard agent={activeAgent} rank={activeAgent.rank} isMobile={true} category={category} />
+              <PortraitCard agent={activeAgent} rank={activeAgent.rank} isMobile={true} category={category} onAgentClick={onAgentClick} />
             </motion.div>
           </AnimatePresence>
         </SwipeCarouselZone>
@@ -575,7 +578,7 @@ function PortraitPodium({ agents, isMobile, category }: { agents: any[]; isMobil
   return (
     <div className="flex items-end justify-center gap-4 px-2 pt-3 pb-2 w-full">
       {orderedLineup.map((agent) => (
-        <PortraitCard key={agent.rank} agent={agent} rank={agent.rank} isMobile={false} category={category} />
+        <PortraitCard key={agent.rank} agent={agent} rank={agent.rank} isMobile={false} category={category} onAgentClick={onAgentClick} />
       ))}
     </div>
   );
@@ -585,6 +588,7 @@ export default function HofSection({
   hofCat, hofAgents, hofTab, hofIdx, slideDir, isMobile, isDark,
   onSwitchCat, onGoTab, onPrev, onNext,
   selectedPeriod, availablePeriods = [], onPeriodChange,
+  onAgentClick,
 }: {
   hofCat: string; hofAgents: any[]; hofTab: string; hofIdx: number;
   slideDir: number; isMobile: boolean; isDark: boolean;
@@ -593,6 +597,7 @@ export default function HofSection({
   selectedPeriod?: string;
   availablePeriods?: string[];
   onPeriodChange?: (p: string) => void;
+  onAgentClick?: (agentId: string) => void;
 }) {
   const catTheme = getCategoryTheme(hofCat);
 
@@ -734,7 +739,7 @@ export default function HofSection({
                 </motion.div>
               </AnimatePresence>
 
-              <PortraitPodium agents={hofAgents} isMobile={isMobile} category={hofCat} />
+              <PortraitPodium agents={hofAgents} isMobile={isMobile} category={hofCat} onAgentClick={onAgentClick} />
             </motion.div>
           </AnimatePresence>
         </SwipeCarouselZone>

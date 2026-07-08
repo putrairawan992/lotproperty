@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Award, ShieldAlert, Check, Save, ToggleLeft, ToggleRight } from "lucide-react";
+import { Award, ShieldAlert, Check, Save, ToggleLeft, ToggleRight, User } from "lucide-react";
 import Card from "../../components/Card";
+import SearchableSelect, { type SelectOption } from "../../components/SearchableSelect";
+import AgentProfileSheet from "../../components/AgentProfileSheet";
 import { T, useTheme } from "../../types";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { AGENT_DATA_LIST, DYNAMIC_PERIODS } from "../../appData";
@@ -12,6 +14,7 @@ export default function AdminHoFPage() {
   const [period, setPeriod] = useState(DYNAMIC_PERIODS[0] || "");
   const [toastMsg, setToastMsg] = useState("");
   const [savingCategory, setSavingCategory] = useState<string | null>(null);
+  const [sheetAgentId, setSheetAgentId] = useState<string | null>(null);
   const [serverAgents, setServerAgents] = useState<Array<{ id: number; name: string; status: string; role: string }>>([]);
   const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { name?: string }; period: string }>>([]);
   
@@ -35,6 +38,16 @@ export default function AdminHoFPage() {
         name: a.name,
         status: a.status,
       })));
+
+  // Agent options sorted alphabetically for the searchable dropdown
+  const agentOptions = useMemo<SelectOption[]>(() => {
+    return [...activeAgents]
+      .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }))
+      .map(a => ({
+        value: a.name,
+        label: a.name,
+      }));
+  }, [activeAgents]);
 
   useEffect(() => {
     const loadAgents = async () => {
@@ -360,16 +373,27 @@ export default function AdminHoFPage() {
 
                         {section.overridden ? (
                           <div className="flex-1 flex items-center gap-2">
-                            <select value={selectedAgent}
-                              onChange={ev => handleAgentChange(si, rankIdx, ev.target.value)}
-                              className="flex-1 px-2.5 py-1.5 rounded-lg border text-xs outline-none bg-card cursor-pointer font-medium"
-                              style={{ borderColor: T.border }}>
-                              <option value="">— Kosong / None —</option>
-                              {activeAgents.map(a => (
-                                <option key={`${a.id}-${a.name}`} value={a.name}>{a.name}</option>
-                              ))}
-                            </select>
-                            
+                            <SearchableSelect
+                              options={agentOptions}
+                              value={selectedAgent}
+                              onChange={(v) => handleAgentChange(si, rankIdx, v)}
+                              placeholder="— Kosong / None —"
+                              emptyLabel="Agent tidak ditemukan"
+                              className="flex-1"
+                            />
+                            {selectedAgent && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const id = resolveAgentIdByName(selectedAgent);
+                                  if (id) setSheetAgentId(String(id));
+                                }}
+                                className="p-1.5 rounded-lg hover:bg-[#E8A500]/10 text-[#E8A500] transition-colors border border-transparent hover:border-[#E8A500]/20 flex-shrink-0"
+                                title="Lihat profil agent"
+                              >
+                                <User size={14} />
+                              </button>
+                            )}
                             {rankIdx >= 3 && (
                               <button
                                 onClick={() => handleRemoveRank(si, rankIdx)}
@@ -417,6 +441,8 @@ export default function AdminHoFPage() {
           );
         })}
       </div>
+
+      <AgentProfileSheet agentId={sheetAgentId} onClose={() => setSheetAgentId(null)} />
     </div>
   );
 }

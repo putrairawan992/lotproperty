@@ -52,7 +52,9 @@ type HofRecordResponse = {
   category: string;
   rank: number;
   notes?: string;
+  agent_id?: number;
   agent?: {
+    id?: number;
     name?: string;
     photo_url?: string;
     level?: string;
@@ -168,6 +170,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
       if (!HOF_TABS.includes(mappedCat as (typeof HOF_TABS)[number])) continue;
 
       grouped[mappedCat].push({
+        id: rec.agent?.id || rec.agent_id || null,
         rank: rec.rank,
         name: rec.agent?.name || "Unknown Agent",
         initials: (rec.agent?.name || "A")
@@ -423,6 +426,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
         selectedPeriod={selectedPeriod}
         availablePeriods={availablePeriods}
         onPeriodChange={setSelectedPeriod}
+        onAgentClick={(id) => setSheetAgentId(id)}
       />
 
       {/* Event Banner Slider placed below Hall of Fame and above Weekly Leaderboard */}
