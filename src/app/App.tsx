@@ -38,6 +38,178 @@ import AdminApp from "./pages/Admin/AdminApp";
 import { api } from "./services/api";
 import GuestLoginPrompt from "./components/GuestLoginPrompt";
 
+// ── Draggable Floating Action Button (Fire Theme) ────────────────
+function DraggableFab({ onClick }: { onClick: () => void }) {
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const posRef = useRef({ x: 0, y: 0 });
+  const dragRef = useRef({ dragging: false, startX: 0, startY: 0, moved: false });
+  const animRef = useRef<number>(0);
+  const SIZE = 56;
+  const MARGIN = 16;
+
+  // Fire particle animation (canvas overlay)
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const W = SIZE;
+    const H = SIZE;
+    canvas.width = W;
+    canvas.height = H;
+
+    interface Particle {
+      x: number; y: number; r: number;
+      vx: number; vy: number;
+      life: number; maxLife: number;
+      hue: number;
+    }
+    const particles: Particle[] = [];
+    const MAX = 20;
+
+    const spawn = () => {
+      if (particles.length >= MAX) return;
+      particles.push({
+        x: W / 2 + (Math.random() - 0.5) * 20,
+        y: H * 0.6 + Math.random() * 10,
+        r: 1 + Math.random() * 2.5,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: -(0.8 + Math.random() * 2),
+        life: 1,
+        maxLife: 20 + Math.random() * 30,
+        hue: 10 + Math.random() * 30, // red-yellow-orange range
+      });
+    };
+
+    const tick = () => {
+      ctx.clearRect(0, 0, W, H);
+      // Update & draw
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.life -= 1 / p.maxLife;
+        if (p.life <= 0) { particles.splice(i, 1); continue; }
+        const alpha = p.life * 0.9;
+        const size = p.r * p.life;
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size);
+        grad.addColorStop(0, `hsla(${p.hue}, 100%, 65%, ${alpha})`);
+        grad.addColorStop(0.5, `hsla(${p.hue - 5}, 100%, 50%, ${alpha * 0.6})`);
+        grad.addColorStop(1, `hsla(0, 100%, 50%, 0)`);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+      }
+      // Spawn new particles
+      if (Math.random() < 0.5) spawn();
+      if (Math.random() < 0.3) spawn();
+      animRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+    return () => cancelAnimationFrame(animRef.current);
+  }, []);
+
+  // Initialize position
+  useEffect(() => {
+    const btn = btnRef.current;
+    if (!btn) return;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    posRef.current = { x: vw - SIZE - MARGIN, y: vh - 160 };
+    btn.style.right = "auto";
+    btn.style.bottom = "auto";
+    btn.style.left = posRef.current.x + "px";
+    btn.style.top = posRef.current.y + "px";
+  }, []);
+
+  const clamp = (val: number, min: number, max: number) => Math.min(max, Math.max(min, val));
+
+  const onStart = (clientX: number, clientY: number) => {
+    dragRef.current = { dragging: true, startX: clientX, startY: clientY, moved: false };
+    if (btnRef.current) btnRef.current.style.transition = "none";
+  };
+
+  const onMove = (clientX: number, clientY: number) => {
+    if (!dragRef.current.dragging || !btnRef.current) return;
+    const dx = clientX - dragRef.current.startX;
+    const dy = clientY - dragRef.current.startY;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) dragRef.current.moved = true;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const newX = clamp(posRef.current.x + dx, MARGIN, vw - SIZE - MARGIN);
+    const newY = clamp(posRef.current.y + dy, MARGIN, vh - SIZE - MARGIN);
+    btnRef.current.style.left = newX + "px";
+    btnRef.current.style.top = newY + "px";
+  };
+
+  const onEnd = () => {
+    if (!dragRef.current.dragging) return;
+    dragRef.current.dragging = false;
+    const btn = btnRef.current;
+    if (!btn) return;
+    const vw = window.innerWidth;
+    const currentLeft = parseInt(btn.style.left || "0", 10);
+    const snapX = currentLeft < vw / 2 ? MARGIN : vw - SIZE - MARGIN;
+    posRef.current = { x: snapX, y: parseInt(btn.style.top || "0", 10) };
+    btn.style.transition = "left 0.25s ease, top 0.25s ease";
+    btn.style.left = snapX + "px";
+    btn.style.top = posRef.current.y + "px";
+  };
+
+  return (
+    <button
+      ref={btnRef}
+      onPointerDown={(e) => { e.preventDefault(); onStart(e.clientX, e.clientY); }}
+      onPointerMove={(e) => onMove(e.clientX, e.clientY)}
+      onPointerUp={() => { onEnd(); }}
+      onPointerLeave={() => { if (dragRef.current.dragging) onEnd(); }}
+      onClick={() => { if (!dragRef.current.moved) onClick(); }}
+      className="fixed z-40 rounded-full flex items-center justify-center select-none touch-none overflow-hidden fire-fab"
+      style={{
+        width: SIZE,
+        height: SIZE,
+        color: "white",
+        cursor: "grab",
+        border: "none",
+        background: "radial-gradient(circle at 50% 30%, #FF4444 0%, #CC0000 60%, #880000 100%)",
+        boxShadow: "0 0 18px rgba(255,60,60,0.7), 0 0 36px rgba(255,60,60,0.35), 0 2px 8px rgba(0,0,0,0.3)",
+      }}
+      title="LOT FJB — Geser & Tap"
+    >
+      {/* Fire particle canvas */}
+      <canvas
+        ref={canvasRef}
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ mixBlendMode: "screen" }}
+      />
+      {/* Glow ring animation */}
+      <span
+        className="absolute inset-0 rounded-full pointer-events-none"
+        style={{
+          animation: "firePulse 1.5s ease-in-out infinite",
+          background: "transparent",
+        }}
+      />
+      <MessageCircle size={26} style={{ position: "relative", zIndex: 2, filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.4))" }} />
+      <style>{`
+        @keyframes firePulse {
+          0%, 100% { box-shadow: inset 0 0 0px rgba(255,200,50,0); }
+          50% { box-shadow: inset 0 0 12px rgba(255,200,50,0.25), 0 0 8px rgba(255,100,0,0.3); }
+        }
+        .fire-fab {
+          animation: fabBreathe 2s ease-in-out infinite;
+        }
+        @keyframes fabBreathe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.06); }
+        }
+      `}</style>
+    </button>
+  );
+}
+
 export default function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
@@ -353,23 +525,8 @@ export default function App() {
           <BottomTabs current={page} onNav={handlePageChange} />
         </div>
 
-        {/* Floating FAB — LOT FJB */}
-        <button
-          onClick={() => handlePageChange("board")}
-          className="fixed z-40 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
-          style={{
-            bottom: 80,
-            right: 20,
-            width: 56,
-            height: 56,
-            backgroundColor: "#25D366",
-            color: "white",
-            boxShadow: "0 4px 16px rgba(37, 211, 102, 0.4)",
-          }}
-          title="LOT FJB"
-        >
-          <MessageCircle size={26} />
-        </button>
+        {/* Draggable Floating FAB — LOT FJB */}
+        <DraggableFab onClick={() => handlePageChange("board")} />
 
         {/* Level Up Modal */}
         {levelUpData && (
