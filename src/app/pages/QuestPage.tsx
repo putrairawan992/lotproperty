@@ -355,7 +355,12 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
       setWeeklyQuests(prev => prev.map(item => {
         if (item.id === "new_prospect") {
-          const progress = Math.min(Number(activeAgent?.total_prospects || 0), item.total);
+          const progress = Math.min(Number(statusRes?.weekly_prospects_count || 0), item.total);
+          return { ...item, progress, done: progress >= item.total };
+        }
+        if (item.id === "prospect_clearance") {
+          const overdue = Number(statusRes?.overdue_reminders_count || 0);
+          const progress = overdue === 0 ? 1 : 0;
           return { ...item, progress, done: progress >= item.total };
         }
         return item;
@@ -456,7 +461,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowContentModal(false);
       setContentUrl("");
-      showQuestComplete({ name: "Upload Konten Sosmed", xp: xp || 300 });
+      showQuestComplete({ name: "Upload Konten Sosmed", xp: xp || 300, overkill: !!res?.is_overkill });
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
@@ -471,7 +476,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowPromoModal(false);
       setPromoUrl("");
-      showQuestComplete({ name: "Listing Promotion", xp: xp || 100 });
+      showQuestComplete({ name: "Listing Promotion", xp: xp || 100, overkill: !!res?.is_overkill });
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {

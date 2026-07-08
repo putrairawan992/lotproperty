@@ -10,7 +10,7 @@ export const ThemeCtx = createContext<{
   refreshUser: () => Promise<void>;
   unreadNotifCount: number;
   setUnreadNotifCount: React.Dispatch<React.SetStateAction<number>>;
-  showQuestComplete: (quest: { name: string; xp: number } | null) => void;
+  showQuestComplete: (quest: { name: string; xp: number; overkill?: boolean } | null) => void;
 }>({
   isDark: true,
   toggle: () => {},

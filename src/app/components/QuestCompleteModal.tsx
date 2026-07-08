@@ -20,13 +20,31 @@ const TreasureChestIcon = ({ size = 22, className = "" }: { size?: number; class
   </svg>
 );
 
-// Global "Quest Selesai!" popup — any page can trigger it via useTheme().showQuestComplete(...).
-// Animation kept to a single fade+scale (no staggered springs/rotations) since the
-// previous per-element bounce/rotate sequence was overkill for a routine popup.
+// Pulsing ring that expands outward and fades — loops while the modal is open.
+function PulseRing({ color, delay }: { color: string; delay: number }) {
+  return (
+    <motion.div
+      className="absolute inset-0 rounded-full pointer-events-none"
+      style={{ border: `2px solid ${color}` }}
+      initial={{ scale: 1, opacity: 0.7 }}
+      animate={{ scale: 1.9, opacity: 0 }}
+      transition={{ duration: 1.6, repeat: Infinity, ease: "easeOut", delay }}
+    />
+  );
+}
+
+// Global "Quest Selesai!" / "Quest Overkill" popup — any page can trigger it via
+// useTheme().showQuestComplete(...). `overkill: true` swaps the copy/accent to flag a
+// Quest Overkill bonus award (earned after a category's quota is already used up).
 export default function QuestCompleteModal({ quest, onClose }: {
-  quest: { name: string; xp: number } | null;
+  quest: { name: string; xp: number; overkill?: boolean } | null;
   onClose: () => void;
 }) {
+  const accent = quest?.overkill ? "#FF6A00" : "#E8A500";
+  const accentGradient = quest?.overkill
+    ? "linear-gradient(135deg, #FF8A00 0%, #FF3D00 100%)"
+    : "linear-gradient(135deg, #FFD700 0%, #E8A500 100%)";
+
   return (
     <AnimatePresence>
       {quest && (
@@ -37,36 +55,81 @@ export default function QuestCompleteModal({ quest, onClose }: {
             onClick={onClose}
           />
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="relative w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center justify-center p-8 text-center"
-            style={{ backgroundColor: T.card, border: `1px solid ${T.border}` }}
+            initial={{ scale: 0.9, opacity: 0, y: 10 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 10 }}
+            transition={{ type: "spring", stiffness: 260, damping: 22 }}
+            className="relative w-full max-w-sm rounded-3xl overflow-hidden flex flex-col items-center justify-center p-8 text-center"
+            style={{
+              backgroundColor: T.card,
+              border: `1px solid ${accent}66`,
+              boxShadow: `0 0 0 1px ${accent}33, 0 25px 60px -15px ${accent}66, 0 0 80px -10px ${accent}40`,
+            }}
           >
-            <div className="w-24 h-24 mb-6 rounded-full flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg, #FFD700 0%, #E8A500 100%)", boxShadow: "0 10px 25px -5px rgba(232, 165, 0, 0.5)" }}>
-              <TreasureChestIcon size={48} className="text-white" />
+            {/* Ambient glow wash behind everything */}
+            <motion.div
+              className="absolute inset-0 pointer-events-none"
+              style={{ background: `radial-gradient(circle at 50% 20%, ${accent}30, transparent 65%)` }}
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
+            />
+
+            <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+              <PulseRing color={accent} delay={0} />
+              <PulseRing color={accent} delay={0.6} />
+              <motion.div
+                className="relative w-full h-full rounded-full flex items-center justify-center"
+                style={{ background: accentGradient, boxShadow: `0 0 30px 4px ${accent}90` }}
+                initial={{ scale: 0.3, rotate: -30 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 14, delay: 0.1 }}
+              >
+                <TreasureChestIcon size={48} className="text-white" />
+              </motion.div>
             </div>
 
-            <h3 className="text-2xl font-black mb-2 tracking-tight" style={{ color: T.text1 }}>
-              Quest Selesai!
-            </h3>
+            {quest.overkill && (
+              <motion.span
+                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+                className="relative mb-2 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider text-white"
+                style={{ backgroundColor: accent, boxShadow: `0 0 16px ${accent}90` }}
+              >
+                🔥 Quest Overkill
+              </motion.span>
+            )}
 
-            <p className="text-sm mb-6 font-medium" style={{ color: T.text2 }}>
-              Anda berhasil menyelesaikan <br />
+            <motion.h3
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+              className="relative text-2xl font-black mb-2 tracking-tight"
+              style={{ color: T.text1, textShadow: `0 0 20px ${accent}80` }}
+            >
+              {quest.overkill ? "Bonus Overkill!" : "Quest Selesai!"}
+            </motion.h3>
+
+            <p className="relative text-sm mb-6 font-medium" style={{ color: T.text2 }}>
+              {quest.overkill ? (
+                <>Limit harian sudah tercapai, tapi tetap dapat bonus untuk <br /></>
+              ) : (
+                <>Anda berhasil menyelesaikan <br /></>
+              )}
               <strong style={{ color: T.text1 }}>{quest.name}</strong>
             </p>
 
-            <div className="px-6 py-3 rounded-2xl flex items-center gap-2 mb-8"
-              style={{ backgroundColor: "rgba(232, 165, 0, 0.1)", border: "1px solid rgba(232, 165, 0, 0.3)" }}>
-              <span className="text-xl font-black text-[#E8A500]">+{quest.xp.toLocaleString("id-ID")} XP</span>
-            </div>
+            <motion.div
+              initial={{ scale: 0.7, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.3, type: "spring", stiffness: 260 }}
+              className="relative px-6 py-3 rounded-2xl flex items-center gap-2 mb-8 overflow-hidden"
+              style={{ backgroundColor: `${accent}1A`, border: `1px solid ${accent}66`, boxShadow: `0 0 20px -4px ${accent}80` }}
+            >
+              <span className="relative text-xl font-black" style={{ color: accent, textShadow: `0 0 12px ${accent}90` }}>
+                +{quest.xp.toLocaleString("id-ID")} XP
+              </span>
+            </motion.div>
 
             <button
               onClick={onClose}
-              className="w-full py-4 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
-              style={{ backgroundColor: "#E8A500" }}
+              className="relative w-full py-4 rounded-xl font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
+              style={{ backgroundColor: accent, boxShadow: `0 8px 24px -6px ${accent}90` }}
             >
               Lanjutkan
             </button>

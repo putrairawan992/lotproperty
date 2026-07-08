@@ -139,7 +139,7 @@ function SectionTitle({ children }: { children: ReactNode }) {
 
 export default function ListingPage() {
   const loadingTime = useLoading(1100);
-  const { isGuest, refreshUser } = useTheme();
+  const { isGuest, refreshUser, showQuestComplete } = useTheme();
   const [apiLoading, setApiLoading] = useState(true);
 
   const loading = loadingTime || (isGuest ? false : apiLoading);
@@ -269,7 +269,7 @@ export default function ListingPage() {
     if (!isFormValid) return;
 
     try {
-      await api.listings.create({
+      const res = await api.listings.create({
         owner_name: form.owner.trim(),
         phone: form.phone.trim(),
         address: form.address.trim(),
@@ -289,6 +289,11 @@ export default function ListingPage() {
       setSuccessToast("Listing baru berhasil ditambahkan!");
       await loadListings();
       await refreshUser();
+
+      const xpEarned = Number(res?.xp_earned || 0);
+      if (xpEarned > 0) {
+        showQuestComplete({ name: "New Listing", xp: xpEarned, overkill: !!res?.is_overkill });
+      }
     } catch (error) {
       setSuccessToast(error instanceof Error ? error.message : "Gagal menambahkan listing");
     }

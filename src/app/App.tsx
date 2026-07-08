@@ -218,7 +218,7 @@ export default function App() {
   const [authView, setAuthView] = useState<"login" | "register" | "pending" | "forgot" | "admin">("login");
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const [levelUpData, setLevelUpData] = useState<{ level: number; tier: string; xp: string } | null>(null);
-  const [completedQuest, setCompletedQuest] = useState<{ name: string; xp: number } | null>(null);
+  const [completedQuest, setCompletedQuest] = useState<{ name: string; xp: number; overkill?: boolean } | null>(null);
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [attendanceXp, setAttendanceXp] = useState(0);
   const [appLoading, setAppLoading] = useState(true);

@@ -131,7 +131,7 @@ function SectionLabel({ children }: { children: ReactNode }) {
 
 export default function ProspectPage() {
   const loadingTime = useLoading(1100);
-  const { isGuest, refreshUser } = useTheme();
+  const { isGuest, refreshUser, showQuestComplete } = useTheme();
   const [apiLoading, setApiLoading] = useState(true);
 
   const loading = loadingTime || (isGuest ? false : apiLoading);
@@ -319,7 +319,7 @@ export default function ProspectPage() {
       const when = newNeedsReminder
         ? new Date(`${newForm.reminderDate}T${newForm.reminderTime}:00`)
         : new Date();
-      await api.prospects.create({
+      const res = await api.prospects.create({
         name: newForm.name.trim(),
         phone: newForm.phone.trim(),
         notes: newForm.note.trim(),
@@ -332,6 +332,11 @@ export default function ProspectPage() {
       triggerToast("Prospect baru berhasil ditambahkan!");
       await loadProspects();
       await refreshUser();
+
+      const xpEarned = Number(res?.xp_earned || 0);
+      if (xpEarned > 0) {
+        showQuestComplete({ name: "New Prospect", xp: xpEarned, overkill: !!res?.is_overkill });
+      }
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal menambahkan prospect");
     }
