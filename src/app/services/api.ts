@@ -308,6 +308,7 @@ export const api = {
     getBoardPosts: () => request<any[]>("/public/board/posts"),
     getAcademyModules: () => request<any[]>("/public/academy"),
     getAgentsMinimal: () => request<Array<{ id: number; name: string }>>("/public/agents/minimal"),
+    getProfile: (slugOrID: string) => request<any>(`/public/agents/${slugOrID}`),
   },
 
   // Admin Panel

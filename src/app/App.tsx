@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { X } from "lucide-react";
+import { X, MessageCircle } from "lucide-react";
 
 // Types & Context
 import { Page, AdminRole, T, ThemeCtx } from "./types";
@@ -352,6 +352,24 @@ export default function App() {
         <div>
           <BottomTabs current={page} onNav={handlePageChange} />
         </div>
+
+        {/* Floating FAB — LOT FJB */}
+        <button
+          onClick={() => handlePageChange("board")}
+          className="fixed z-40 rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+          style={{
+            bottom: 80,
+            right: 20,
+            width: 56,
+            height: 56,
+            backgroundColor: "#25D366",
+            color: "white",
+            boxShadow: "0 4px 16px rgba(37, 211, 102, 0.4)",
+          }}
+          title="LOT FJB"
+        >
+          <MessageCircle size={26} />
+        </button>
 
         {/* Level Up Modal */}
         {levelUpData && (

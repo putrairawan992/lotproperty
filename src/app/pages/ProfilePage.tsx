@@ -238,7 +238,8 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
 
   useEffect(() => {
     const loadProfile = async () => {
-      if (isGuest) {
+      const idParamNow = getQueryParam("id");
+      if (isGuest && !idParamNow) {
         setProfile({
           name: "Ronald Richy",
           email: "ronald@lot.id",
@@ -281,10 +282,11 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
       }
       try {
         setProfileLoading(true);
-        const slugParam = getQueryParam("id");
         let data: any;
-        if (slugParam) {
-          data = await api.profile.getProfile(slugParam);
+        if (isGuest) {
+          data = await api.public.getProfile(idParamNow!);
+        } else if (idParamNow) {
+          data = await api.profile.getProfile(idParamNow);
         } else {
           const me = await api.auth.getMe();
           data = await api.profile.getProfile(String(me?.id));
@@ -300,7 +302,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
         }
 
         try {
-          const leaderboard = await api.dashboard.getWeeklyLeaderboard();
+          const leaderboard = isGuest ? await api.public.getWeeklyLeaderboard() : await api.dashboard.getWeeklyLeaderboard();
           if (Array.isArray(leaderboard)) {
             const found = leaderboard.find((row: any) => Number(row?.id) === Number(data?.id));
             if (found && Number(found.rank) > 0) {
