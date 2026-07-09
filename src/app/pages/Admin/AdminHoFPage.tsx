@@ -11,7 +11,7 @@ import { api } from "../../services/api";
 import { normalizeHofCategory } from "../../utils/hofCategory";
 
 export default function AdminHoFPage() {
-  const [period, setPeriod] = useState(DYNAMIC_PERIODS[0] || "");
+  const [period, setPeriod] = useState(DYNAMIC_PERIODS[1] || DYNAMIC_PERIODS[0] || ""); // default bulan sebelumnya
   const [toastMsg, setToastMsg] = useState("");
   const [savingCategory, setSavingCategory] = useState<string | null>(null);
   const [sheetAgentId, setSheetAgentId] = useState<string | null>(null);

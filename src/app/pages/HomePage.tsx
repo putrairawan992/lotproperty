@@ -156,7 +156,7 @@ export default function HomePage({ onNav, onShowLevelUp }: { onNav: (p: Page) =>
   const [eventData, setEventData] = useState<EventItem[]>([]);
   const [hofRawData, setHofRawData] = useState<any[]>([]);
   const [availablePeriods, setAvailablePeriods] = useState<string[]>(DYNAMIC_PERIODS);
-  const [selectedPeriod, setSelectedPeriod] = useState<string>(DYNAMIC_PERIODS[0] || "");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(DYNAMIC_PERIODS[1] || DYNAMIC_PERIODS[0] || ""); // default bulan sebelumnya (perhitungan akhir bulan)
   const [completedModulesCount, setCompletedModulesCount] = useState(0);
 
   useEffect(() => {
