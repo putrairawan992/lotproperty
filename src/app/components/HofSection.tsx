@@ -440,12 +440,12 @@ function PortraitCard({
       >
         {agent.name.split(" ")[0]}
       </p>
-      <p
+      {/* <p
         className="mt-1 text-center leading-tight line-clamp-1 w-full px-0.5 font-medium"
         style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontFamily: "'Inter', sans-serif" }}
       >
         {category === "Top 5 Commission" ? agent.level : agent.value}
-      </p>
+      </p> */}
     </motion.div>
   );
 }
