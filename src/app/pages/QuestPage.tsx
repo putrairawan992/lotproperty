@@ -461,7 +461,11 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowContentModal(false);
       setContentUrl("");
-      showQuestComplete({ name: "Upload Konten Sosmed", xp: xp || 300, overkill: !!res?.is_overkill });
+      if (xp > 0) {
+        showQuestComplete({ name: "Upload Konten Sosmed", xp, overkill: !!res?.is_overkill });
+      } else {
+        triggerToast("Konten sudah diklaim hari ini. Coba lagi besok (+50 XP overkill bonus).");
+      }
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
@@ -476,7 +480,11 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowPromoModal(false);
       setPromoUrl("");
-      showQuestComplete({ name: "Listing Promotion", xp: xp || 100, overkill: !!res?.is_overkill });
+      if (xp > 0) {
+        showQuestComplete({ name: "Listing Promotion", xp, overkill: !!res?.is_overkill });
+      } else {
+        triggerToast("Promosi sudah diklaim maksimal hari ini. Coba lagi besok (+50 XP overkill bonus).");
+      }
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
