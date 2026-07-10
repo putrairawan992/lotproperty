@@ -269,6 +269,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const [submittingEventCode, setSubmittingEventCode] = useState(false);
 
   const [successToast, setSuccessToast] = useState("");
+  const [toastIsError, setToastIsError] = useState(false);
 
   const [showContentModal, setShowContentModal] = useState(false);
   const [contentUrl, setContentUrl] = useState("");
@@ -389,7 +390,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
         if (found) setWeeklyRank(`#${found.rank}`);
       }
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Gagal memuat status quest");
+      triggerToast(error instanceof Error ? error.message : "Gagal memuat status quest", true);
     } finally {
       setApiLoading(false);
     }
@@ -402,7 +403,8 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   if (loading) return <QuestPageSkeleton />;
 
-  const triggerToast = (msg: string) => {
+  const triggerToast = (msg: string, isError: boolean = false) => {
+    setToastIsError(isError);
     setSuccessToast(msg);
     setTimeout(() => setSuccessToast(""), 3000);
   };
@@ -421,7 +423,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
           refreshUser();
         })
         .catch((error: unknown) => {
-          triggerToast(error instanceof Error ? error.message : "Gagal submit attendance");
+          triggerToast(error instanceof Error ? error.message : "Gagal submit attendance", true);
         });
     } else if (q.id === "new_recruit") {
       setShowRecruitModal(true);
@@ -452,7 +454,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       setRecruitForm({ name: "", email: "", phone: "", ktm: "" });
       triggerToast("Bukti rekrutmen berhasil dikirim! Menunggu approval Admin.");
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Gagal mengirim bukti rekrutmen");
+      triggerToast(error instanceof Error ? error.message : "Gagal mengirim bukti rekrutmen", true);
     }
   };
 
@@ -469,7 +471,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       showQuestComplete({ name: "Event Participation", xp: xp || 1000 });
       await refreshUser();
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Gagal memverifikasi kode event");
+      triggerToast(error instanceof Error ? error.message : "Gagal memverifikasi kode event", true);
     } finally {
       setSubmittingEventCode(false);
     }
@@ -490,7 +492,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Gagal submit konten");
+      triggerToast(error instanceof Error ? error.message : "Gagal submit konten", true);
     }
   };
 
@@ -509,7 +511,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Gagal submit promosi listing");
+      triggerToast(error instanceof Error ? error.message : "Gagal submit promosi listing", true);
     }
   };
 
@@ -603,8 +605,10 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       <AnimatePresence>
         {successToast && (
           <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}
-            className="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#16A34A] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-semibold border border-green-500/20">
-            <Check size={16} /> {successToast}
+            className={`fixed top-16 left-1/2 -translate-x-1/2 z-[60] text-white px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 text-sm font-semibold border ${
+              toastIsError ? "bg-[#DC2626] border-red-500/20" : "bg-[#16A34A] border-green-500/20"
+            }`}>
+            {toastIsError ? <span className="text-base leading-none">⚠️</span> : <Check size={16} />} {successToast}
           </motion.div>
         )}
       </AnimatePresence>
