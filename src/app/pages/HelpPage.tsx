@@ -482,26 +482,7 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
         {/* ── INTERACTIVE FORMULIR ── */}
         {tab === "forms" && (
           <motion.div key="forms" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
-            {/* Google Forms Quick Links */}
-            <Card className="p-4 bg-gradient-to-r from-amber-500/5 to-emerald-500/5 border border-amber-500/10">
-              <p className="text-xs font-bold text-[#E8A500] uppercase tracking-wider mb-2.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                📋 GOOGLE FORM RESMI LOT PROPERTY
-              </p>
-              <div className="grid grid-cols-1 gap-3">
-                <a
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSdaoeYPZSUskh8pS40gmgCRlvXDu3wdbsJ4OBoMQgGZqvd2pw/viewform"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 bg-muted/20 transition-all text-left no-underline group cursor-pointer"
-                >
-                  <div>
-                    <p className="text-xs font-bold text-foreground group-hover:text-emerald-500 transition-colors">Formulir Klaim DP</p>
-                    <p className="text-[10px] text-muted-foreground mt-0.5">Pengajuan klaim DP transaksi resmi</p>
-                  </div>
-                  <ChevronRight size={14} className="text-muted-foreground group-hover:text-emerald-500 transition-colors" />
-                </a>
-              </div>
-            </Card>
+            {/* Google Forms Quick Links card moved to Quest page, below Claim Commission */}
 
             {/* FEEDBACK FORM */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">

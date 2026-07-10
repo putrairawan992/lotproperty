@@ -713,6 +713,27 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
         </div>
       </motion.div>
 
+      {/* Google Form Resmi — Klaim DP (moved here from Help > Forms, right below Claim Commission) */}
+      <Card className="p-4 bg-gradient-to-r from-amber-500/5 to-emerald-500/5 border border-amber-500/10">
+        <p className="text-xs font-bold text-[#E8A500] uppercase tracking-wider mb-2.5" style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+          📋 GOOGLE FORM RESMI LOT PROPERTY
+        </p>
+        <div className="grid grid-cols-1 gap-3">
+          <a
+            href="https://docs.google.com/forms/d/e/1FAIpQLSdaoeYPZSUskh8pS40gmgCRlvXDu3wdbsJ4OBoMQgGZqvd2pw/viewform"
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-between p-3 rounded-xl border border-white/5 hover:border-emerald-500/30 bg-muted/20 transition-all text-left no-underline group cursor-pointer"
+          >
+            <div>
+              <p className="text-xs font-bold text-foreground group-hover:text-emerald-500 transition-colors">Formulir Klaim DP</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">Pengajuan klaim DP transaksi resmi</p>
+            </div>
+            <ChevronRight size={14} className="text-muted-foreground group-hover:text-emerald-500 transition-colors" />
+          </a>
+        </div>
+      </Card>
+
       {/* Daily Quest */}
       <Card style={{ borderLeft: "4px solid #16A34A" }}>
         <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b gap-3" style={{ borderColor: T.border, backgroundColor: isDark ? "rgba(22,163,74,0.1)" : "#DCFCE715" }}>
