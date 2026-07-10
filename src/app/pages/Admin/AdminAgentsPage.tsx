@@ -312,6 +312,7 @@ export default function AdminAgentsPage() {
   const [editModal, setEditModal] = useState<AgentItem | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
   const [editPassword, setEditPassword] = useState("");
   const [editRole, setEditRole] = useState("");
   const [editMentorId, setEditMentorId] = useState<number | null>(null);
@@ -534,6 +535,7 @@ export default function AdminAgentsPage() {
     setEditModal(a);
     setEditName(a.name);
     setEditEmail(a.email);
+    setEditPhone(a.phone || "");
     setEditPassword("");
     setEditRole(a.role || "");
     setEditMentorId(a.mentor_id || 0);
@@ -567,6 +569,7 @@ export default function AdminAgentsPage() {
       const payload: any = {};
       if (editName !== editModal.name) payload.name = editName;
       if (editEmail !== editModal.email) payload.email = editEmail;
+      if (editPhone !== (editModal.phone || "")) payload.phone = editPhone;
       if (editPassword) payload.password = editPassword;
       if (editRole) payload.role = editRole;
 
@@ -590,6 +593,7 @@ export default function AdminAgentsPage() {
         ...a,
         name: editName || a.name,
         email: editEmail || a.email,
+        phone: editPhone,
         mentor_id: nextMentorId > 0 ? nextMentorId : null,
         role: editRole || a.role,
         photo_url: payload.photo_url !== undefined ? payload.photo_url : a.photo_url,
@@ -1218,7 +1222,7 @@ export default function AdminAgentsPage() {
                     <div key={s.id} className="flex flex-wrap items-center gap-3 p-4 justify-between">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold" style={{ color: T.text1 }}>{s.name}</p>
-                        <p className="text-xs" style={{ color: T.text3 }}>{s.email} · KTM: {s.ktm} · Mentor: {s.mentor?.name || `#${s.mentor_id}`}</p>
+                        <p className="text-xs" style={{ color: T.text3 }}>{s.email} · {s.phone || "—"} · KTM: {s.ktm} · Mentor: {s.mentor?.name || `#${s.mentor_id}`}</p>
                         {s.status === "Rejected" && s.reject_reason && (
                           <p className="text-xs mt-1" style={{ color: "#DC2626" }}>Alasan tolak: {s.reject_reason}</p>
                         )}
@@ -1420,6 +1424,12 @@ export default function AdminAgentsPage() {
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Email</label>
                   <input value={editEmail} onChange={e => setEditEmail(e.target.value)} autoComplete="off"
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>No. Handphone</label>
+                  <input value={editPhone} onChange={e => setEditPhone(e.target.value)} autoComplete="off"
+                    placeholder="08xxxxxxxxxx"
                     className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
                 </div>
                 <div>

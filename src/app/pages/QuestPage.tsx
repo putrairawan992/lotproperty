@@ -261,7 +261,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   // Modal states
   const [showRecruitModal, setShowRecruitModal] = useState(false);
-  const [recruitForm, setRecruitForm] = useState({ name: "", email: "", ktm: "" });
+  const [recruitForm, setRecruitForm] = useState({ name: "", email: "", phone: "", ktm: "" });
 
   const [showEventModal, setShowEventModal] = useState(false);
   const [eventCameraActive, setEventCameraActive] = useState(false);
@@ -444,12 +444,12 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   };
 
   const handleRecruitSubmit = async () => {
-    if (!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.ktm.trim()) return;
+    if (!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.phone.trim() || !recruitForm.ktm.trim()) return;
     try {
-      await api.quests.submitRecruit(recruitForm.name.trim(), recruitForm.email.trim(), recruitForm.ktm.trim());
+      await api.quests.submitRecruit(recruitForm.name.trim(), recruitForm.email.trim(), recruitForm.phone.trim(), recruitForm.ktm.trim());
       setSkillQuests(prev => prev.map(q => q.id === "new_recruit" ? { ...q, status: "pending" } : q));
       setShowRecruitModal(false);
-      setRecruitForm({ name: "", email: "", ktm: "" });
+      setRecruitForm({ name: "", email: "", phone: "", ktm: "" });
       triggerToast("Bukti rekrutmen berhasil dikirim! Menunggu approval Admin.");
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal mengirim bukti rekrutmen");
@@ -827,6 +827,11 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
                     className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold mb-1.5 uppercase" style={{ color: T.text3 }}>No. Handphone Agen Baru</label>
+                  <input type="tel" placeholder="08xxxxxxxxxx" value={recruitForm.phone} onChange={e => setRecruitForm(f => ({ ...f, phone: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
+                </div>
+                <div>
                   <label className="block text-xs font-semibold mb-1.5 uppercase" style={{ color: T.text3 }}>Nomor KTM (Kartu Tanda Mitra)</label>
                   <input type="text" placeholder="KTM-XXXXXX" value={recruitForm.ktm} onChange={e => setRecruitForm(f => ({ ...f, ktm: e.target.value }))}
                     className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
@@ -834,9 +839,9 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               </div>
               <div className="px-6 py-4 border-t flex gap-2 justify-end bg-muted/10" style={{ borderColor: T.border }}>
                 <button onClick={() => setShowRecruitModal(false)} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
-                <button onClick={handleRecruitSubmit} disabled={!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.ktm.trim()}
+                <button onClick={handleRecruitSubmit} disabled={!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.phone.trim() || !recruitForm.ktm.trim()}
                   className="px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 text-white animate-pulse"
-                  style={{ backgroundColor: recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.ktm.trim() ? "#E8A500" : "var(--border)", cursor: recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.ktm.trim() ? "pointer" : "not-allowed" }}>
+                  style={{ backgroundColor: recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.phone.trim() && recruitForm.ktm.trim() ? "#E8A500" : "var(--border)", cursor: recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.phone.trim() && recruitForm.ktm.trim() ? "pointer" : "not-allowed" }}>
                   <Send size={14} /> Submit Bukti
                 </button>
               </div>

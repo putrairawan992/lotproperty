@@ -153,10 +153,10 @@ export const api = {
         body: JSON.stringify({ url }),
       });
     },
-    submitRecruit: (name: string, email: string, ktm: string) => {
+    submitRecruit: (name: string, email: string, phone: string, ktm: string) => {
       return request<any>("/quests/recruit", {
         method: "POST",
-        body: JSON.stringify({ name, email, ktm }),
+        body: JSON.stringify({ name, email, phone, ktm }),
       });
     }
   },
@@ -372,7 +372,7 @@ export const api = {
     updateAgentStatus: (id: number | string, action: "approve" | "suspend" | "reactivate") => {
       return request<any>(`/admin/agents/${id}/status?action=${action}`, { method: "POST" });
     },
-    updateAgent: (id: number | string, payload: { name?: string; email?: string; password?: string; role?: string; photo_url?: string; mentor_id?: number | null }) => {
+    updateAgent: (id: number | string, payload: { name?: string; email?: string; phone?: string; password?: string; role?: string; photo_url?: string; mentor_id?: number | null }) => {
       return request<any>(`/admin/agents/${id}`, { method: "PUT", body: JSON.stringify(payload) });
     },
     deleteAgent: (id: number | string) => {
