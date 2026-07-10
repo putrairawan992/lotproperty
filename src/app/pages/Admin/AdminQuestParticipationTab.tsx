@@ -33,7 +33,6 @@ export default function AdminQuestParticipationTab() {
 
   const [code, setCode] = useState("");
   const [label, setLabel] = useState("");
-  const [xpReward, setXpReward] = useState("1000");
   const [isActive, setIsActive] = useState(true);
 
   const [barcodeFor, setBarcodeFor] = useState<QuestCode | null>(null);
@@ -78,7 +77,6 @@ export default function AdminQuestParticipationTab() {
   const resetForm = () => {
     setCode("");
     setLabel("");
-    setXpReward("1000");
     setIsActive(true);
     setEditId(null);
     setShowForm(false);
@@ -87,7 +85,6 @@ export default function AdminQuestParticipationTab() {
   const handleEditClick = (c: QuestCode) => {
     setCode(c.code);
     setLabel(c.label || "");
-    setXpReward(String(c.xp_reward || 1000));
     setIsActive(c.is_active);
     setEditId(c.id);
     setShowForm(true);
@@ -101,7 +98,7 @@ export default function AdminQuestParticipationTab() {
     }
     setSaving(true);
     try {
-      const payload = { code: code.trim(), label: label.trim(), xp_reward: parseInt(xpReward) || 1000, is_active: isActive };
+      const payload = { code: code.trim(), label: label.trim(), xp_reward: 1000, is_active: isActive };
       if (editId) {
         await api.admin.updateQuestParticipationCode(editId, payload);
         notify("Kode Quest Participation berhasil diperbarui!", "success");
@@ -269,9 +266,10 @@ export default function AdminQuestParticipationTab() {
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Reward XP</label>
-                    <input type="number" value={xpReward} onChange={e => setXpReward(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none font-semibold"
-                      style={{ borderColor: T.border }} />
+                    <div className="w-full px-3.5 py-2.5 rounded-xl border bg-muted text-sm font-semibold text-muted-foreground"
+                      style={{ borderColor: T.border }}>
+                      1000 XP
+                    </div>
                   </div>
                   <label className="flex items-center gap-2 cursor-pointer text-xs font-bold uppercase tracking-wider" style={{ color: T.text2 }}>
                     <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} className="cursor-pointer" />
