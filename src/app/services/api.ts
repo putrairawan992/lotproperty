@@ -129,6 +129,12 @@ export const api = {
         body: formData,
       });
     },
+    updateMe: (payload: { name?: string; current_password?: string; new_password?: string }) => {
+      return request<any>("/profile/me", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+      });
+    },
   },
 
   // Quests
@@ -145,6 +151,12 @@ export const api = {
       return request<any>("/quests/promotion", {
         method: "POST",
         body: JSON.stringify({ url }),
+      });
+    },
+    submitRecruit: (name: string, email: string, ktm: string) => {
+      return request<any>("/quests/recruit", {
+        method: "POST",
+        body: JSON.stringify({ name, email, ktm }),
       });
     }
   },
@@ -274,6 +286,12 @@ export const api = {
       return request<any>(`/events/${id}/submit`, {
         method: "POST",
         body: JSON.stringify({ submission_url: url }),
+      });
+    },
+    redeem: (code: string) => {
+      return request<any>("/events/redeem", {
+        method: "POST",
+        body: JSON.stringify({ code }),
       });
     }
   },
@@ -428,6 +446,13 @@ export const api = {
     getEventSubmissions: () => request<any[]>("/admin/event-submissions"),
     reviewEventSubmission: (id: number | string, status: "Approved" | "Rejected", rejectReason: string = "") => {
       return request<any>(`/admin/event-submissions/${id}/review`, {
+        method: "PUT",
+        body: JSON.stringify({ status, reject_reason: rejectReason }),
+      });
+    },
+    getRecruitSubmissions: () => request<any[]>("/admin/recruit-submissions"),
+    reviewRecruitSubmission: (id: number | string, status: "Approved" | "Rejected", rejectReason: string = "") => {
+      return request<any>(`/admin/recruit-submissions/${id}/review`, {
         method: "PUT",
         body: JSON.stringify({ status, reject_reason: rejectReason }),
       });

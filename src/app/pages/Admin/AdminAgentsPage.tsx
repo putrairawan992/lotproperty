@@ -3,6 +3,7 @@ import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar,
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import AdminPagination from "../../components/AdminPagination";
+import SearchableSelect, { type SelectOption } from "../../components/SearchableSelect";
 import LevelBadge from "../../components/LevelBadge";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T, useTheme } from "../../types";
@@ -285,7 +286,10 @@ function VerticalTreeNode({
 }
 
 export default function AdminAgentsPage() {
-  const [activeTab, setActiveTab] = useState<"list" | "tree">("list");
+  const [activeTab, setActiveTab] = useState<"list" | "tree" | "recruits">("list");
+  const [recruitSubmissions, setRecruitSubmissions] = useState<any[]>([]);
+  const [loadingRecruitSubmissions, setLoadingRecruitSubmissions] = useState(false);
+  const [newCredentials, setNewCredentials] = useState<{ email: string; password: string } | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [agents, setAgents] = useState<AgentItem[]>([]);
@@ -294,6 +298,9 @@ export default function AdminAgentsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [recruitsModal, setRecruitsModal] = useState<TreeNodeData | null>(null);
+  // Full agent roster for the Mentor/Upline dropdown — decoupled from the paginated
+  // table (`agents` only holds the current page, so it can't list every possible mentor).
+  const [mentorOptions, setMentorOptions] = useState<SelectOption[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
   const [editModal, setEditModal] = useState<AgentItem | null>(null);
@@ -388,10 +395,58 @@ export default function AdminAgentsPage() {
     setPage(1);
   }, [search, statusFilter]);
 
+  // Full agent roster for the Mentor/Upline dropdown, loaded once (independent of the
+  // paginated table above).
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.admin.getAgents({ pageSize: 500 });
+        const rows = Array.isArray(res?.data) ? res.data : [];
+        setMentorOptions(
+          rows
+            .filter((r: any) => String(r.role || "Agent") === "Agent")
+            .map((r: any) => ({ value: String(r.id), label: String(r.name || ""), sub: String(r.email || "") }))
+        );
+      } catch {
+        // Keep empty options when API fails.
+      }
+    })();
+  }, []);
+
   const triggerToast = (msg: string, isErr = false) => {
     setToastMsg(msg);
     setToastError(isErr);
     setTimeout(() => setToastMsg(""), 3000);
+  };
+
+  const loadRecruitSubmissions = async () => {
+    setLoadingRecruitSubmissions(true);
+    try {
+      const rows = await api.admin.getRecruitSubmissions();
+      setRecruitSubmissions(Array.isArray(rows) ? rows : []);
+    } catch {
+      triggerToast("Gagal memuat pengajuan rekrutmen", true);
+    } finally {
+      setLoadingRecruitSubmissions(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "recruits") loadRecruitSubmissions();
+  }, [activeTab]);
+
+  const reviewRecruitSubmission = async (id: number, status: "Approved" | "Rejected") => {
+    try {
+      const res = await api.admin.reviewRecruitSubmission(id, status);
+      if (status === "Approved" && res?.agent_email && res?.generated_password) {
+        setNewCredentials({ email: res.agent_email, password: res.generated_password });
+      } else {
+        triggerToast("Pengajuan rekrutmen ditolak");
+      }
+      await loadRecruitSubmissions();
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal memproses pengajuan", true);
+    }
   };
 
   const updateStatus = async (id: number, status: string) => {
@@ -644,6 +699,20 @@ export default function AdminAgentsPage() {
               boxShadow: activeTab === "tree" && !isDark ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
             }}>
             <Network size={13} /> Pohon Rekrutmen
+          </button>
+          <button onClick={() => { setActiveTab("recruits"); setSearch(""); }}
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all"
+            style={{
+              backgroundColor: activeTab === "recruits" ? (isDark ? "#2A241C" : "white") : "transparent",
+              color: activeTab === "recruits" ? "#E8A500" : (isDark ? "#9CA3AF" : "#6B7280"),
+              boxShadow: activeTab === "recruits" && !isDark ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
+            }}>
+            <Award size={13} /> Pengajuan Rekrutmen
+            {recruitSubmissions.filter(s => s.status === "Pending").length > 0 && (
+              <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: "#DC2626", color: "white" }}>
+                {recruitSubmissions.filter(s => s.status === "Pending").length}
+              </span>
+            )}
           </button>
         </div>
 
@@ -1047,6 +1116,103 @@ export default function AdminAgentsPage() {
           </motion.div>
         )}
 
+        {/* TAB 3: RECRUIT SUBMISSIONS (agent-submitted "New Recruit" quest) */}
+        {activeTab === "recruits" && (
+          <motion.div key="recruits" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+            <Card>
+              <div className="p-4 border-b" style={{ borderColor: T.border }}>
+                <h3 className="text-sm font-bold" style={{ color: T.text1 }}>Pengajuan Rekrutmen dari Agent</h3>
+                <p className="text-xs mt-0.5" style={{ color: T.text3 }}>Approve memberi +5.000 XP ke mentor & mencatat recruit resmi.</p>
+              </div>
+
+              {loadingRecruitSubmissions ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground gap-3">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E8A500]"></div>
+                  <p className="text-xs font-semibold">Memuat pengajuan...</p>
+                </div>
+              ) : recruitSubmissions.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-2" style={{ color: T.text3 }}>
+                  <Award size={28} className="opacity-40" />
+                  <p className="text-xs font-semibold">Belum ada pengajuan rekrutmen.</p>
+                </div>
+              ) : (
+                <div className="divide-y" style={{ borderColor: T.border }}>
+                  {recruitSubmissions.map((s) => (
+                    <div key={s.id} className="flex flex-wrap items-center gap-3 p-4 justify-between">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold" style={{ color: T.text1 }}>{s.name}</p>
+                        <p className="text-xs" style={{ color: T.text3 }}>{s.email} · KTM: {s.ktm} · Mentor: {s.mentor?.name || `#${s.mentor_id}`}</p>
+                        {s.status === "Rejected" && s.reject_reason && (
+                          <p className="text-xs mt-1" style={{ color: "#DC2626" }}>Alasan tolak: {s.reject_reason}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {s.status === "Pending" ? (
+                          <>
+                            <button onClick={() => reviewRecruitSubmission(s.id, "Rejected")}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                              style={{ borderColor: "rgba(220,38,38,0.3)", color: "#DC2626" }}>
+                              Tolak
+                            </button>
+                            <button onClick={() => reviewRecruitSubmission(s.id, "Approved")}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all"
+                              style={{ backgroundColor: "#16A34A" }}>
+                              Approve
+                            </button>
+                          </>
+                        ) : (
+                          <span className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                            style={{
+                              backgroundColor: s.status === "Approved" ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.1)",
+                              color: s.status === "Approved" ? "#16A34A" : "#DC2626",
+                            }}>
+                            {s.status === "Approved" ? "Disetujui" : "Ditolak"}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Card>
+          </motion.div>
+        )}
+
+      </AnimatePresence>
+
+      {/* Modal: New Agent Credentials (after approving a Recruit Submission) */}
+      <AnimatePresence>
+        {newCredentials && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setNewCredentials(null)}>
+            <motion.div className="bg-card w-full max-w-sm rounded-2xl border shadow-2xl overflow-hidden" style={{ borderColor: T.border }}
+              initial={{ scale: 0.95, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 12 }} onClick={e => e.stopPropagation()}>
+              <div className="px-5 py-4 border-b" style={{ borderColor: T.border }}>
+                <h3 className="text-sm font-bold" style={{ color: T.text1 }}>Akun Agent Berhasil Dibuat</h3>
+                <p className="text-xs mt-0.5" style={{ color: T.text3 }}>Sampaikan kredensial ini ke agent baru — password tidak bisa dilihat lagi setelah ini ditutup.</p>
+              </div>
+              <div className="p-5 space-y-3">
+                <div className="p-3 rounded-xl" style={{ backgroundColor: T.muted }}>
+                  <p className="text-[10px] font-bold uppercase" style={{ color: T.text3 }}>Email</p>
+                  <p className="text-sm font-mono" style={{ color: T.text1 }}>{newCredentials.email}</p>
+                </div>
+                <div className="p-3 rounded-xl" style={{ backgroundColor: T.muted }}>
+                  <p className="text-[10px] font-bold uppercase" style={{ color: T.text3 }}>Password Default</p>
+                  <p className="text-sm font-mono" style={{ color: T.text1 }}>{newCredentials.password}</p>
+                </div>
+              </div>
+              <div className="px-5 py-4 border-t flex justify-end gap-2" style={{ borderColor: T.border }}>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(`Email: ${newCredentials.email}\nPassword: ${newCredentials.password}`); triggerToast("Kredensial disalin"); }}
+                  className="px-3 py-2 rounded-lg text-xs font-bold border" style={{ borderColor: T.border, color: T.text2 }}>
+                  Salin
+                </button>
+                <button onClick={() => setNewCredentials(null)} className="px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ backgroundColor: "#16A34A" }}>
+                  Selesai
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
       </AnimatePresence>
 
       {/* Modal: Daftar Rekrut */}
@@ -1187,15 +1353,13 @@ export default function AdminAgentsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Mentor / Upline</label>
-                  <select value={editMentorId || 0} onChange={e => setEditMentorId(Number(e.target.value))}
-                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card font-medium" style={{ borderColor: T.border, color: T.text1 }}>
-                    <option value={0}>— Tidak ada (Mandiri / No Mentor) —</option>
-                    {agents
-                      .filter(a => a.id !== editModal.id && a.role === "Agent")
-                      .map(a => (
-                        <option key={a.id} value={a.id}>{a.name} ({a.email})</option>
-                      ))}
-                  </select>
+                  <SearchableSelect
+                    value={editMentorId ? String(editMentorId) : ""}
+                    onChange={v => setEditMentorId(v ? Number(v) : null)}
+                    options={[{ value: "", label: "— Tidak ada (Mandiri / No Mentor) —" }, ...mentorOptions.filter(o => Number(o.value) !== editModal.id)]}
+                    placeholder="Pilih mentor / upline..."
+                    emptyLabel="Tidak ada agent"
+                  />
                 </div>
               </div>
 
@@ -1279,15 +1443,13 @@ export default function AdminAgentsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Mentor / Upline</label>
-                  <select value={newMentorId || 0} onChange={e => setNewMentorId(Number(e.target.value) || null)}
-                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card font-medium" style={{ borderColor: T.border, color: T.text1 }}>
-                    <option value={0}>— Tidak ada (Mandiri / No Mentor) —</option>
-                    {agents
-                      .filter(a => a.role === "Agent")
-                      .map(a => (
-                        <option key={a.id} value={a.id}>{a.name} ({a.email})</option>
-                      ))}
-                  </select>
+                  <SearchableSelect
+                    value={newMentorId ? String(newMentorId) : ""}
+                    onChange={v => setNewMentorId(v ? Number(v) : null)}
+                    options={[{ value: "", label: "— Tidak ada (Mandiri / No Mentor) —" }, ...mentorOptions]}
+                    placeholder="Pilih mentor / upline..."
+                    emptyLabel="Tidak ada agent"
+                  />
                 </div>
               </div>
 

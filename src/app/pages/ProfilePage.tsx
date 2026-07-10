@@ -351,6 +351,43 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Account Settings — self-service name/password change (own profile only).
+  const [showAccountSettings, setShowAccountSettings] = useState(false);
+  const [accountName, setAccountName] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [savingAccount, setSavingAccount] = useState(false);
+
+  const handleSaveAccount = async () => {
+    if (newPassword && newPassword !== confirmPassword) {
+      triggerError("Konfirmasi password baru tidak cocok.");
+      return;
+    }
+    if (newPassword && newPassword.length < 6) {
+      triggerError("Password baru minimal 6 karakter.");
+      return;
+    }
+    setSavingAccount(true);
+    try {
+      const res = await api.profile.updateMe({
+        name: accountName.trim() || undefined,
+        current_password: currentPassword || undefined,
+        new_password: newPassword || undefined,
+      });
+      setProfile((prev: any) => (prev ? { ...prev, name: res?.name ?? prev.name } : prev));
+      triggerToast("Profil berhasil diperbarui!");
+      setShowAccountSettings(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      triggerError(err instanceof Error ? err.message : "Gagal memperbarui profil.");
+    } finally {
+      setSavingAccount(false);
+    }
+  };
+
   useEffect(() => {
     const params = new URLSearchParams(search);
     const shareCard = params.get("shareCard");
@@ -1103,6 +1140,23 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
               )}
             </div>
           </Card>
+
+          {/* Account Settings — change own name/password (not shown when viewing another agent) */}
+          {!getQueryParam("id") && (
+            <Card className="p-5">
+              <button
+                type="button"
+                onClick={() => { setAccountName(profileCard.name); setShowAccountSettings(true); }}
+                className="w-full flex items-center justify-between gap-3 text-left"
+              >
+                <div>
+                  <p className="text-sm font-bold" style={{ color: T.text1 }}>Pengaturan Akun</p>
+                  <p className="text-xs mt-0.5" style={{ color: T.text3 }}>Ubah nama & password</p>
+                </div>
+                <ChevronRight size={18} style={{ color: T.text3 }} />
+              </button>
+            </Card>
+          )}
         </div>
 
         {/* ==================== RIGHT COLUMN ==================== */}
@@ -1408,6 +1462,51 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
               <div className="px-6 py-4 border-t flex justify-end bg-muted/10" style={{ borderColor: T.border }}>
                 <button onClick={handleSaveFeaturedBadges} disabled={savingFeatured} className="px-6 py-2.5 rounded-xl font-bold bg-[#E8A500] text-white font-display text-sm transition-all hover:bg-[#CC9200] disabled:opacity-60 disabled:cursor-not-allowed">
                   {savingFeatured ? "MENYIMPAN..." : "SIMPAN SHOWCASE"}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ── MODAL: ACCOUNT SETTINGS (name / password) ── */}
+      <AnimatePresence>
+        {showAccountSettings && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowAccountSettings(false)} className="absolute inset-0 bg-black/60" />
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-card w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden relative z-10" style={{ borderColor: T.border }}>
+              <div className="px-6 py-4 border-b flex justify-between items-center" style={{ borderColor: T.border }}>
+                <h3 className="font-bold font-display text-lg" style={{ color: T.text1 }}>Pengaturan Akun</h3>
+                <button onClick={() => setShowAccountSettings(false)} style={{ color: T.text3 }}><X size={20} /></button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Nama</label>
+                  <input type="text" value={accountName} onChange={e => setAccountName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
+                    style={{ borderColor: T.border, color: T.text1 }} />
+                </div>
+
+                <div className="pt-2 border-t" style={{ borderColor: T.border }}>
+                  <p className="text-xs font-semibold mb-3 uppercase tracking-wide" style={{ color: T.text3 }}>Ganti Password (opsional)</p>
+                  <div className="space-y-3">
+                    <input type="password" placeholder="Password saat ini" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
+                      style={{ borderColor: T.border, color: T.text1 }} autoComplete="current-password" />
+                    <input type="password" placeholder="Password baru (min. 6 karakter)" value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
+                      style={{ borderColor: T.border, color: T.text1 }} autoComplete="new-password" />
+                    <input type="password" placeholder="Konfirmasi password baru" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
+                      style={{ borderColor: T.border, color: T.text1 }} autoComplete="new-password" />
+                  </div>
+                </div>
+              </div>
+              <div className="px-6 py-4 border-t flex justify-end bg-muted/10" style={{ borderColor: T.border }}>
+                <button onClick={handleSaveAccount} disabled={savingAccount || !accountName.trim()}
+                  className="px-6 py-2.5 rounded-xl font-bold bg-[#E8A500] text-white font-display text-sm transition-all hover:bg-[#CC9200] disabled:opacity-60 disabled:cursor-not-allowed">
+                  {savingAccount ? "MENYIMPAN..." : "SIMPAN"}
                 </button>
               </div>
             </motion.div>

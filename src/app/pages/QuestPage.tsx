@@ -1,8 +1,9 @@
 import { useState, useContext, useEffect, useRef } from "react";
-import { Calendar, DollarSign, Target, Check, ChevronRight, X, Camera, Send, QrCode } from "lucide-react";
+import { Calendar, DollarSign, Target, Check, ChevronRight, X, Send } from "lucide-react";
 import { AnimatePresence, motion, useMotionValue, useSpring, useTransform } from "motion/react";
 import * as THREE from "three";
 import Card from "../components/Card";
+import QrCameraScanner from "../components/QrCameraScanner";
 import LevelBadge from "../components/LevelBadge";
 import XPBar from "../components/XPBar";
 import { QuestPageSkeleton } from "../components/Skeletons";
@@ -260,11 +261,13 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   // Modal states
   const [showRecruitModal, setShowRecruitModal] = useState(false);
-  const [recruitForm, setRecruitForm] = useState({ name: "", ktm: "" });
+  const [recruitForm, setRecruitForm] = useState({ name: "", email: "", ktm: "" });
 
   const [showEventModal, setShowEventModal] = useState(false);
+  const [eventCameraActive, setEventCameraActive] = useState(false);
   const [eventCode, setEventCode] = useState("");
-  const [scanning, setScanning] = useState(false);
+  const [submittingEventCode, setSubmittingEventCode] = useState(false);
+
   const [successToast, setSuccessToast] = useState("");
 
   const [showContentModal, setShowContentModal] = useState(false);
@@ -370,7 +373,9 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       setSkillQuests(prev => prev.map(item => {
         if (item.id === "new_recruit") {
           const progress = Math.min(Number(activeAgent?.total_recruits || 0), 1);
-          return { ...item, progress, done: progress >= item.total };
+          const done = progress >= item.total;
+          const status = !done && statusRes?.has_pending_recruit ? "pending" : undefined;
+          return { ...item, progress, done, status };
         }
         if (item.id === "academy") {
           const progress = Math.min(completedModules, 5);
@@ -422,7 +427,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       setShowRecruitModal(true);
     } else if (q.id === "event_participation") {
       setShowEventModal(true);
-      setScanning(true);
+      setEventCameraActive(true);
     } else if (q.id === "new_content") {
       setShowContentModal(true);
     } else if (q.id === "new_prospect") {
@@ -438,20 +443,36 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     }
   };
 
-  const handleRecruitSubmit = () => {
-    if (!recruitForm.name.trim() || !recruitForm.ktm.trim()) return;
-    setSkillQuests(prev => prev.map(q => q.id === "new_recruit" ? { ...q, status: "pending" } : q));
-    setShowRecruitModal(false);
-    setRecruitForm({ name: "", ktm: "" });
-    triggerToast("Bukti rekrutmen berhasil dikirim! Menunggu approval Admin.");
+  const handleRecruitSubmit = async () => {
+    if (!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.ktm.trim()) return;
+    try {
+      await api.quests.submitRecruit(recruitForm.name.trim(), recruitForm.email.trim(), recruitForm.ktm.trim());
+      setSkillQuests(prev => prev.map(q => q.id === "new_recruit" ? { ...q, status: "pending" } : q));
+      setShowRecruitModal(false);
+      setRecruitForm({ name: "", email: "", ktm: "" });
+      triggerToast("Bukti rekrutmen berhasil dikirim! Menunggu approval Admin.");
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal mengirim bukti rekrutmen");
+    }
   };
 
-  const handleEventCodeSubmit = (code: string) => {
-    if (!code.trim()) return;
-    setSkillQuests(prev => prev.map(q => q.id === "event_participation" ? { ...q, progress: 1, done: true } : q));
-    setShowEventModal(false);
-    setEventCode("");
-    showQuestComplete({ name: "Event Participation", xp: 1000 });
+  const handleEventCodeRedeem = async (code: string) => {
+    if (!code.trim() || submittingEventCode) return;
+    setSubmittingEventCode(true);
+    setEventCameraActive(false);
+    try {
+      const res = await api.events.redeem(code.trim());
+      const xp = Number(res?.xp_earned || 0);
+      setShowEventModal(false);
+      setEventCode("");
+      setSkillQuests(prev => prev.map(q => q.id === "event_participation" ? { ...q, progress: 1, done: true } : q));
+      showQuestComplete({ name: "Event Participation", xp: xp || 1000 });
+      await refreshUser();
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal memverifikasi kode event");
+    } finally {
+      setSubmittingEventCode(false);
+    }
   };
 
   const handleContentSubmit = async () => {
@@ -464,7 +485,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       if (xp > 0) {
         showQuestComplete({ name: "Upload Konten Sosmed", xp, overkill: !!res?.is_overkill });
       } else {
-        triggerToast("Konten sudah diklaim hari ini. Coba lagi besok (+50 XP overkill bonus).");
+        triggerToast("Konten berhasil dikirim!");
       }
       await loadQuestStatus();
       await refreshUser();
@@ -483,7 +504,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       if (xp > 0) {
         showQuestComplete({ name: "Listing Promotion", xp, overkill: !!res?.is_overkill });
       } else {
-        triggerToast("Promosi sudah diklaim maksimal hari ini. Coba lagi besok (+50 XP overkill bonus).");
+        triggerToast("Promosi berhasil dikirim!");
       }
       await loadQuestStatus();
       await refreshUser();
@@ -495,6 +516,14 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   function QuestRow({ q, accent }: { q: any; accent: string }) {
     const isPending = q.id === "new_recruit" && q.status === "pending";
     const isDone = q.done || q.progress >= q.total;
+    // Once daily/weekly quota is hit, these 4 categories can still earn a +50 XP
+    // Quest Overkill bonus (handled server-side in AddXP). Show a clickable Overkill
+    // button instead of a dead checkmark — for New Listing/New Prospect it just routes
+    // to their existing create flow (same as "Go"); the overkill popup + XP still fire
+    // from ListingPage/ProspectPage once the create call returns is_overkill.
+    const canOverkill = isDone && (
+      q.id === "new_content" || q.id === "listing_promo" || q.id === "new_listing" || q.id === "new_prospect"
+    );
 
     return (
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 px-4 sm:px-5 py-3 border-b last:border-0" style={{ borderColor: T.border }}>
@@ -524,7 +553,20 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
           <span className="text-xs font-bold hidden sm:inline flex-shrink-0" style={{ color: "#C8922A" }}>+{q.xp.toLocaleString()} XP</span>
           <span className="text-xs font-semibold sm:hidden flex-shrink-0" style={{ color: T.text3 }}>Reward: <strong style={{ color: "#C8922A" }}>+{q.xp.toLocaleString()} XP</strong></span>
           
-          {isDone ? (
+          {canOverkill ? (
+            <button onClick={() => handleGo(q)} className="w-20 h-8 rounded-xl text-[11px] font-bold flex-shrink-0 transition-all flex items-center justify-center gap-1 border"
+              style={{
+                backgroundColor: isDark ? "rgba(255, 106, 0, 0.14)" : "rgba(255, 106, 0, 0.08)",
+                borderColor: "rgba(255, 106, 0, 0.45)",
+                color: "#FF6A00",
+                fontFamily: "'Rajdhani', sans-serif"
+              }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = "rgba(255, 106, 0, 0.28)"; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = isDark ? "rgba(255, 106, 0, 0.14)" : "rgba(255, 106, 0, 0.08)"; }}
+            >
+              🔥 Overkill
+            </button>
+          ) : isDone ? (
             <div className="w-16 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border" style={{ backgroundColor: isDark ? "rgba(34,197,94,0.1)" : "#DCFCE7", borderColor: "rgba(34,197,94,0.2)" }}>
               <Check size={14} style={{ color: "#16A34A" }} />
             </div>
@@ -751,11 +793,16 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               </div>
               <div className="p-6 space-y-4">
                 <p className="text-xs" style={{ color: T.text3 }}>
-                  Kirimkan data agen baru yang Anda rekrut. Setelah diverifikasi oleh Admin, Anda akan mendapatkan bonus <strong style={{ color: "#E8A500" }}>+5.000 XP</strong>.
+                  Kirimkan data agen baru yang Anda rekrut. Setelah diverifikasi oleh Admin, akun agent akan dibuatkan otomatis dan Anda mendapatkan bonus <strong style={{ color: "#E8A500" }}>+5.000 XP</strong>.
                 </p>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 uppercase" style={{ color: T.text3 }}>Nama Lengkap Agen Baru</label>
                   <input type="text" placeholder="Nama lengkap..." value={recruitForm.name} onChange={e => setRecruitForm(f => ({ ...f, name: e.target.value }))}
+                    className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5 uppercase" style={{ color: T.text3 }}>Email Agen Baru</label>
+                  <input type="email" placeholder="email@contoh.com" value={recruitForm.email} onChange={e => setRecruitForm(f => ({ ...f, email: e.target.value }))}
                     className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
                 </div>
                 <div>
@@ -766,9 +813,9 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               </div>
               <div className="px-6 py-4 border-t flex gap-2 justify-end bg-muted/10" style={{ borderColor: T.border }}>
                 <button onClick={() => setShowRecruitModal(false)} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
-                <button onClick={handleRecruitSubmit} disabled={!recruitForm.name.trim() || !recruitForm.ktm.trim()}
+                <button onClick={handleRecruitSubmit} disabled={!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.ktm.trim()}
                   className="px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 text-white animate-pulse"
-                  style={{ backgroundColor: recruitForm.name.trim() && recruitForm.ktm.trim() ? "#E8A500" : "var(--border)", cursor: recruitForm.name.trim() && recruitForm.ktm.trim() ? "pointer" : "not-allowed" }}>
+                  style={{ backgroundColor: recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.ktm.trim() ? "#E8A500" : "var(--border)", cursor: recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.ktm.trim() ? "pointer" : "not-allowed" }}>
                   <Send size={14} /> Submit Bukti
                 </button>
               </div>
@@ -777,80 +824,34 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
         )}
       </AnimatePresence>
 
-      {/* ── MODAL: EVENT PARTICIPATION (SCAN BARCODE & MANUAL) ── */}
+      {/* ── MODAL: EVENT PARTICIPATION (real camera scan + manual code, verified server-side) ── */}
       <AnimatePresence>
         {showEventModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEventModal(false)} className="absolute inset-0 bg-black/60" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={() => { setShowEventModal(false); setEventCameraActive(false); }} className="absolute inset-0 bg-black/60" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="bg-card w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden relative z-10" style={{ borderColor: T.border }}>
               <div className="px-6 py-4 border-b flex justify-between items-center" style={{ borderColor: T.border }}>
-                <h3 className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 18, color: T.text1 }}>Barcode Scanner Event</h3>
-                <button onClick={() => setShowEventModal(false)} style={{ color: T.text3 }}><X size={20} /></button>
+                <h3 className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 18, color: T.text1 }}>Scan Kode Event</h3>
+                <button onClick={() => { setShowEventModal(false); setEventCameraActive(false); }} style={{ color: T.text3 }}><X size={20} /></button>
               </div>
-              <div className="p-6 space-y-5 text-center">
-                {scanning ? (
-                  <div className="space-y-4">
-                    {/* Fake Camera View */}
-                    <div className="relative w-full aspect-square max-w-[240px] mx-auto rounded-2xl bg-zinc-950 overflow-hidden border border-zinc-800 flex flex-col items-center justify-center text-zinc-500">
-                      <Camera size={36} className="animate-pulse mb-2 text-[#E8A500]" />
-                      <p className="text-[10px] text-zinc-400">Arahkan kamera ke barcode event...</p>
 
-                      {/* Scanning Laser Line */}
-                      <div className="absolute inset-x-0 h-0.5 bg-[#E8A500] opacity-80"
-                        style={{
-                          animation: "scan-laser 2.5s infinite linear",
-                          boxShadow: "0 0 10px #E8A500",
-                        }}
-                      />
-                      <style>{`
-                        @keyframes scan-laser {
-                          0% { top: 10%; }
-                          50% { top: 90%; }
-                          100% { top: 10%; }
-                        }
-                      `}</style>
+              <QrCameraScanner active={eventCameraActive && !submittingEventCode} onScan={handleEventCodeRedeem} />
 
-                      {/* Corner overlays */}
-                      <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-[#E8A500]" />
-                      <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-[#E8A500]" />
-                      <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-[#E8A500]" />
-                      <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-[#E8A500]" />
-                    </div>
-
-                    <p className="text-xs" style={{ color: T.text3 }}>Posisikan QR Code event di dalam area kamera</p>
-
-                    <button onClick={() => setScanning(false)} className="text-xs font-semibold underline text-[#E8A500] hover:opacity-80 transition-all">
-                      Gagal scan? Input kode event manual
-                    </button>
-                  </div>
-                ) : (
-                  <div className="space-y-4 text-left">
-                    <p className="text-xs text-center" style={{ color: T.text3 }}>
-                      Masukkan kode event resmi dari LOT Property yang Anda ikuti untuk mengklaim <strong style={{ color: "#E8A500" }}>+1.000 XP</strong>.
-                    </p>
-                    <div>
-                      <label className="block text-xs font-semibold mb-1.5 uppercase" style={{ color: T.text3 }}>Kode Event Manual</label>
-                      <div className="relative">
-                        <QrCode size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                        <input type="text" placeholder="LOT-EVENT-2026" value={eventCode} onChange={e => setEventCode(e.target.value.toUpperCase())}
-                          className="w-full pl-10 pr-4 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-1">Contoh: LOT-EVENT-2026, LOT-MERDEKA-77</p>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button onClick={() => setScanning(true)} className="flex-1 py-2 rounded-xl text-xs font-semibold border transition-all text-center" style={{ borderColor: T.border, color: T.text2 }}>
-                        Kembali ke Scan Kamera
-                      </button>
-                      <button onClick={() => handleEventCodeSubmit(eventCode)} disabled={!eventCode.trim()}
-                        className="flex-1 py-2 rounded-xl text-xs font-bold transition-all text-white animate-pulse"
-                        style={{ backgroundColor: eventCode.trim() ? "#E8A500" : "var(--border)", cursor: eventCode.trim() ? "pointer" : "not-allowed" }}>
-                        Verifikasi Kode
-                      </button>
-                    </div>
-                  </div>
-                )}
+              <div className="p-6 space-y-3">
+                <p className="text-xs text-center" style={{ color: T.text3 }}>
+                  Arahkan kamera ke QR code event, atau masukkan kode secara manual untuk mengklaim <strong style={{ color: "#E8A500" }}>+1.000 XP</strong>.
+                </p>
+                <div className="flex gap-2">
+                  <input type="text" placeholder="LOT-EVENT-2026" value={eventCode} onChange={e => setEventCode(e.target.value.toUpperCase())}
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
+                  <button onClick={() => handleEventCodeRedeem(eventCode)} disabled={!eventCode.trim() || submittingEventCode}
+                    className="px-4 py-2.5 rounded-xl text-sm font-bold transition-all text-white"
+                    style={{ backgroundColor: eventCode.trim() && !submittingEventCode ? "#E8A500" : "var(--border)", cursor: eventCode.trim() && !submittingEventCode ? "pointer" : "not-allowed" }}>
+                    {submittingEventCode ? "..." : "Kirim"}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

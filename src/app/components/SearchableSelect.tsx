@@ -26,10 +26,13 @@ export default function SearchableSelect({
   className = "",
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
+  const [openUp, setOpenUp] = useState(false);
   const [search, setSearch] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const DROPDOWN_MAX_HEIGHT = 260;
 
   // Close on outside click
   useEffect(() => {
@@ -68,8 +71,16 @@ export default function SearchableSelect({
     <div ref={containerRef} className={`relative ${className}`}>
       {/* Trigger button */}
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          if (!open) {
+            const rect = triggerRef.current?.getBoundingClientRect();
+            const spaceBelow = rect ? window.innerHeight - rect.bottom : Infinity;
+            setOpenUp(spaceBelow < DROPDOWN_MAX_HEIGHT + 48);
+          }
+          setOpen(!open);
+        }}
         className="w-full flex items-center justify-between gap-2 px-3.5 rounded-xl border outline-none bg-card text-left transition-colors hover:border-[#E8A500]/50"
         style={{
           height: 48,
@@ -99,13 +110,13 @@ export default function SearchableSelect({
         />
       </button>
 
-      {/* Dropdown */}
+      {/* Dropdown — flips upward when there isn't room below (e.g. near the bottom of a modal) */}
       {open && (
         <div
-          className="absolute z-50 mt-1.5 w-full rounded-xl border shadow-xl bg-card overflow-hidden"
+          className={`absolute z-50 w-full rounded-xl border shadow-xl bg-card overflow-hidden ${openUp ? "bottom-full mb-1.5" : "mt-1.5"}`}
           style={{
             borderColor: "var(--border)",
-            maxHeight: 260,
+            maxHeight: DROPDOWN_MAX_HEIGHT,
           }}
         >
           {/* Search input */}

@@ -37,6 +37,7 @@ export default function AdminEventsPage() {
             start: ev.start_date ? ev.start_date.slice(0, 10) : "",
             end: ev.end_date ? ev.end_date.slice(0, 10) : "",
             xpPool: Number(ev.xp_pool || 0),
+            code: ev.code || "",
             badge_id: ev.badge_id || "",
             badge: ev.badge?.name || "Event Badge",
             banner: ev.banner || "",
@@ -60,6 +61,7 @@ export default function AdminEventsPage() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [xpPool, setXpPool] = useState("");
+  const [code, setCode] = useState("");
   const [badgeId, setBadgeId] = useState<string | number>("");
   const [prizeItems, setPrizeItems] = useState<{rank: string; prize: string}[]>([]);
   const [termsAndConditions, setTermsAndConditions] = useState("");
@@ -112,6 +114,7 @@ export default function AdminEventsPage() {
       setStart("");
       setEnd("");
       setXpPool("");
+      setCode("");
       setBadgeId("");
       setPrizeItems([]);
       setTermsAndConditions("");
@@ -238,6 +241,7 @@ export default function AdminEventsPage() {
         start_date: new Date(start).toISOString(),
         end_date: new Date(end).toISOString(),
         xp_pool: parseInt(xpPool) || 0,
+        code: code.trim(),
         badge_id: payloadId,
         badge_name: payloadName,
         subtitle: title.trim().toUpperCase(),
@@ -268,6 +272,7 @@ export default function AdminEventsPage() {
           start: ev.start_date ? ev.start_date.slice(0, 10) : "",
           end: ev.end_date ? ev.end_date.slice(0, 10) : "",
           xpPool: Number(ev.xp_pool || 0),
+          code: ev.code || "",
           badge_id: ev.badge_id || "",
           badge: ev.badge?.name || "Event Badge",
           banner: ev.banner || "",
@@ -293,6 +298,7 @@ export default function AdminEventsPage() {
     setStart(ev.start);
     setEnd(ev.end);
     setXpPool(String(ev.xpPool));
+    setCode(ev.code || "");
     setBadgeId(ev.badge_id || ev.badge || ""); // Fallback to badge name if badge_id is null
     parsePrizes(ev.prizes || "");
     setBannerPreview(ev.banner || "");
@@ -413,6 +419,14 @@ export default function AdminEventsPage() {
                         placeholder="Contoh: 100000"
                         className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none font-semibold"
                         style={{ borderColor: T.border }} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Kode Event (Quest Participation)</label>
+                      <input type="text" value={code} onChange={e => setCode(e.target.value.toUpperCase())}
+                        placeholder="Contoh: LOT-EVENT-2026"
+                        className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none font-semibold"
+                        style={{ borderColor: T.border }} />
+                      <p className="text-[10px] mt-1" style={{ color: T.text3 }}>Dipakai agent untuk klaim +1.000 XP di Quest page (scan QR / input manual).</p>
                     </div>
                   </div>
 
