@@ -116,6 +116,7 @@ export default function AdminCommissionPage() {
 
   // Action Dropdown State
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
   const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -196,6 +197,7 @@ export default function AdminCommissionPage() {
     const handler = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpenDropdownId(null);
+        setDropdownPos(null);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -597,16 +599,23 @@ export default function AdminCommissionPage() {
                                   const rect = btn.getBoundingClientRect();
                                   const spaceBelow = window.innerHeight - rect.bottom;
                                   setDropdownDir(spaceBelow < 200 ? "up" : "down");
+                                  setDropdownPos({ top: rect.bottom, right: window.innerWidth - rect.right });
                                   setOpenDropdownId(openDropdownId === c.id ? null : c.id);
                                 }}
                                 className="p-1.5 rounded-lg hover:bg-muted transition-colors cursor-pointer flex-shrink-0"
                               >
                                 <MoreVertical size={16} style={{ color: T.text3 }} />
                               </button>
-                              {openDropdownId === c.id && (
+                              {openDropdownId === c.id && dropdownPos && (
                                 <div ref={dropdownRef}
-                                  className={`absolute right-5 z-50 w-36 rounded-xl border shadow-xl py-1 ${dropdownDir === "up" ? "bottom-full mb-1" : "top-full mt-1"}`}
-                                  style={{ backgroundColor: "var(--card)", borderColor: T.border }}
+                                  className="fixed z-[100] w-36 rounded-xl border shadow-xl py-1"
+                                  style={{
+                                    backgroundColor: "var(--card)",
+                                    borderColor: T.border,
+                                    top: dropdownDir === "up" ? dropdownPos.top - 8 : dropdownPos.top + 4,
+                                    right: dropdownPos.right,
+                                    transform: dropdownDir === "up" ? "translateY(-100%)" : "none",
+                                  }}
                                 >
                                   <button onClick={() => { setDetailClaim(c); setOpenDropdownId(null); }}
                                     className="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-muted flex items-center gap-2 transition-colors cursor-pointer"
