@@ -289,6 +289,12 @@ export default function AdminAgentsPage() {
   const [activeTab, setActiveTab] = useState<"list" | "tree" | "recruits">("list");
   const [recruitSubmissions, setRecruitSubmissions] = useState<any[]>([]);
   const [loadingRecruitSubmissions, setLoadingRecruitSubmissions] = useState(false);
+  const [recruitSearch, setRecruitSearch] = useState("");
+  const [recruitStatusFilter, setRecruitStatusFilter] = useState("All");
+  const [recruitPage, setRecruitPage] = useState(1);
+  const [recruitPageSize, setRecruitPageSize] = useState(10);
+  const [recruitTotal, setRecruitTotal] = useState(0);
+  const [recruitPendingCount, setRecruitPendingCount] = useState(0);
   const [newCredentials, setNewCredentials] = useState<{ email: string; password: string } | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -395,6 +401,13 @@ export default function AdminAgentsPage() {
     setPage(1);
   }, [search, statusFilter]);
 
+  // Pending recruit-submission count for the tab badge — needed even before the
+  // "recruits" tab is opened, since the badge shows on all tabs.
+  useEffect(() => {
+    loadRecruitPendingCount();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Full agent roster for the Mentor/Upline dropdown, loaded once (independent of the
   // paginated table above).
   useEffect(() => {
@@ -422,8 +435,14 @@ export default function AdminAgentsPage() {
   const loadRecruitSubmissions = async () => {
     setLoadingRecruitSubmissions(true);
     try {
-      const rows = await api.admin.getRecruitSubmissions();
-      setRecruitSubmissions(Array.isArray(rows) ? rows : []);
+      const res = await api.admin.getRecruitSubmissions({
+        status: recruitStatusFilter,
+        search: recruitSearch,
+        page: recruitPage,
+        pageSize: recruitPageSize,
+      });
+      setRecruitSubmissions(Array.isArray(res?.data) ? res.data : []);
+      setRecruitTotal(res?.total || 0);
     } catch {
       triggerToast("Gagal memuat pengajuan rekrutmen", true);
     } finally {
@@ -431,9 +450,34 @@ export default function AdminAgentsPage() {
     }
   };
 
+  // Pending count independent of the current filter/page, for the tab badge.
+  const loadRecruitPendingCount = async () => {
+    try {
+      const res = await api.admin.getRecruitSubmissions({ status: "Pending", page: 1, pageSize: 1 });
+      setRecruitPendingCount(res?.total || 0);
+    } catch {
+      // Keep previous count if this fails.
+    }
+  };
+
   useEffect(() => {
-    if (activeTab === "recruits") loadRecruitSubmissions();
-  }, [activeTab]);
+    if (activeTab === "recruits") {
+      loadRecruitSubmissions();
+      loadRecruitPendingCount();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, recruitStatusFilter, recruitPage, recruitPageSize]);
+
+  // Debounce search so typing doesn't hit the API on every keystroke.
+  useEffect(() => {
+    if (activeTab !== "recruits") return;
+    const t = setTimeout(() => {
+      setRecruitPage(1);
+      loadRecruitSubmissions();
+    }, 300);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recruitSearch]);
 
   const reviewRecruitSubmission = async (id: number, status: "Approved" | "Rejected") => {
     try {
@@ -444,8 +488,18 @@ export default function AdminAgentsPage() {
         triggerToast("Pengajuan rekrutmen ditolak");
       }
       await loadRecruitSubmissions();
+      await loadRecruitPendingCount();
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal memproses pengajuan", true);
+    }
+  };
+
+  const resetAgentPassword = async (agentId: number) => {
+    try {
+      const res = await api.admin.resetAgentPassword(agentId);
+      setNewCredentials({ email: res.email, password: res.new_password });
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal reset password", true);
     }
   };
 
@@ -708,9 +762,9 @@ export default function AdminAgentsPage() {
               boxShadow: activeTab === "recruits" && !isDark ? "0 1px 2px rgba(0,0,0,0.05)" : "none"
             }}>
             <Award size={13} /> Pengajuan Rekrutmen
-            {recruitSubmissions.filter(s => s.status === "Pending").length > 0 && (
+            {recruitPendingCount > 0 && (
               <span className="ml-0.5 px-1.5 py-0.5 rounded-full text-[10px]" style={{ backgroundColor: "#DC2626", color: "white" }}>
-                {recruitSubmissions.filter(s => s.status === "Pending").length}
+                {recruitPendingCount}
               </span>
             )}
           </button>
@@ -1120,9 +1174,32 @@ export default function AdminAgentsPage() {
         {activeTab === "recruits" && (
           <motion.div key="recruits" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
             <Card>
-              <div className="p-4 border-b" style={{ borderColor: T.border }}>
-                <h3 className="text-sm font-bold" style={{ color: T.text1 }}>Pengajuan Rekrutmen dari Agent</h3>
-                <p className="text-xs mt-0.5" style={{ color: T.text3 }}>Approve memberi +5.000 XP ke mentor & mencatat recruit resmi.</p>
+              <div className="p-4 border-b space-y-3" style={{ borderColor: T.border }}>
+                <div>
+                  <h3 className="text-sm font-bold" style={{ color: T.text1 }}>Pengajuan Rekrutmen dari Agent</h3>
+                  <p className="text-xs mt-0.5" style={{ color: T.text3 }}>Approve memberi +5.000 XP ke mentor & mencatat recruit resmi.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative flex-1" style={{ minWidth: 200 }}>
+                    <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: T.text3 }} />
+                    <input type="text" value={recruitSearch} onChange={e => setRecruitSearch(e.target.value)}
+                      placeholder="Cari nama, email, atau KTM..."
+                      className="w-full pl-9 pr-9 py-2 rounded-xl border text-sm outline-none bg-card"
+                      style={{ borderColor: T.border }} />
+                    {recruitSearch && (
+                      <button onClick={() => setRecruitSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-muted text-muted-foreground transition-all cursor-pointer">
+                        <X size={12} />
+                      </button>
+                    )}
+                  </div>
+                  <select value={recruitStatusFilter} onChange={e => setRecruitStatusFilter(e.target.value)}
+                    className="px-3 py-2 rounded-xl border text-sm outline-none bg-card font-medium cursor-pointer" style={{ borderColor: T.border, color: T.text1 }}>
+                    <option value="All">Semua Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Approved">Disetujui</option>
+                    <option value="Rejected">Ditolak</option>
+                  </select>
+                </div>
               </div>
 
               {loadingRecruitSubmissions ? (
@@ -1161,19 +1238,29 @@ export default function AdminAgentsPage() {
                             </button>
                           </>
                         ) : (
-                          <span className="px-3 py-1.5 rounded-lg text-xs font-bold"
-                            style={{
-                              backgroundColor: s.status === "Approved" ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.1)",
-                              color: s.status === "Approved" ? "#16A34A" : "#DC2626",
-                            }}>
-                            {s.status === "Approved" ? "Disetujui" : "Ditolak"}
-                          </span>
+                          <>
+                            {s.status === "Approved" && s.created_agent_id && (
+                              <button onClick={() => resetAgentPassword(s.created_agent_id)}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                                style={{ borderColor: T.border, color: T.text2 }}>
+                                Reset & Salin Password
+                              </button>
+                            )}
+                            <span className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                              style={{
+                                backgroundColor: s.status === "Approved" ? "rgba(22,163,74,0.1)" : "rgba(220,38,38,0.1)",
+                                color: s.status === "Approved" ? "#16A34A" : "#DC2626",
+                              }}>
+                              {s.status === "Approved" ? "Disetujui" : "Ditolak"}
+                            </span>
+                          </>
                         )}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+              <AdminPagination page={recruitPage} pageSize={recruitPageSize} totalItems={recruitTotal} onPageChange={setRecruitPage} onPageSizeChange={setRecruitPageSize} />
             </Card>
           </motion.div>
         )}

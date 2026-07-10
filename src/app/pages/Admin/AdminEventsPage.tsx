@@ -7,8 +7,10 @@ import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T } from "../../types";
 import { api } from "../../services/api";
 import { ALL_BADGES } from "../ProfilePage";
+import AdminQuestParticipationTab from "./AdminQuestParticipationTab";
 
 export default function AdminEventsPage() {
+  const [tab, setTab] = useState<"banner" | "quest">("banner");
   const [events, setEvents] = useState<any[]>([]);
   const [dbBadges, setDbBadges] = useState<any[]>([]);
 
@@ -61,7 +63,6 @@ export default function AdminEventsPage() {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [xpPool, setXpPool] = useState("");
-  const [code, setCode] = useState("");
   const [badgeId, setBadgeId] = useState<string | number>("");
   const [prizeItems, setPrizeItems] = useState<{rank: string; prize: string}[]>([]);
   const [termsAndConditions, setTermsAndConditions] = useState("");
@@ -114,7 +115,6 @@ export default function AdminEventsPage() {
       setStart("");
       setEnd("");
       setXpPool("");
-      setCode("");
       setBadgeId("");
       setPrizeItems([]);
       setTermsAndConditions("");
@@ -241,7 +241,6 @@ export default function AdminEventsPage() {
         start_date: new Date(start).toISOString(),
         end_date: new Date(end).toISOString(),
         xp_pool: parseInt(xpPool) || 0,
-        code: code.trim(),
         badge_id: payloadId,
         badge_name: payloadName,
         subtitle: title.trim().toUpperCase(),
@@ -298,7 +297,6 @@ export default function AdminEventsPage() {
     setStart(ev.start);
     setEnd(ev.end);
     setXpPool(String(ev.xpPool));
-    setCode(ev.code || "");
     setBadgeId(ev.badge_id || ev.badge || ""); // Fallback to badge name if badge_id is null
     parsePrizes(ev.prizes || "");
     setBannerPreview(ev.banner || "");
@@ -359,12 +357,38 @@ export default function AdminEventsPage() {
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">Kelola event khusus agen, tetapkan reward XP, dan atur banner promosi</p>
         </div>
-        <button onClick={handleToggleForm}
-          className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md w-full sm:w-auto self-start sm:self-auto cursor-pointer">
-          <Plus size={14} /> Buat Event
+        {tab === "banner" && (
+          <button onClick={handleToggleForm}
+            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md w-full sm:w-auto self-start sm:self-auto cursor-pointer">
+            <Plus size={14} /> Buat Event
+          </button>
+        )}
+      </div>
+
+      {/* Tab switch */}
+      <div className="flex gap-1 p-1 rounded-xl w-full sm:w-fit" style={{ backgroundColor: T.muted }}>
+        <button onClick={() => setTab("banner")}
+          className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          style={{
+            backgroundColor: tab === "banner" ? "var(--card)" : "transparent",
+            color: tab === "banner" ? "#E8A500" : T.text3,
+          }}>
+          <FileImage size={13} /> Event Banner
+        </button>
+        <button onClick={() => setTab("quest")}
+          className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          style={{
+            backgroundColor: tab === "quest" ? "var(--card)" : "transparent",
+            color: tab === "quest" ? "#E8A500" : T.text3,
+          }}>
+          <Zap size={13} /> Quest Participation
         </button>
       </div>
 
+      {tab === "quest" ? (
+        <AdminQuestParticipationTab />
+      ) : (
+      <>
       {/* Modal Form */}
       <AnimatePresence>
         {showAddForm && (
@@ -419,14 +443,6 @@ export default function AdminEventsPage() {
                         placeholder="Contoh: 100000"
                         className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none font-semibold"
                         style={{ borderColor: T.border }} />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Kode Event (Quest Participation)</label>
-                      <input type="text" value={code} onChange={e => setCode(e.target.value.toUpperCase())}
-                        placeholder="Contoh: LOT-EVENT-2026"
-                        className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none font-semibold"
-                        style={{ borderColor: T.border }} />
-                      <p className="text-[10px] mt-1" style={{ color: T.text3 }}>Dipakai agent untuk klaim +1.000 XP di Quest page (scan QR / input manual).</p>
                     </div>
                   </div>
 
@@ -699,6 +715,8 @@ export default function AdminEventsPage() {
           </div>
         )}
       </div>
+      </>
+      )}
     </div>
   );
 }

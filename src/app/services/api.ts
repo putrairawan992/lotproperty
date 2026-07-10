@@ -443,6 +443,23 @@ export const api = {
     deleteAcademyModule: (id: number | string) => {
       return request<any>(`/admin/academy/${id}`, { method: "DELETE" });
     },
+    getQuestParticipationCodes: (opts: { status?: string; search?: string; page?: number; pageSize?: number } = {}) => {
+      const params = new URLSearchParams();
+      if (opts.status && opts.status !== "All") params.set("status", opts.status);
+      if (opts.search) params.set("search", opts.search);
+      params.set("page", String(opts.page || 1));
+      params.set("page_size", String(opts.pageSize || 10));
+      return request<{ data: any[]; total: number }>(`/admin/quest-participation-codes?${params}`);
+    },
+    createQuestParticipationCode: (payload: { code: string; label?: string; xp_reward?: number; is_active?: boolean }) => {
+      return request<any>("/admin/quest-participation-codes", { method: "POST", body: JSON.stringify(payload) });
+    },
+    updateQuestParticipationCode: (id: number | string, payload: { code: string; label?: string; xp_reward?: number; is_active?: boolean }) => {
+      return request<any>(`/admin/quest-participation-codes/${id}`, { method: "PUT", body: JSON.stringify(payload) });
+    },
+    deleteQuestParticipationCode: (id: number | string) => {
+      return request<any>(`/admin/quest-participation-codes/${id}`, { method: "DELETE" });
+    },
     getEventSubmissions: () => request<any[]>("/admin/event-submissions"),
     reviewEventSubmission: (id: number | string, status: "Approved" | "Rejected", rejectReason: string = "") => {
       return request<any>(`/admin/event-submissions/${id}/review`, {
@@ -450,11 +467,23 @@ export const api = {
         body: JSON.stringify({ status, reject_reason: rejectReason }),
       });
     },
-    getRecruitSubmissions: () => request<any[]>("/admin/recruit-submissions"),
+    getRecruitSubmissions: (opts: { status?: string; search?: string; page?: number; pageSize?: number } = {}) => {
+      const params = new URLSearchParams();
+      if (opts.status && opts.status !== "All") params.set("status", opts.status);
+      if (opts.search) params.set("search", opts.search);
+      params.set("page", String(opts.page || 1));
+      params.set("page_size", String(opts.pageSize || 10));
+      return request<{ data: any[]; total: number }>(`/admin/recruit-submissions?${params}`);
+    },
     reviewRecruitSubmission: (id: number | string, status: "Approved" | "Rejected", rejectReason: string = "") => {
       return request<any>(`/admin/recruit-submissions/${id}/review`, {
         method: "PUT",
         body: JSON.stringify({ status, reject_reason: rejectReason }),
+      });
+    },
+    resetAgentPassword: (id: number | string) => {
+      return request<{ email: string; new_password: string }>(`/admin/agents/${id}/reset-password`, {
+        method: "POST",
       });
     },
     // Search & pagination dihitung di server (tabel bisa berisi ribuan baris historis).
