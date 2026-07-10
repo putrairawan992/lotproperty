@@ -1,5 +1,8 @@
 import { motion, AnimatePresence } from "motion/react";
 import { T } from "../types";
+import bullseyeIcon from "../../imports/strike_shoot.png";
+import trophyIcon from "../../imports/trophy.png";
+import { TrophyIcon } from "lucide-react";
 
 const TreasureChestIcon = ({ size = 22, className = "" }: { size?: number; className?: string }) => (
   <svg
@@ -37,7 +40,7 @@ function PulseRing({ color, delay }: { color: string; delay: number }) {
 // useTheme().showQuestComplete(...). `overkill: true` swaps the copy/accent to flag a
 // Quest Overkill bonus award (earned after a category's quota is already used up).
 export default function QuestCompleteModal({ quest, onClose }: {
-  quest: { name: string; xp: number; overkill?: boolean } | null;
+  quest: { name: string; xp: number; overkill?: boolean; streak?: number } | null;
   onClose: () => void;
 }) {
   const accent = quest?.overkill ? "#FF6A00" : "#E8A500";
@@ -74,7 +77,7 @@ export default function QuestCompleteModal({ quest, onClose }: {
               transition={{ duration: 2.4, repeat: Infinity, ease: "easeInOut" }}
             />
 
-            <div className="relative w-24 h-24 mb-6 flex items-center justify-center">
+            <div className="relative w-40 h-40 mb-6 flex items-center justify-center">
               <PulseRing color={accent} delay={0} />
               <PulseRing color={accent} delay={0.6} />
               <motion.div
@@ -84,8 +87,27 @@ export default function QuestCompleteModal({ quest, onClose }: {
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: "spring", stiffness: 300, damping: 14, delay: 0.1 }}
               >
-                <TreasureChestIcon size={48} className="text-white" />
+                {quest.overkill ? <img src={bullseyeIcon} width={155} height={155} alt="Overkill" className="object-cover" /> :
+                    <img src={trophyIcon} width={155} height={155} alt="CompleteQuest" className="object-cover" />
+  }
               </motion.div>
+
+              {/* Streak counter — pops/bounces in on every consecutive Overkill */}
+              {quest.overkill && !!quest.streak && (
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={quest.streak}
+                    initial={{ scale: 0, opacity: 0, rotate: -15 }}
+                    animate={{ scale: [0, 1.35, 1], opacity: 1, rotate: 0 }}
+                    exit={{ scale: 0, opacity: 0 }}
+                    transition={{ duration: 0.45, ease: "easeOut" }}
+                    className="absolute -bottom-1 -right-1 min-w-[32px] h-[32px] px-2 rounded-full flex items-center justify-center text-sm font-black text-white border-2"
+                    style={{ backgroundColor: accent, borderColor: T.card, boxShadow: `0 0 14px ${accent}90` }}
+                  >
+                    ×{quest.streak}
+                  </motion.div>
+                </AnimatePresence>
+              )}
             </div>
 
             {quest.overkill && (

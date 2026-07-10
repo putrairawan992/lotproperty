@@ -273,8 +273,10 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   const [showContentModal, setShowContentModal] = useState(false);
   const [contentUrl, setContentUrl] = useState("");
+  const [contentError, setContentError] = useState("");
   const [showPromoModal, setShowPromoModal] = useState(false);
   const [promoUrl, setPromoUrl] = useState("");
+  const [promoError, setPromoError] = useState("");
   const [weeklyRank, setWeeklyRank] = useState("#-");
   const [lastApprovedCommission, setLastApprovedCommission] = useState<{ amount: number; verifiedAt: string } | null>(null);
 
@@ -431,6 +433,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       setShowEventModal(true);
       setEventCameraActive(true);
     } else if (q.id === "new_content") {
+      setContentError("");
       setShowContentModal(true);
     } else if (q.id === "new_prospect") {
       navigate("/prospect?create=1");
@@ -441,9 +444,13 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     } else if (q.id === "new_listing") {
       navigate("/listing?create=1");
     } else if (q.id === "listing_promo") {
+      setPromoError("");
       setShowPromoModal(true);
     }
   };
+
+  const closeContentModal = () => { setShowContentModal(false); setContentError(""); };
+  const closePromoModal = () => { setShowPromoModal(false); setPromoError(""); };
 
   const handleRecruitSubmit = async () => {
     if (!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.phone.trim() || !recruitForm.ktm.trim()) return;
@@ -479,6 +486,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
   const handleContentSubmit = async () => {
     if (!contentUrl.trim()) return;
+    setContentError("");
     try {
       const res = await api.quests.submitContent(contentUrl.trim());
       const xp = Number(res?.xp_earned || 0);
@@ -492,12 +500,15 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Gagal submit konten", true);
+      // Shown inline in the modal (not the page-level toast) so it never visually
+      // overlaps the still-open "Submit Link Konten" modal.
+      setContentError(error instanceof Error ? error.message : "Gagal submit konten");
     }
   };
 
   const handlePromoSubmit = async () => {
     if (!promoUrl.trim()) return;
+    setPromoError("");
     try {
       const res = await api.quests.submitPromotion(promoUrl.trim());
       const xp = Number(res?.xp_earned || 0);
@@ -511,7 +522,9 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       await loadQuestStatus();
       await refreshUser();
     } catch (error) {
-      triggerToast(error instanceof Error ? error.message : "Gagal submit promosi listing", true);
+      // Shown inline in the modal (not the page-level toast) so it never visually
+      // overlaps the still-open "Listing Promotion" modal.
+      setPromoError(error instanceof Error ? error.message : "Gagal submit promosi listing");
     }
   };
 
@@ -892,25 +905,30 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       <AnimatePresence>
         {showContentModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowContentModal(false)} className="absolute inset-0 bg-black/60" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closeContentModal} className="absolute inset-0 bg-black/60" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="bg-card w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden relative z-10" style={{ borderColor: T.border }}>
               <div className="px-6 py-4 border-b flex justify-between items-center" style={{ borderColor: T.border }}>
                 <h3 className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 18, color: T.text1 }}>Submit Link Konten</h3>
-                <button onClick={() => setShowContentModal(false)} style={{ color: T.text3 }}><X size={20} /></button>
+                <button onClick={closeContentModal} style={{ color: T.text3 }}><X size={20} /></button>
               </div>
               <div className="p-6 space-y-4">
                 <p className="text-xs" style={{ color: T.text3 }}>
                   Kirimkan link publik konten promosi properti Anda (Instagram Reels, TikTok, YouTube Shorts, dll) untuk mendapatkan bonus <strong style={{ color: "#E8A500" }}>+300 XP</strong>.
                 </p>
+                {contentError && (
+                  <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#DC2626] border border-red-500/30">
+                    <span className="text-sm leading-none">⚠️</span> {contentError}
+                  </div>
+                )}
                 <div>
                   <label className="block text-xs font-semibold mb-1.5 uppercase" style={{ color: T.text3 }}>URL Konten Promosi</label>
-                  <input type="url" placeholder="https://instagram.com/reels/..." value={contentUrl} onChange={e => setContentUrl(e.target.value)}
+                  <input type="url" placeholder="https://instagram.com/reels/..." value={contentUrl} onChange={e => { setContentUrl(e.target.value); setContentError(""); }}
                     className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
                 </div>
               </div>
               <div className="px-6 py-4 border-t flex gap-2 justify-end bg-muted/10" style={{ borderColor: T.border }}>
-                <button onClick={() => setShowContentModal(false)} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
+                <button onClick={closeContentModal} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
                 <button onClick={handleContentSubmit} disabled={!contentUrl.trim()}
                   className="px-5 py-2 rounded-xl text-sm font-bold transition-all text-white"
                   style={{ backgroundColor: contentUrl.trim() ? "#E8A500" : "var(--border)", cursor: contentUrl.trim() ? "pointer" : "not-allowed" }}>
@@ -926,17 +944,22 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       <AnimatePresence>
         {showPromoModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowPromoModal(false)} className="absolute inset-0 bg-black/60" />
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={closePromoModal} className="absolute inset-0 bg-black/60" />
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               className="bg-card w-full max-w-md rounded-3xl border shadow-2xl overflow-hidden relative z-10" style={{ borderColor: T.border }}>
               <div className="px-6 py-4 border-b flex justify-between items-center" style={{ borderColor: T.border }}>
                 <h3 className="font-bold" style={{ fontFamily: "'Rajdhani', sans-serif", fontSize: 18, color: T.text1 }}>Listing Promotion</h3>
-                <button onClick={() => setShowPromoModal(false)} style={{ color: T.text3 }}><X size={20} /></button>
+                <button onClick={closePromoModal} style={{ color: T.text3 }}><X size={20} /></button>
               </div>
               <div className="p-6 space-y-4">
                 <p className="text-xs" style={{ color: T.text3 }}>
                   Pilih portal properti atau media sosial di bawah ini untuk mempromosikan listing Anda, kemudian submit link postingan promosi Anda untuk klaim <strong style={{ color: "#E8A500" }}>+100 XP</strong>.
                 </p>
+                {promoError && (
+                  <div className="flex items-start gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-white bg-[#DC2626] border border-red-500/30">
+                    <span className="text-sm leading-none">⚠️</span> {promoError}
+                  </div>
+                )}
 
                 {/* Platforms Grid list */}
                 <div className="grid grid-cols-2 gap-2.5">
@@ -969,12 +992,12 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
 
                 <div className="pt-2">
                   <label className="block text-xs font-semibold mb-1.5 uppercase" style={{ color: T.text3 }}>URL Postingan Promosi</label>
-                  <input type="url" placeholder="https://www.olx.co.id/item/..." value={promoUrl} onChange={e => setPromoUrl(e.target.value)}
+                  <input type="url" placeholder="https://www.olx.co.id/item/..." value={promoUrl} onChange={e => { setPromoUrl(e.target.value); setPromoError(""); }}
                     className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none" style={{ borderColor: T.border, color: T.text1, backgroundColor: T.card }} />
                 </div>
               </div>
               <div className="px-6 py-4 border-t flex gap-2 justify-end bg-muted/10" style={{ borderColor: T.border }}>
-                <button onClick={() => setShowPromoModal(false)} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
+                <button onClick={closePromoModal} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
                 <button onClick={handlePromoSubmit} disabled={!promoUrl.trim()}
                   className="px-5 py-2 rounded-xl text-sm font-bold transition-all text-white"
                   style={{ backgroundColor: promoUrl.trim() ? "#E8A500" : "var(--border)", cursor: promoUrl.trim() ? "pointer" : "not-allowed" }}>

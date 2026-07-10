@@ -218,7 +218,18 @@ export default function App() {
   const [authView, setAuthView] = useState<"login" | "register" | "pending" | "forgot" | "admin">("login");
   const [adminRole, setAdminRole] = useState<AdminRole | null>(null);
   const [levelUpData, setLevelUpData] = useState<{ level: number; tier: string; xp: string } | null>(null);
-  const [completedQuest, setCompletedQuest] = useState<{ name: string; xp: number; overkill?: boolean } | null>(null);
+  const [completedQuest, setCompletedQuest] = useState<{ name: string; xp: number; overkill?: boolean; streak?: number } | null>(null);
+  // Consecutive Overkill count — resets whenever a non-overkill quest completes, so the
+  // ×N streak counter on QuestCompleteModal reflects a currently-building combo.
+  const overkillStreakRef = useRef(0);
+  const handleShowQuestComplete = (q: { name: string; xp: number; overkill?: boolean } | null) => {
+    if (q?.overkill) {
+      overkillStreakRef.current += 1;
+    } else {
+      overkillStreakRef.current = 0;
+    }
+    setCompletedQuest(q ? { ...q, streak: overkillStreakRef.current } : null);
+  };
   const [showAttendancePopup, setShowAttendancePopup] = useState(false);
   const [attendanceXp, setAttendanceXp] = useState(0);
   const [appLoading, setAppLoading] = useState(true);
@@ -428,7 +439,7 @@ export default function App() {
   // Admin flow
   if (adminRole) {
     return (
-      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: setCompletedQuest }}>
+      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: handleShowQuestComplete }}>
         <AdminApp role={adminRole} onLogout={handleLogout} />
       </ThemeCtx.Provider>
     );
@@ -483,7 +494,7 @@ export default function App() {
       }} onRegister={() => setAuthView("register")} onForgotPassword={() => setAuthView("forgot")} onAdminLogin={() => { setAuthView("admin"); navigate("/admin"); }} onGuest={() => setIsGuest(true)} />;
     };
     return (
-      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: setCompletedQuest }}>
+      <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: handleShowQuestComplete }}>
         {renderAuth()}
       </ThemeCtx.Provider>
     );
@@ -530,7 +541,7 @@ export default function App() {
   };
 
   return (
-    <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: setCompletedQuest }}>
+    <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: handleShowQuestComplete }}>
       <div className="flex flex-col h-screen overflow-hidden animate-fade-in" style={{ backgroundColor: T.bg, fontFamily: "'Inter', sans-serif" }}>
         {/* Top Header */}
         <TopHeader page={page} onNav={handlePageChange} onLogout={handleLogout} />
