@@ -26,6 +26,7 @@ export default function AdminQuestParticipationTab() {
   const [pageSize, setPageSize] = useState(10);
 
   const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
   const [showForm, setShowForm] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
@@ -69,6 +70,11 @@ export default function AdminQuestParticipationTab() {
     }
   }, [toastMsg]);
 
+  const notify = (msg: string, type: "success" | "error" = "success") => {
+    setToastType(type);
+    setToastMsg(msg);
+  };
+
   const resetForm = () => {
     setCode("");
     setLabel("");
@@ -90,7 +96,7 @@ export default function AdminQuestParticipationTab() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!code.trim()) {
-      setToastMsg("Kode event wajib diisi!");
+      notify("Kode event wajib diisi!", "error");
       return;
     }
     setSaving(true);
@@ -98,15 +104,16 @@ export default function AdminQuestParticipationTab() {
       const payload = { code: code.trim(), label: label.trim(), xp_reward: parseInt(xpReward) || 1000, is_active: isActive };
       if (editId) {
         await api.admin.updateQuestParticipationCode(editId, payload);
-        setToastMsg("Kode Quest Participation berhasil diperbarui!");
+        notify("Kode Quest Participation berhasil diperbarui!", "success");
       } else {
         await api.admin.createQuestParticipationCode(payload);
-        setToastMsg("Kode Quest Participation berhasil dibuat!");
+        notify("Kode Quest Participation berhasil dibuat!", "success");
       }
       resetForm();
+      setPage(1);
       loadCodes();
     } catch (err) {
-      setToastMsg(err instanceof Error ? err.message : "Gagal menyimpan kode");
+      notify(err instanceof Error ? err.message : "Gagal menyimpan kode", "error");
     } finally {
       setSaving(false);
     }
@@ -115,10 +122,10 @@ export default function AdminQuestParticipationTab() {
   const handleDelete = async (c: QuestCode) => {
     try {
       await api.admin.deleteQuestParticipationCode(c.id);
-      setToastMsg("Kode berhasil dihapus.");
+      notify("Kode berhasil dihapus.", "success");
       loadCodes();
     } catch (err) {
-      setToastMsg(err instanceof Error ? err.message : "Gagal menghapus kode");
+      notify(err instanceof Error ? err.message : "Gagal menghapus kode", "error");
     }
   };
 
@@ -141,8 +148,11 @@ export default function AdminQuestParticipationTab() {
       <AnimatePresence>
         {toastMsg && (
           <motion.div initial={{ opacity: 0, y: -20, x: "-50%" }} animate={{ opacity: 1, y: 0, x: "-50%" }} exit={{ opacity: 0, y: -20, x: "-50%" }}
-            className="fixed top-16 left-1/2 z-50 bg-[#16A34A] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-semibold border border-green-500/20">
-            <Check size={16} /> {toastMsg}
+            className={`fixed top-16 left-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-semibold text-white ${
+              toastType === "error" ? "bg-[#DC2626] border border-red-500/30" : "bg-[#16A34A] border border-green-500/20"
+            }`}>
+            {toastType === "error" ? <span className="text-base leading-none">⚠️</span> : <Check size={16} />}
+            {toastMsg}
           </motion.div>
         )}
       </AnimatePresence>

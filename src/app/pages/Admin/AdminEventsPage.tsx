@@ -15,6 +15,7 @@ export default function AdminEventsPage() {
   const [dbBadges, setDbBadges] = useState<any[]>([]);
 
   const [toastMsg, setToastMsg] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error">("success");
   const [showAddForm, setShowAddForm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -108,6 +109,11 @@ export default function AdminEventsPage() {
     }
   }, [toastMsg]);
 
+  const notify = (msg: string, type: "success" | "error" = "success") => {
+    setToastType(type);
+    setToastMsg(msg);
+  };
+
   const handleToggleForm = () => {
     if (showAddForm) {
       setTitle("");
@@ -193,17 +199,17 @@ export default function AdminEventsPage() {
   const handleCreateOrUpdateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim() || !desc.trim() || !start || !end || !xpPool) {
-      setToastMsg("Semua field formulir event wajib diisi!");
+      notify("Semua field formulir event wajib diisi!", "error");
       return;
     }
-    
+
     if (badgeId === "upload" && !customBadgeFile) {
-      setToastMsg("Pilih file badge custom yang akan diupload!");
+      notify("Pilih file badge custom yang akan diupload!", "error");
       return;
     }
-    
+
     if (badgeId === "upload" && !customBadgeName.trim()) {
-      setToastMsg("Nama badge custom tidak boleh kosong!");
+      notify("Nama badge custom tidak boleh kosong!", "error");
       return;
     }
 
@@ -256,10 +262,10 @@ export default function AdminEventsPage() {
       if (editId) {
         const rawId = editId.replace("EV-", "");
         await api.admin.updateEvent(rawId, payload);
-        setToastMsg("Event Berhasil Diperbarui!");
+        notify("Event Berhasil Diperbarui!", "success");
       } else {
         await api.admin.createEvent(payload);
-        setToastMsg("Event Baru Berhasil Dibuat dan Dipublikasikan!");
+        notify("Event Baru Berhasil Dibuat dan Dipublikasikan!", "success");
       }
 
       const data = await api.events.getList();
@@ -286,7 +292,7 @@ export default function AdminEventsPage() {
 
       handleToggleForm();
     } catch (err) {
-      setToastMsg(err instanceof Error ? err.message : "Gagal menyimpan event");
+      notify(err instanceof Error ? err.message : "Gagal menyimpan event", "error");
       setSaving(false);
     }
   };
@@ -332,9 +338,9 @@ export default function AdminEventsPage() {
       const rawId = id.replace("EV-", "");
       await api.admin.deleteEvent(rawId);
       setEvents(prev => prev.filter(ev => ev.id !== id));
-      setToastMsg("Event Berhasil Dihapus.");
+      notify("Event Berhasil Dihapus.", "success");
     } catch (err) {
-      setToastMsg(err instanceof Error ? err.message : "Gagal menghapus event");
+      notify(err instanceof Error ? err.message : "Gagal menghapus event", "error");
     }
   };
 
@@ -344,8 +350,11 @@ export default function AdminEventsPage() {
       <AnimatePresence>
         {toastMsg && (
           <motion.div initial={{ opacity: 0, y: -20, x: "-50%" }} animate={{ opacity: 1, y: 0, x: "-50%" }} exit={{ opacity: 0, y: -20, x: "-50%" }}
-            className="fixed top-16 left-1/2 z-50 bg-[#16A34A] text-white px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-semibold border border-green-500/20">
-            <Check size={16} /> {toastMsg}
+            className={`fixed top-16 left-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-semibold text-white ${
+              toastType === "error" ? "bg-[#DC2626] border border-red-500/30" : "bg-[#16A34A] border border-green-500/20"
+            }`}>
+            {toastType === "error" ? <span className="text-base leading-none">⚠️</span> : <Check size={16} />}
+            {toastMsg}
           </motion.div>
         )}
       </AnimatePresence>
