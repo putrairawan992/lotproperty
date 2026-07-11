@@ -52,22 +52,18 @@ function getLevelColor(level: string): string {
   return "#9CA3AF"; // Rookie Agent or default
 }
 
-// Recursive helper to calculate recruitment tree statistics
-function getTreeStats(node: TreeNodeData | null): { total: number; byLevel: Record<string, number> } {
-  if (!node) return { total: 0, byLevel: {} };
-  let total = 1;
-  const byLevel: Record<string, number> = { [node.level]: 1 };
+// Recursive helper to calculate recruitment tree statistics across every root
+function getTreeStats(roots: TreeNodeData[]): { total: number; byLevel: Record<string, number> } {
+  let total = 0;
+  const byLevel: Record<string, number> = {};
 
   function recurse(n: TreeNodeData) {
-    const children = n.children || [];
-    children.forEach(child => {
-      total++;
-      byLevel[child.level] = (byLevel[child.level] || 0) + 1;
-      recurse(child);
-    });
+    total++;
+    byLevel[n.level] = (byLevel[n.level] || 0) + 1;
+    (n.children || []).forEach(recurse);
   }
 
-  recurse(node);
+  roots.forEach(recurse);
   return { total, byLevel };
 }
 
@@ -339,8 +335,8 @@ export default function AdminAgentsPage() {
   const [activeStatusSelectAgentId, setActiveStatusSelectAgentId] = useState<number | null>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const { isDark } = useTheme();
-  const [treeRoot, setTreeRoot] = useState<TreeNodeData | null>(null);
-  const stats = getTreeStats(treeRoot);
+  const [treeRoots, setTreeRoots] = useState<TreeNodeData[] | null>(null);
+  const stats = getTreeStats(treeRoots || []);
 
   const formatJoined = (createdAt?: string) => {
     if (!createdAt) return "-";
@@ -383,9 +379,7 @@ export default function AdminAgentsPage() {
       try {
         const treeData = await api.admin.getAgentsTree();
         if (cancelled) return;
-        if (treeData && treeData?.name) {
-          setTreeRoot(treeData);
-        }
+        setTreeRoots(Array.isArray(treeData?.roots) ? treeData.roots : []);
       } catch {
         // Fallback is maintained
       }
@@ -602,9 +596,7 @@ export default function AdminAgentsPage() {
       // Rebuild tree root representation immediately
       try {
         const treeData = await api.admin.getAgentsTree();
-        if (treeData && treeData?.name) {
-          setTreeRoot(treeData);
-        }
+        setTreeRoots(Array.isArray(treeData?.roots) ? treeData.roots : []);
       } catch (e) {
         console.error("Failed to reload tree after edit", e);
       }
@@ -670,7 +662,7 @@ export default function AdminAgentsPage() {
       // Reload tree
       try {
         const treeData = await api.admin.getAgentsTree();
-        if (treeData && treeData?.name) setTreeRoot(treeData);
+        setTreeRoots(Array.isArray(treeData?.roots) ? treeData.roots : []);
       } catch {}
     } catch (err: any) {
       triggerToast(err?.message || "Gagal menambahkan agent", true);
@@ -1145,16 +1137,25 @@ export default function AdminAgentsPage() {
                 </div>
               </div>
 
-              {!treeRoot ? (
+              {!treeRoots ? (
                 <div className="flex flex-col items-center justify-center py-20 text-muted-foreground gap-3">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#E8A500]"></div>
                   <p className="text-xs font-semibold">Memuat Jaringan Rekrutmen...</p>
                 </div>
+              ) : treeRoots.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-2" style={{ color: T.text3 }}>
+                  <Users size={28} className="opacity-40" />
+                  <p className="text-xs font-semibold">Belum ada agent dalam jaringan rekrutmen.</p>
+                </div>
               ) : (
                 <>
                   {/* Mobile View: Vertical Folder Tree (visible on mobile) */}
-                  <div className="block lg:hidden w-full border rounded-2xl p-2.5 bg-card/20" style={{ borderColor: T.border }}>
-                    <VerticalTreeNode node={treeRoot} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
+                  <div className="block lg:hidden w-full border rounded-2xl p-2.5 bg-card/20 space-y-3 divide-y" style={{ borderColor: T.border }}>
+                    {treeRoots.map((root, idx) => (
+                      <div key={idx} className={idx > 0 ? "pt-3" : ""}>
+                        <VerticalTreeNode node={root} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
+                      </div>
+                    ))}
                   </div>
 
                   {/* Desktop View: Horizontal Tree Scroll (visible on desktop) */}
@@ -1162,10 +1163,12 @@ export default function AdminAgentsPage() {
                     className="hidden lg:block w-full overflow-x-auto overscroll-x-contain py-8 bg-card/40 rounded-2xl border min-h-[500px]"
                     style={{ borderColor: T.border, WebkitOverflowScrolling: "touch" }}
                   >
-                    <div className="w-max min-w-full mx-auto px-8 sm:px-12">
-                      <div className="flex flex-col items-center flex-shrink-0">
-                        <TreeNode node={treeRoot} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
-                      </div>
+                    <div className="w-max min-w-full mx-auto px-8 sm:px-12 flex flex-wrap gap-10 justify-center">
+                      {treeRoots.map((root, idx) => (
+                        <div key={idx} className="flex flex-col items-center flex-shrink-0">
+                          <TreeNode node={root} search={search} isDark={isDark} onShowRecruits={setRecruitsModal} />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </>
@@ -1222,7 +1225,7 @@ export default function AdminAgentsPage() {
                     <div key={s.id} className="flex flex-wrap items-center gap-3 p-4 justify-between">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold" style={{ color: T.text1 }}>{s.name}</p>
-                        <p className="text-xs" style={{ color: T.text3 }}>{s.email} · {s.phone || "—"} · KTP: {s.ktm || "—"} · Mentor: {s.mentor?.name || `#${s.mentor_id}`}</p>
+                        <p className="text-xs" style={{ color: T.text3 }}>{s.email} · {s.phone || "—"} · KTP: {s.ktm || "—"} · Mentor: {s.mentor?.name || `Akun mentor tidak ditemukan (ID #${s.mentor_id})`}</p>
                         {s.status === "Rejected" && s.reject_reason && (
                           <p className="text-xs mt-1" style={{ color: "#DC2626" }}>Alasan tolak: {s.reject_reason}</p>
                         )}
