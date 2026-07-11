@@ -1187,7 +1187,7 @@ export default function AdminAgentsPage() {
                   <div className="relative flex-1" style={{ minWidth: 200 }}>
                     <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: T.text3 }} />
                     <input type="text" value={recruitSearch} onChange={e => setRecruitSearch(e.target.value)}
-                      placeholder="Cari nama, email, atau KTM..."
+                      placeholder="Cari nama, email, atau KTP..."
                       className="w-full pl-9 pr-9 py-2 rounded-xl border text-sm outline-none bg-card"
                       style={{ borderColor: T.border }} />
                     {recruitSearch && (
@@ -1222,7 +1222,7 @@ export default function AdminAgentsPage() {
                     <div key={s.id} className="flex flex-wrap items-center gap-3 p-4 justify-between">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold" style={{ color: T.text1 }}>{s.name}</p>
-                        <p className="text-xs" style={{ color: T.text3 }}>{s.email} · {s.phone || "—"} · KTM: {s.ktm} · Mentor: {s.mentor?.name || `#${s.mentor_id}`}</p>
+                        <p className="text-xs" style={{ color: T.text3 }}>{s.email} · {s.phone || "—"} · KTP: {s.ktm || "—"} · Mentor: {s.mentor?.name || `#${s.mentor_id}`}</p>
                         {s.status === "Rejected" && s.reject_reason && (
                           <p className="text-xs mt-1" style={{ color: "#DC2626" }}>Alasan tolak: {s.reject_reason}</p>
                         )}
