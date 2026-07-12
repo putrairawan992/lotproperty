@@ -76,7 +76,7 @@ export default function AdminDashboard() {
       setAgents(agentsRows.map((a: any) => ({
         id: Number(a.id),
         name: String(a.name || ""),
-        office: String(a.office || "-"),
+        office: String(a.office || ""),
         status: String(a.status || "Pending"),
         joined: a.created_at
           ? new Date(a.created_at).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })
@@ -220,7 +220,7 @@ export default function AdminDashboard() {
                     className="text-sm font-semibold truncate block" 
                     style={{ color: T.text1 }} 
                   />
-                  <p className="text-xs" style={{ color: T.text3 }}>{a.office} · {a.joined}</p>
+                  <p className="text-xs" style={{ color: T.text3 }}>{a.office ? `${a.office} · ` : ""}{a.joined}</p>
                 </div>
                 <div className="flex gap-1.5">
                   <button onClick={() => handleApproveAgent(a.id)} className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all hover:opacity-80"
