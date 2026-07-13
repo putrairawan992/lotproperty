@@ -496,7 +496,7 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                     
                     <div>
                       <label className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Nama Pengirim</label>
-                      <input type="text" value="Ronald Richy" disabled className="w-full px-3.5 py-2.5 rounded-xl border bg-muted/20 text-muted-foreground text-sm cursor-not-allowed outline-none" style={{ borderColor: T.border }} />
+                      <input type="text" value={user?.name || "Agent"} disabled className="w-full px-3.5 py-2.5 rounded-xl border bg-muted/20 text-muted-foreground text-sm cursor-not-allowed outline-none" style={{ borderColor: T.border }} />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
