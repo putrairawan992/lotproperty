@@ -522,5 +522,9 @@ export const api = {
       });
     },
     getLogs: () => request<any[]>("/admin/logs"),
+    getServerStatus: () => request<any>("/admin/server-status"),
+    getBackups: () => request<any[]>("/admin/backups"),
+    runBackup: () => request<any>("/admin/backups/run", { method: "POST" }),
+    backupDownloadUrl: (filename: string) => `${BASE_URL}/admin/backups/${encodeURIComponent(filename)}/download`,
   }
 };

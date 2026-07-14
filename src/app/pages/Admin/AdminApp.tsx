@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Home, Users, DollarSign, Trophy, GraduationCap, Zap, TrendingUp, BookOpen, X, Menu, LifeBuoy, CalendarClock } from "lucide-react";
+import { Home, Users, DollarSign, Trophy, GraduationCap, Zap, TrendingUp, BookOpen, X, Menu, LifeBuoy, CalendarClock, Server } from "lucide-react";
 import Logo from "../../components/Logo";
 import { T, useTheme, AdminRole, AdminPage, ROLE_COLOR } from "../../types";
 import { useLocation } from "../../routes";
@@ -14,6 +14,7 @@ import AdminLogPage from "./AdminLogPage";
 import AdminEventsPage from "./AdminEventsPage";
 import AdminAcademyPage from "./AdminAcademyPage";
 import AdminCheckoutPage from "./AdminCheckoutPage";
+import AdminStorageServerPage from "./AdminStorageServerPage";
 
 const ADMIN_NAV: { id: AdminPage; label: string; icon: React.ElementType; badge?: number }[] = [
   { id: "dashboard",  label: "Dashboard",         icon: Home },
@@ -25,13 +26,14 @@ const ADMIN_NAV: { id: AdminPage; label: string; icon: React.ElementType; badge?
   { id: "events",     label: "Events",             icon: Zap },
   { id: "xp",         label: "XP Adjustment",      icon: TrendingUp },
   { id: "log",        label: "System Log",         icon: BookOpen },
+  { id: "storage",    label: "Storage Server",     icon: Server },
 ];
 
 export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout: () => void }) {
   const { isDark, toggle } = useTheme();
   const { path, navigate } = useLocation();
   const rawPage = path.replace(/^\/admin\//, "");
-  const page: AdminPage = ["dashboard", "agents", "commission", "checkout", "hof", "academy", "events", "xp", "log"].includes(rawPage)
+  const page: AdminPage = ["dashboard", "agents", "commission", "checkout", "hof", "academy", "events", "xp", "log", "storage"].includes(rawPage)
     ? (rawPage as AdminPage)
     : "dashboard";
 
@@ -83,6 +85,7 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
       case "events":     return <AdminEventsPage />;
       case "xp":         return <AdminXPPage />;
       case "log":        return <AdminLogPage />;
+      case "storage":    return <AdminStorageServerPage />;
       default:           return <AdminDashboard />;
     }
   };
@@ -151,7 +154,7 @@ export default function AdminApp({ role, onLogout }: { role: AdminRole; onLogout
 
   const pageTitles: Record<AdminPage, string> = {
     dashboard: "Dashboard", agents: "Agent Management", commission: "Commission", checkout: "Reminder Checkout",
-    hof: "Hall of Fame", academy: "Academy", events: "Events", xp: "XP Adjustment", log: "System Log",
+    hof: "Hall of Fame", academy: "Academy", events: "Events", xp: "XP Adjustment", log: "System Log", storage: "Storage Server",
   };
 
   return (

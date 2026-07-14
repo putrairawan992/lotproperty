@@ -47,7 +47,7 @@ export type Page = "home" | "quest" | "listing" | "prospect" | "academy" | "lead
 
 export type Rarity = "mythic" | "legendary" | "epic" | "rare" | "common";
 
-export type AdminPage = "dashboard" | "agents" | "commission" | "checkout" | "hof" | "academy" | "events" | "xp" | "log";
+export type AdminPage = "dashboard" | "agents" | "commission" | "checkout" | "hof" | "academy" | "events" | "xp" | "log" | "storage";
 
 export const ADMIN_ROLES = ["Super Admin", "Office Manager", "Finance"] as const;
 export type AdminRole = typeof ADMIN_ROLES[number];
