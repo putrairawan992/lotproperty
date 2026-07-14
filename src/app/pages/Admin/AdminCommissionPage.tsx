@@ -7,6 +7,7 @@ import { T } from "../../types";
 import { useTabQuery } from "../../routes";
 import { AGENT_PHOTOS } from "../../appData";
 import { api } from "../../services/api";
+import { formatIDR } from "../../utils/currency";
 
 interface CommissionItem {
   id: string;
@@ -64,9 +65,6 @@ interface HelpSubmissionItem {
     email: string;
   };
 }
-
-const formatIDR = (amount: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount || 0);
 
 const formatDate = (value: string) => {
   const d = new Date(value);

@@ -12,6 +12,7 @@ import { T, Page, ThemeCtx } from "../types";
 import { BADGE_ASSETS, RARITY_CFG, getLevelTierColor } from "../badgeAssets";
 import { useLocation } from "../routes";
 import { api } from "../services/api";
+import { formatIDR } from "../utils/currency";
 import petiHartaKarun from "../../imports/peti-harta-karun.png";
 
 function Quest3DCoins({ isDark }: { isDark: boolean }) {
@@ -699,7 +700,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               </p>
               {lastApprovedCommission && (
                 <p className="text-[10px] mt-1 font-semibold" style={{ color: "#D97706" }}>
-                  Terakhir disetujui: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(lastApprovedCommission.amount)}
+                  Terakhir disetujui: {formatIDR(lastApprovedCommission.amount)}
                   {" · "}
                   {lastApprovedCommission.verifiedAt
                     ? new Date(lastApprovedCommission.verifiedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })

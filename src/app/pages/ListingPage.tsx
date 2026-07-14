@@ -14,6 +14,7 @@ import { useTabQuery, useLocation } from "../routes";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { api } from "../services/api";
 import EmptyState from "../components/EmptyState";
+import { formatIDR, formatThousands, parseIDR } from "../utils/currency";
 
 interface Listing {
   id: string;
@@ -81,10 +82,6 @@ type ListingApiRow = {
   created_at: string;
 };
 
-function formatIDR(value: number) {
-  return `Rp ${value.toLocaleString("id-ID")}`;
-}
-
 function listingFromApi(item: ListingApiRow): Listing {
   const created = new Date(item.created_at);
   const createdAt = Number.isNaN(created.getTime())
@@ -113,11 +110,6 @@ function listingFromApi(item: ListingApiRow): Listing {
     notes: item.notes || "—",
     createdAt,
   };
-}
-
-function parseNumber(input: string) {
-  const digits = input.replace(/[^0-9]/g, "");
-  return Number(digits || "0");
 }
 
 function FieldLabel({ children, required }: { children: ReactNode; required?: boolean }) {
@@ -273,12 +265,12 @@ export default function ListingPage() {
         owner_name: form.owner.trim(),
         phone: form.phone.trim(),
         address: form.address.trim(),
-        price: parseNumber(form.price),
+        price: parseIDR(form.price),
         property_type: form.type,
         listing_type: form.listingType,
-        luas_tanah: form.landArea.trim() ? parseNumber(form.landArea) : 0,
-        luas_bangunan: form.buildingArea.trim() ? parseNumber(form.buildingArea) : 0,
-        jumlah_lantai: form.floors.trim() ? parseNumber(form.floors) : 0,
+        luas_tanah: form.landArea.trim() ? parseIDR(form.landArea) : 0,
+        luas_bangunan: form.buildingArea.trim() ? parseIDR(form.buildingArea) : 0,
+        jumlah_lantai: form.floors.trim() ? parseIDR(form.floors) : 0,
         certificate: form.certificate.trim(),
         commission_percent: form.commission.trim(),
         notes: form.notes.trim(),
@@ -665,8 +657,8 @@ export default function ListingPage() {
                         <FieldLabel required>Harga</FieldLabel>
                         <div className="relative">
                           <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold" style={{ color: T.text3 }}>Rp</span>
-                          <input type="text" placeholder="Masukkan harga" value={form.price}
-                            onChange={e => setForm(f => ({ ...f, price: e.target.value }))}
+                          <input type="text" inputMode="numeric" placeholder="Masukkan harga" value={form.price}
+                            onChange={e => setForm(f => ({ ...f, price: formatThousands(e.target.value) }))}
                             className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
                             style={{ borderColor: T.border, color: T.text1 }} />
                         </div>
