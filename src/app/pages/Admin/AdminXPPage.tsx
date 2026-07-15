@@ -82,14 +82,17 @@ export default function AdminXPPage() {
 
   // Agent options sorted alphabetically for the dropdown
   const agentOptions = useMemo<SelectOption[]>(() => {
-    return agents
-      .filter(a => a.status === "Active")
-      .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }))
-      .map(a => ({
-        value: String(a.id),
-        label: a.name,
-        sub: a.level,
-      }));
+    return [
+      { value: "", label: "— Kosong / None —" },
+      ...agents
+        .filter(a => a.status === "Active")
+        .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }))
+        .map(a => ({
+          value: String(a.id),
+          label: a.name,
+          sub: a.level,
+        })),
+    ];
   }, [agents]);
 
   const handleSubmit = async () => {

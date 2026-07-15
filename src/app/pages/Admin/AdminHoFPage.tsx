@@ -41,12 +41,15 @@ export default function AdminHoFPage() {
 
   // Agent options sorted alphabetically for the searchable dropdown
   const agentOptions = useMemo<SelectOption[]>(() => {
-    return [...activeAgents]
-      .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }))
-      .map(a => ({
-        value: a.name,
-        label: a.name,
-      }));
+    return [
+      { value: "", label: "— Kosong / None —" },
+      ...[...activeAgents]
+        .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }))
+        .map(a => ({
+          value: a.name,
+          label: a.name,
+        })),
+    ];
   }, [activeAgents]);
 
   useEffect(() => {
