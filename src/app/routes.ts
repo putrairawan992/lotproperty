@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Page, AdminPage } from "./types";
-import { Home, Target, Building2, Users, Trophy, User, GraduationCap } from "lucide-react";
+import { Home, Target, Building2, Users, Trophy, User, GraduationCap, UserSearch } from "lucide-react";
 
 // Helper to check current pathname and normalize it to our Page type
 export function getPageFromUrl(): Page {
   const path = window.location.pathname.replace(/^\//, "");
-  const validPages: Page[] = ["home", "quest", "listing", "prospect", "academy", "leaderboard", "profile", "notifications", "event", "attendance", "help", "board"];
+  const validPages: Page[] = ["home", "quest", "listing", "explore", "prospect", "academy", "leaderboard", "profile", "notifications", "event", "attendance", "help", "board"];
   if (validPages.includes(path as Page)) {
     return path as Page;
   }
@@ -84,6 +84,7 @@ export const PAGE_TITLE: Record<Page, string> = {
   home:          "Home",
   quest:         "Quest",
   listing:       "My Listing",
+  explore:       "Explore",
   prospect:      "Prospect",
   academy:       "Academy",
   leaderboard:   "Leaderboard",
@@ -99,6 +100,7 @@ export const NAV_TABS = [
   { id: "home" as Page,        label: "Home",        icon: Home },
   { id: "quest" as Page,       label: "Quest",       icon: Target },
   { id: "listing" as Page,     label: "Listing",     icon: Building2 },
+  { id: "explore" as Page,     label: "Explore",     icon: UserSearch },
   { id: "prospect" as Page,    label: "Prospect",    icon: Users },
   { id: "academy" as Page,     label: "Academy",     icon: GraduationCap },
   { id: "profile" as Page,     label: "Profile",     icon: User },
@@ -109,6 +111,7 @@ export const DESKTOP_NAV_TABS = [
   { id: "leaderboard" as Page, label: "Leaderboard", icon: Trophy },
   { id: "quest" as Page,       label: "Quest",       icon: Target },
   { id: "listing" as Page,     label: "Listing",     icon: Building2 },
+  { id: "explore" as Page,     label: "Explore",     icon: UserSearch },
   { id: "prospect" as Page,    label: "Prospect",    icon: Users },
   { id: "academy" as Page,     label: "Academy",     icon: GraduationCap },
   { id: "profile" as Page,     label: "Profile",     icon: User },

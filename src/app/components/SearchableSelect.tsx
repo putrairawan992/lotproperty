@@ -5,7 +5,8 @@ import { T } from "../types";
 export interface SelectOption {
   value: string;
   label: string;
-  sub?: string; // secondary text (e.g. level)
+  sub?: string; // secondary text shown inline as a badge (e.g. level)
+  subLine?: string; // secondary text shown on its own line below the label (e.g. email) — disambiguates duplicate names
 }
 
 interface SearchableSelectProps {
@@ -61,7 +62,8 @@ export default function SearchableSelect({
     return options.filter(
       (o) =>
         o.label.toLowerCase().includes(q) ||
-        (o.sub || "").toLowerCase().includes(q)
+        (o.sub || "").toLowerCase().includes(q) ||
+        (o.subLine || "").toLowerCase().includes(q)
     );
   }, [options, search]);
 
@@ -169,7 +171,7 @@ export default function SearchableSelect({
                     setOpen(false);
                     setSearch("");
                   }}
-                  className={`w-full text-left px-3.5 py-2.5 text-sm flex items-center gap-2 transition-colors ${
+                  className={`w-full text-left px-3.5 py-2 text-sm flex items-center gap-2 transition-colors ${
                     o.value === value
                       ? "bg-[#E8A500]/10 font-semibold"
                       : "hover:bg-muted/30"
@@ -178,15 +180,24 @@ export default function SearchableSelect({
                     color: o.value === value ? "#E8A500" : "var(--text-primary)",
                   }}
                 >
-                  <span className="truncate flex-1 min-w-0">{o.label}</span>
-                  {o.sub && (
-                    <span
-                      className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-muted/50 flex-shrink-0"
-                      style={{ color: T.text3 }}
-                    >
-                      {o.sub}
+                  <span className="flex-1 min-w-0">
+                    <span className="flex items-center gap-2">
+                      <span className="truncate">{o.label}</span>
+                      {o.sub && (
+                        <span
+                          className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-muted/50 flex-shrink-0"
+                          style={{ color: T.text3 }}
+                        >
+                          {o.sub}
+                        </span>
+                      )}
                     </span>
-                  )}
+                    {o.subLine && (
+                      <span className="block truncate text-xs font-normal" style={{ color: T.text3 }}>
+                        {o.subLine}
+                      </span>
+                    )}
+                  </span>
                 </button>
               ))
             )}

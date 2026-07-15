@@ -15,7 +15,7 @@ export default function AdminHoFPage() {
   const [toastMsg, setToastMsg] = useState("");
   const [savingCategory, setSavingCategory] = useState<string | null>(null);
   const [sheetAgentId, setSheetAgentId] = useState<string | null>(null);
-  const [serverAgents, setServerAgents] = useState<Array<{ id: number; name: string; status: string; role: string }>>([]);
+  const [serverAgents, setServerAgents] = useState<Array<{ id: number; name: string; email: string; status: string; role: string }>>([]);
   const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { name?: string }; period: string }>>([]);
   
   const [entries, setEntries] = useState([
@@ -48,6 +48,7 @@ export default function AdminHoFPage() {
         .map(a => ({
           value: a.name,
           label: a.name,
+          subLine: (a as any).email || undefined,
         })),
     ];
   }, [activeAgents]);
@@ -60,6 +61,7 @@ export default function AdminHoFPage() {
         setServerAgents(rows.map((r: any) => ({
           id: Number(r.id),
           name: String(r.name || ""),
+          email: String(r.email || ""),
           status: String(r.status || ""),
           role: String(r.role || ""),
         })));

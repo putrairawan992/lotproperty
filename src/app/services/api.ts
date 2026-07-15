@@ -185,6 +185,18 @@ export const api = {
     },
   },
 
+  // Agent directory ("Explore" tab) — any logged-in user, searchable + paginated.
+  agents: {
+    getDirectory: (opts: { search?: string; page?: number; pageSize?: number } = {}) => {
+      const params = new URLSearchParams();
+      if (opts.search) params.append("search", opts.search);
+      if (opts.page) params.append("page", String(opts.page));
+      if (opts.pageSize) params.append("page_size", String(opts.pageSize));
+      const qs = params.toString();
+      return request<{ data: any[]; total: number; page: number }>(`/agents${qs ? `?${qs}` : ""}`);
+    },
+  },
+
   // Listings CRM
   listings: {
     getList: (filters: { status?: string; property_type?: string; listing_type?: string; search?: string; page?: number; page_size?: number } = {}) => {

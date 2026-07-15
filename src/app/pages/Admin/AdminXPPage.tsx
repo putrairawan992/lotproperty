@@ -7,6 +7,7 @@ import { api } from "../../services/api";
 interface AgentOption {
   id: number;
   name: string;
+  email: string;
   level: string;
   status: string;
   role: string;
@@ -39,6 +40,7 @@ export default function AdminXPPage() {
         .map((a: any) => ({
           id: Number(a.id),
           name: String(a.name || ""),
+          email: String(a.email || ""),
           level: String(a.title || "Rookie Agent"),
           status: String(a.status || "Pending"),
           role: String(a.role || ""),
@@ -91,6 +93,7 @@ export default function AdminXPPage() {
           value: String(a.id),
           label: a.name,
           sub: a.level,
+          subLine: a.email || undefined,
         })),
     ];
   }, [agents]);

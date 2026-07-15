@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { Users, AlertCircle, DollarSign, Zap, TrendingUp, CheckCircle } from "lucide-react";
+import { Users, AlertCircle, DollarSign, Zap, TrendingUp, CheckCircle, UserX } from "lucide-react";
 import Card from "../../components/Card";
 import { T, useTheme } from "../../types";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
@@ -56,6 +56,7 @@ export default function AdminDashboard() {
 
   const [activeAgentsCount, setActiveAgentsCount] = useState(0);
   const [pendingAgentsCount, setPendingAgentsCount] = useState(0);
+  const [suspendedAgentsCount, setSuspendedAgentsCount] = useState(0);
   const [pendingAgents, setPendingAgents] = useState<AgentDataItem[]>([]);
   // Preview only (4 most recent Pending) — the true totals come from the
   // counts endpoint below, not from downloading the whole claims table.
@@ -66,10 +67,11 @@ export default function AdminDashboard() {
 
   const loadDashboard = useCallback(async () => {
     try {
-      const [activeAgentsRes, pendingAgentsRes, pendingCommData, counts, logRows, eventRows] = await Promise.all([
+      const [activeAgentsRes, pendingAgentsRes, suspendedAgentsRes, pendingCommData, counts, logRows, eventRows] = await Promise.all([
         // pageSize: 1 — only the server-computed COUNT(*) is needed, not the rows.
         api.admin.getAgents({ status: "Active", pageSize: 1 }).catch(() => ({ data: [], total: 0 })),
         api.admin.getAgents({ status: "Pending", pageSize: 100 }).catch(() => ({ data: [], total: 0 })),
+        api.admin.getAgents({ status: "Suspended", pageSize: 1 }).catch(() => ({ data: [], total: 0 })),
         api.admin.getCommissions({ status: "Pending", pageSize: 4 }).catch(() => ({ data: [], total: 0 })),
         api.admin.getCommissionCounts().catch(() => ({ pending: 0, approved: 0, rejected: 0, xp_earned_approved: 0 })),
         api.admin.getLogs().catch(() => []),
@@ -78,6 +80,7 @@ export default function AdminDashboard() {
 
       setActiveAgentsCount(Number(activeAgentsRes?.total || 0));
       setPendingAgentsCount(Number(pendingAgentsRes?.total || 0));
+      setSuspendedAgentsCount(Number(suspendedAgentsRes?.total || 0));
       setPendingAgents((pendingAgentsRes?.data || []).map((a: any) => ({
         id: Number(a.id),
         name: String(a.name || ""),
@@ -160,6 +163,7 @@ export default function AdminDashboard() {
   const stats = [
     { label: "Total Agent Aktif", value: String(activeAgentsCount),  icon: Users,       color: isDark ? "#60A5FA" : "#1A6FC4", bg: isDark ? "rgba(96, 165, 250, 0.15)" : "#EEF5FC" },
     { label: "Pendaftaran Pending", value: String(pendingAgentsCount),  icon: AlertCircle, color: isDark ? "#F59E0B" : "#D97706", bg: isDark ? "rgba(245, 158, 11, 0.15)" : "#FEF3C7" },
+    { label: "Agent Suspended",     value: String(suspendedAgentsCount), icon: UserX,      color: isDark ? "#F87171" : "#DC2626", bg: isDark ? "rgba(248, 113, 113, 0.15)" : "#FEE2E2" },
     { label: "Klaim Komisi Pending", value: String(pendingCommissionsCount), icon: DollarSign,  color: isDark ? "#FBBF24" : "#E8A500", bg: isDark ? "rgba(251, 191, 36, 0.15)" : "#FFFAED" },
     { label: "Event Aktif",         value: String(eventsCount),  icon: Zap,         color: isDark ? "#A78BFA" : "#7B2FBE", bg: isDark ? "rgba(167, 139, 250, 0.15)" : "#F5F0FD" },
     { label: "Total XP Bulan Ini",  value: monthlyXP,icon: TrendingUp, color: isDark ? "#34D399" : "#16A34A", bg: isDark ? "rgba(52, 211, 153, 0.15)" : "#DCFCE7" },

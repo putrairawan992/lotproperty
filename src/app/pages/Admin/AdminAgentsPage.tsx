@@ -413,7 +413,7 @@ export default function AdminAgentsPage() {
         setMentorOptions(
           rows
             .filter((r: any) => String(r.role || "Agent") === "Agent")
-            .map((r: any) => ({ value: String(r.id), label: String(r.name || ""), sub: String(r.email || "") }))
+            .map((r: any) => ({ value: String(r.id), label: String(r.name || ""), subLine: String(r.email || "") }))
         );
       } catch {
         // Keep empty options when API fails.

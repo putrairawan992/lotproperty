@@ -23,6 +23,7 @@ import PendingPage from "./pages/PendingPage";
 import HomePage from "./pages/HomePage";
 import QuestPage from "./pages/QuestPage";
 import ListingPage from "./pages/ListingPage";
+import ExplorePage from "./pages/ExplorePage";
 import ProspectPage from "./pages/ProspectPage";
 import AcademyPage from "./pages/AcademyPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
@@ -518,6 +519,7 @@ export default function App() {
       case "home": return <HomePage onNav={handlePageChange} onShowLevelUp={triggerLevelUpPreview} />;
       case "quest": return guestBlock(<QuestPage onNav={handlePageChange} />);
       case "listing": return guestBlock(<ListingPage />);
+      case "explore": return guestBlock(<ExplorePage />);
       case "prospect": return guestBlock(<ProspectPage />);
       case "academy": return <AcademyPage />;
       case "leaderboard": return <LeaderboardPage />;
