@@ -572,8 +572,8 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
               {[
                 { label: "CS Marketing Support", sub: "Pertanyaan listing, event & quest XP",  icon: "💬", color: "#E8A500", bg: isDark ? "rgba(232,165,0,0.1)" : "#FFFAED", href: "https://wa.me/6281234567890", cta: "Chat WhatsApp" },
                 { label: "CS Finance Support",    sub: "Pemberkasan & verifikasi klaim komisi",  icon: "💰", color: "#16A34A", bg: isDark ? "rgba(22,163,74,0.1)" : "#F0FDF4", href: "https://wa.me/6281298765432", cta: "Chat WhatsApp" },
-                { label: "Email Support",      sub: "cs@lotproperty.id",     icon: "📧", color: "#1A6FC4", bg: isDark ? "rgba(26,111,196,0.1)" : "#EEF5FC", href: "mailto:cs@lotproperty.id",   cta: "Kirim Email" },
-                { label: "Telepon Kantor",     sub: "(021) 1234-5678",       icon: "📞", color: "#7B2FBE", bg: isDark ? "rgba(123,47,190,0.1)" : "#F5F0FD", href: "tel:02112345678",             cta: "Telepon" },
+                { label: "Email Support",      sub: "lotpropertygroup@gmail.com",     icon: "📧", color: "#1A6FC4", bg: isDark ? "rgba(26,111,196,0.1)" : "#EEF5FC", href: "mailto:lotpropertygroup@gmail.com",   cta: "Kirim Email" },
+                // { label: "Telepon Kantor",     sub: "(021) 1234-5678",       icon: "📞", color: "#7B2FBE", bg: isDark ? "rgba(123,47,190,0.1)" : "#F5F0FD", href: "tel:02112345678",             cta: "Telepon" },
               ].map((c, i) => (
                 <motion.a key={i} href={c.href} target="_blank" rel="noreferrer"
                   className="flex items-center gap-4 p-4 rounded-2xl border no-underline"
