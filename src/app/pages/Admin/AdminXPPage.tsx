@@ -1,17 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Card from "../../components/Card";
-import SearchableSelect, { type SelectOption } from "../../components/SearchableSelect";
+import SearchableSelect, { type LoadOptionsResult } from "../../components/SearchableSelect";
 import { T } from "../../types";
 import { api } from "../../services/api";
-
-interface AgentOption {
-  id: number;
-  name: string;
-  email: string;
-  level: string;
-  status: string;
-  role: string;
-}
 
 interface XPHistoryItem {
   agent: string;
@@ -23,32 +14,27 @@ interface XPHistoryItem {
 }
 
 export default function AdminXPPage() {
-  const [agents, setAgents] = useState<AgentOption[]>([]);
   const [selectedAgent, setSelectedAgent] = useState("");
+  const [selectedAgentLabel, setSelectedAgentLabel] = useState("");
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"add"|"deduct">("add");
   const [reason, setReason] = useState("");
   const [history, setHistory] = useState<XPHistoryItem[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const loadAgents = async () => {
-    try {
-      const res = await api.admin.getAgents({ pageSize: 200 }); // ambil semua agent aktif
-      const rows = res?.data || [];
-      setAgents(rows
-        .filter((a: any) => String(a.role || "") === "Agent" && String(a.status || "") === "Active")
-        .map((a: any) => ({
-          id: Number(a.id),
-          name: String(a.name || ""),
-          email: String(a.email || ""),
-          level: String(a.title || "Rookie Agent"),
-          status: String(a.status || "Pending"),
-          role: String(a.role || ""),
-        })));
-    } catch {
-      // Keep empty options on API failure.
-    }
-  };
+  // Server-side search + pagination — scrolling the dropdown loads more pages
+  // instead of downloading the entire agent roster upfront.
+  const loadXpAgentOptions = useCallback(async (query: string, page: number): Promise<LoadOptionsResult> => {
+    const res = await api.admin.getAgents({ search: query, status: "Active", role: "Agent", page, pageSize: 20 });
+    const rows = res?.data || [];
+    const options = rows.map((a: any) => ({
+      value: String(a.id),
+      label: String(a.name || ""),
+      sub: String(a.title || "Rookie Agent"),
+      subLine: String(a.email || ""),
+    }));
+    return { options, hasMore: page * 20 < Number(res?.total || 0) };
+  }, []);
 
   const loadHistory = async () => {
     try {
@@ -78,38 +64,20 @@ export default function AdminXPPage() {
   };
 
   useEffect(() => {
-    loadAgents();
     loadHistory();
   }, []);
-
-  // Agent options sorted alphabetically for the dropdown
-  const agentOptions = useMemo<SelectOption[]>(() => {
-    return [
-      { value: "", label: "— Kosong / None —" },
-      ...agents
-        .filter(a => a.status === "Active")
-        .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }))
-        .map(a => ({
-          value: String(a.id),
-          label: a.name,
-          sub: a.level,
-          subLine: a.email || undefined,
-        })),
-    ];
-  }, [agents]);
 
   const handleSubmit = async () => {
     if (!selectedAgent || !amount || !reason) return;
 
     setSaving(true);
     try {
-      const selected = agents.find(a => String(a.id) === selectedAgent);
       const parsed = Number(amount);
       const signedAmount = type === "add" ? parsed : -Math.abs(parsed);
       await api.admin.xpAdjust(selectedAgent, signedAmount, reason);
 
       setHistory(prev => [{
-        agent: selected?.name || "Agent",
+        agent: selectedAgentLabel || "Agent",
         type,
         amount: Math.abs(parsed),
         reason,
@@ -118,6 +86,7 @@ export default function AdminXPPage() {
       }, ...prev]);
 
       setSelectedAgent("");
+      setSelectedAgentLabel("");
       setAmount("");
       setReason("");
     } catch {
@@ -137,9 +106,10 @@ export default function AdminXPPage() {
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: T.text2 }}>Agent</label>
             <SearchableSelect
-              options={agentOptions}
+              loadOptions={loadXpAgentOptions}
               value={selectedAgent}
-              onChange={setSelectedAgent}
+              selectedLabel={selectedAgentLabel}
+              onChange={(v, opt) => { setSelectedAgent(v); setSelectedAgentLabel(opt?.label || ""); }}
               placeholder="Pilih agent..."
               emptyLabel="Agent tidak ditemukan"
             />

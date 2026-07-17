@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail, MoreVertical, Trash2, Edit3, ImagePlus } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import AdminPagination from "../../components/AdminPagination";
-import SearchableSelect, { type SelectOption } from "../../components/SearchableSelect";
+import SearchableSelect, { type LoadOptionsResult } from "../../components/SearchableSelect";
 import LevelBadge from "../../components/LevelBadge";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
 import { T, useTheme } from "../../types";
@@ -300,9 +300,6 @@ export default function AdminAgentsPage() {
   const [pageSize, setPageSize] = useState(10);
   const [loadingAgents, setLoadingAgents] = useState(true);
   const [recruitsModal, setRecruitsModal] = useState<TreeNodeData | null>(null);
-  // Full agent roster for the Mentor/Upline dropdown — decoupled from the paginated
-  // table (`agents` only holds the current page, so it can't list every possible mentor).
-  const [mentorOptions, setMentorOptions] = useState<SelectOption[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<number | null>(null);
   const [dropdownDir, setDropdownDir] = useState<"down" | "up">("down");
   const [editModal, setEditModal] = useState<AgentItem | null>(null);
@@ -312,6 +309,7 @@ export default function AdminAgentsPage() {
   const [editPassword, setEditPassword] = useState("");
   const [editRole, setEditRole] = useState("");
   const [editMentorId, setEditMentorId] = useState<number | null>(null);
+  const [editMentorLabel, setEditMentorLabel] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   // Create Agent modal
@@ -322,6 +320,7 @@ export default function AdminAgentsPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState("Agent");
   const [newMentorId, setNewMentorId] = useState<number | null>(null);
+  const [newMentorLabel, setNewMentorLabel] = useState("");
   const [savingCreate, setSavingCreate] = useState(false);
   // Photo for Create
   const [newPhotoFile, setNewPhotoFile] = useState<File | null>(null);
@@ -403,22 +402,16 @@ export default function AdminAgentsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Full agent roster for the Mentor/Upline dropdown, loaded once (independent of the
-  // paginated table above).
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await api.admin.getAgents({ pageSize: 500 });
-        const rows = Array.isArray(res?.data) ? res.data : [];
-        setMentorOptions(
-          rows
-            .filter((r: any) => String(r.role || "Agent") === "Agent")
-            .map((r: any) => ({ value: String(r.id), label: String(r.name || ""), subLine: String(r.email || "") }))
-        );
-      } catch {
-        // Keep empty options when API fails.
-      }
-    })();
+  // Server-side search + pagination for the Mentor/Upline picker — scrolling the dropdown
+  // loads more pages instead of downloading the entire agent roster upfront.
+  const loadMentorOptions = useCallback(async (excludeId: number | null, query: string, page: number): Promise<LoadOptionsResult> => {
+    const res = await api.admin.getAgents({ search: query, role: "Agent", page, pageSize: 20 });
+    const rows = (res?.data || []).filter((r: any) => Number(r.id) !== excludeId);
+    const rowOptions = rows.map((r: any) => ({ value: String(r.id), label: String(r.name || ""), subLine: String(r.email || "") }));
+    const options = page === 1 && !query.trim()
+      ? [{ value: "", label: "— Tidak ada (Mandiri / No Mentor) —" }, ...rowOptions]
+      : rowOptions;
+    return { options, hasMore: page * 20 < Number(res?.total || 0) };
   }, []);
 
   const triggerToast = (msg: string, isErr = false) => {
@@ -533,9 +526,18 @@ export default function AdminAgentsPage() {
     setEditPassword("");
     setEditRole(a.role || "");
     setEditMentorId(a.mentor_id || 0);
+    setEditMentorLabel("");
     setEditPhotoFile(null);
     setEditPhotoPreview(a.photo_url || "");
     setOpenDropdownId(null);
+
+    // The mentor picker only knows names from what's currently loaded/searched — resolve
+    // the existing mentor's name once, up front, so the trigger doesn't show a blank value.
+    if (a.mentor_id) {
+      api.admin.getAgents({ id: a.mentor_id, pageSize: 1 })
+        .then(res => setEditMentorLabel(res?.data?.[0]?.name || ""))
+        .catch(() => {});
+    }
   };
 
   const handlePhotoPick = (file: File | null, setFile: (f: File | null) => void, setPreview: (p: string) => void) => {
@@ -638,6 +640,7 @@ export default function AdminAgentsPage() {
       setNewPassword("");
       setNewRole("Agent");
       setNewMentorId(null);
+      setNewMentorLabel("");
       setNewPhotoFile(null);
       setNewPhotoPreview("");
       setShowCreateModal(false);
@@ -1455,8 +1458,9 @@ export default function AdminAgentsPage() {
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Mentor / Upline</label>
                   <SearchableSelect
                     value={editMentorId ? String(editMentorId) : ""}
-                    onChange={v => setEditMentorId(v ? Number(v) : null)}
-                    options={[{ value: "", label: "— Tidak ada (Mandiri / No Mentor) —" }, ...mentorOptions.filter(o => Number(o.value) !== editModal.id)]}
+                    selectedLabel={editMentorLabel}
+                    onChange={(v, opt) => { setEditMentorId(v ? Number(v) : null); setEditMentorLabel(opt?.label || ""); }}
+                    loadOptions={(query, page) => loadMentorOptions(editModal.id, query, page)}
                     placeholder="Pilih mentor / upline..."
                     emptyLabel="Tidak ada agent"
                   />
@@ -1545,8 +1549,9 @@ export default function AdminAgentsPage() {
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Mentor / Upline</label>
                   <SearchableSelect
                     value={newMentorId ? String(newMentorId) : ""}
-                    onChange={v => setNewMentorId(v ? Number(v) : null)}
-                    options={[{ value: "", label: "— Tidak ada (Mandiri / No Mentor) —" }, ...mentorOptions]}
+                    selectedLabel={newMentorLabel}
+                    onChange={(v, opt) => { setNewMentorId(v ? Number(v) : null); setNewMentorLabel(opt?.label || ""); }}
+                    loadOptions={(query, page) => loadMentorOptions(null, query, page)}
                     placeholder="Pilih mentor / upline..."
                     emptyLabel="Tidak ada agent"
                   />

@@ -363,9 +363,11 @@ export const api = {
     updateHelpSubmissionStatus: (id: number | string, status: string) => {
       return request<any>(`/admin/help/submissions/${id}/status`, { method: "PUT", body: JSON.stringify({ status }) });
     },
-    getAgents: (opts: { status?: string; search?: string; page?: number; pageSize?: number } = {}) => {
+    getAgents: (opts: { status?: string; role?: string; id?: number | string; search?: string; page?: number; pageSize?: number } = {}) => {
       const params = new URLSearchParams();
       if (opts.status && opts.status !== "All") params.set("status", opts.status);
+      if (opts.role) params.set("role", opts.role);
+      if (opts.id) params.set("id", String(opts.id));
       if (opts.search) params.set("search", opts.search);
       params.set("page", String(opts.page || 1));
       params.set("page_size", String(opts.pageSize || 10));

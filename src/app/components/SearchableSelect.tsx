@@ -1,5 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from "react";
-import { Search, ChevronDown, X } from "lucide-react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { Search, ChevronDown, X, Loader2 } from "lucide-react";
 import { T } from "../types";
 
 export interface SelectOption {
@@ -9,10 +9,25 @@ export interface SelectOption {
   subLine?: string; // secondary text shown on its own line below the label (e.g. email) — disambiguates duplicate names
 }
 
-interface SearchableSelectProps {
+export interface LoadOptionsResult {
   options: SelectOption[];
+  hasMore: boolean;
+}
+
+interface SearchableSelectProps {
+  /** Static mode: full option list already in memory, filtered client-side. */
+  options?: SelectOption[];
+  /**
+   * Async mode: server does the search + pagination (page is 1-based).
+   * When provided, `options` is ignored and the list scrolls to load more.
+   */
+  loadOptions?: (query: string, page: number) => Promise<LoadOptionsResult>;
   value: string;
-  onChange: (value: string) => void;
+  /** Async mode only: label to show for `value` when it isn't in the currently loaded page
+   *  (e.g. an existing selection made in a previous session). Falls back to `value` itself. */
+  selectedLabel?: string;
+  selectedSub?: string;
+  onChange: (value: string, option?: SelectOption) => void;
   placeholder?: string;
   emptyLabel?: string;
   className?: string;
@@ -20,12 +35,17 @@ interface SearchableSelectProps {
 
 export default function SearchableSelect({
   options,
+  loadOptions,
   value,
+  selectedLabel,
+  selectedSub,
   onChange,
   placeholder = "Cari...",
   emptyLabel = "Tidak ada pilihan",
   className = "",
 }: SearchableSelectProps) {
+  const isAsync = !!loadOptions;
+
   const [open, setOpen] = useState(false);
   const [openUp, setOpenUp] = useState(false);
   const [search, setSearch] = useState("");
@@ -34,6 +54,13 @@ export default function SearchableSelect({
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const DROPDOWN_MAX_HEIGHT = 260;
+
+  // Async-mode state
+  const [asyncOptions, setAsyncOptions] = useState<SelectOption[]>([]);
+  const [asyncPage, setAsyncPage] = useState(1);
+  const [asyncHasMore, setAsyncHasMore] = useState(false);
+  const [asyncLoading, setAsyncLoading] = useState(false);
+  const requestIdRef = useRef(0);
 
   // Close on outside click
   useEffect(() => {
@@ -56,18 +83,63 @@ export default function SearchableSelect({
     }
   }, [open]);
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return options;
+  const runLoad = useCallback((query: string, page: number, append: boolean) => {
+    if (!loadOptions) return;
+    const requestId = ++requestIdRef.current;
+    setAsyncLoading(true);
+    loadOptions(query, page)
+      .then((res) => {
+        if (requestId !== requestIdRef.current) return; // a newer search/page superseded this one
+        setAsyncOptions((prev) => (append ? [...prev, ...res.options] : res.options));
+        setAsyncHasMore(res.hasMore);
+        setAsyncPage(page);
+      })
+      .catch(() => {
+        if (requestId !== requestIdRef.current) return;
+        if (!append) setAsyncOptions([]);
+        setAsyncHasMore(false);
+      })
+      .finally(() => {
+        if (requestId === requestIdRef.current) setAsyncLoading(false);
+      });
+  }, [loadOptions]);
+
+  // Debounced (re)load on open + on search text change, async mode only.
+  useEffect(() => {
+    if (!isAsync || !open) return;
+    const t = setTimeout(() => runLoad(search, 1, false), 250);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAsync, open, search]);
+
+  const handleScroll = () => {
+    if (!isAsync || asyncLoading || !asyncHasMore) return;
+    const el = listRef.current;
+    if (!el) return;
+    if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40) {
+      runLoad(search, asyncPage + 1, true);
+    }
+  };
+
+  const staticFiltered = useMemo(() => {
+    if (isAsync) return [];
+    const list = options || [];
+    if (!search.trim()) return list;
     const q = search.toLowerCase();
-    return options.filter(
+    return list.filter(
       (o) =>
         o.label.toLowerCase().includes(q) ||
         (o.sub || "").toLowerCase().includes(q) ||
         (o.subLine || "").toLowerCase().includes(q)
     );
-  }, [options, search]);
+  }, [isAsync, options, search]);
 
-  const selected = options.find((o) => o.value === value);
+  const filtered = isAsync ? asyncOptions : staticFiltered;
+
+  const selected = isAsync
+    ? asyncOptions.find((o) => o.value === value) ||
+      (value ? { value, label: selectedLabel || value, sub: selectedSub } : undefined)
+    : (options || []).find((o) => o.value === value);
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -156,8 +228,8 @@ export default function SearchableSelect({
           </div>
 
           {/* Options list */}
-          <div ref={listRef} className="overflow-y-auto" style={{ maxHeight: 200 }}>
-            {filtered.length === 0 ? (
+          <div ref={listRef} onScroll={handleScroll} className="overflow-y-auto" style={{ maxHeight: 200 }}>
+            {filtered.length === 0 && !(isAsync && asyncLoading) ? (
               <div className="px-4 py-6 text-center text-xs" style={{ color: T.text3 }}>
                 {emptyLabel}
               </div>
@@ -167,7 +239,7 @@ export default function SearchableSelect({
                   key={o.value}
                   type="button"
                   onClick={() => {
-                    onChange(o.value);
+                    onChange(o.value, o);
                     setOpen(false);
                     setSearch("");
                   }}
@@ -200,6 +272,11 @@ export default function SearchableSelect({
                   </span>
                 </button>
               ))
+            )}
+            {isAsync && asyncLoading && (
+              <div className="flex items-center justify-center gap-1.5 py-2.5 text-xs" style={{ color: T.text3 }}>
+                <Loader2 size={12} className="animate-spin" /> Memuat...
+              </div>
             )}
           </div>
         </div>

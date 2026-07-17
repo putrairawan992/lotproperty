@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Award, ShieldAlert, Check, Save, ToggleLeft, ToggleRight, User } from "lucide-react";
 import Card from "../../components/Card";
-import SearchableSelect, { type SelectOption } from "../../components/SearchableSelect";
+import SearchableSelect, { type LoadOptionsResult } from "../../components/SearchableSelect";
 import AgentProfileSheet from "../../components/AgentProfileSheet";
 import { T, useTheme } from "../../types";
 import EllipsisTooltip from "../../components/EllipsisTooltip";
@@ -15,8 +15,11 @@ export default function AdminHoFPage() {
   const [toastMsg, setToastMsg] = useState("");
   const [savingCategory, setSavingCategory] = useState<string | null>(null);
   const [sheetAgentId, setSheetAgentId] = useState<string | null>(null);
-  const [serverAgents, setServerAgents] = useState<Array<{ id: number; name: string; email: string; status: string; role: string }>>([]);
-  const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { name?: string }; period: string }>>([]);
+  // Grows as searches/selections happen (and is seeded from saved HoF records) — resolves
+  // an agent's display name back to its numeric ID at save time, without ever needing to
+  // download the full agent roster upfront.
+  const [knownAgentIds, setKnownAgentIds] = useState<Record<string, number>>({});
+  const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { id?: number; name?: string }; period: string }>>([]);
   
   const [entries, setEntries] = useState([
     { cat: "Top 5 Commission",     type: "auto",   overridden: false, visibleCount: 3, autoList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""], overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""] },
@@ -31,46 +34,22 @@ export default function AdminHoFPage() {
 
   const AGENT_DATA = AGENT_DATA_LIST;
 
-  const activeAgents = (serverAgents.length > 0
-    ? serverAgents.filter(a => a.status === "Active" && a.role === "Agent")
-    : AGENT_DATA.filter(a => a.status === "Active").map(a => ({
-        id: Number(String(a.id).replace(/[^0-9]/g, "") || "0"),
-        name: a.name,
-        status: a.status,
-      })));
-
-  // Agent options sorted alphabetically for the searchable dropdown
-  const agentOptions = useMemo<SelectOption[]>(() => {
-    return [
-      { value: "", label: "— Kosong / None —" },
-      ...[...activeAgents]
-        .sort((a, b) => a.name.localeCompare(b.name, "id", { sensitivity: "base" }))
-        .map(a => ({
-          value: a.name,
-          label: a.name,
-          subLine: (a as any).email || undefined,
-        })),
-    ];
-  }, [activeAgents]);
-
-  useEffect(() => {
-    const loadAgents = async () => {
-      try {
-        const res = await api.admin.getAgents({ pageSize: 200 });
-        const rows = res?.data || [];
-        setServerAgents(rows.map((r: any) => ({
-          id: Number(r.id),
-          name: String(r.name || ""),
-          email: String(r.email || ""),
-          status: String(r.status || ""),
-          role: String(r.role || ""),
-        })));
-      } catch {
-        // Keep fallback static agents when API is unavailable.
-      }
-    };
-
-    loadAgents();
+  // Server-side search + pagination for the agent picker — scrolling the dropdown loads
+  // more pages instead of downloading the entire (1000+) agent roster upfront.
+  const loadHofAgentOptions = useCallback(async (query: string, page: number): Promise<LoadOptionsResult> => {
+    const res = await api.admin.getAgents({ search: query, status: "Active", role: "Agent", page, pageSize: 20 });
+    const rows = res?.data || [];
+    const idMap: Record<string, number> = {};
+    const rowOptions = rows.map((r: any) => {
+      const name = String(r.name || "");
+      idMap[name] = Number(r.id);
+      return { value: name, label: name, subLine: String(r.email || "") };
+    });
+    setKnownAgentIds(prev => ({ ...prev, ...idMap }));
+    const options = page === 1 && !query.trim()
+      ? [{ value: "", label: "— Kosong / None —" }, ...rowOptions]
+      : rowOptions;
+    return { options, hasMore: page * 20 < Number(res?.total || 0) };
   }, []);
 
   useEffect(() => {
@@ -81,9 +60,20 @@ export default function AdminHoFPage() {
           setHofRecords(rows.map((r: any) => ({
             category: String(r.category || ""),
             rank: Number(r.rank || 0),
-            agent: r.agent ? { name: String(r.agent.name || "") } : undefined,
+            agent: r.agent ? { id: Number(r.agent.id || r.agent_id || 0), name: String(r.agent.name || "") } : undefined,
             period: String(r.period || ""),
           })));
+          // Seed the name→id cache with every saved record's agent, so re-saving a
+          // category whose picker was never opened this session still resolves correctly.
+          setKnownAgentIds(prev => {
+            const next = { ...prev };
+            for (const r of rows) {
+              if (r.agent?.name && (r.agent?.id || r.agent_id)) {
+                next[String(r.agent.name)] = Number(r.agent.id || r.agent_id);
+              }
+            }
+            return next;
+          });
         }
       } catch {
         // Keep static entries as fallback.
@@ -208,8 +198,7 @@ export default function AdminHoFPage() {
   };
 
   const resolveAgentIdByName = (name: string) => {
-    const fromServer = serverAgents.find(a => a.name === name);
-    if (fromServer?.id) return fromServer.id;
+    if (knownAgentIds[name]) return knownAgentIds[name];
 
     const fromFallback = AGENT_DATA.find(a => a.name === name);
     if (fromFallback) {
@@ -282,9 +271,20 @@ export default function AdminHoFPage() {
           setHofRecords(rows.map((r: any) => ({
             category: String(r.category || ""),
             rank: Number(r.rank || 0),
-            agent: r.agent ? { name: String(r.agent.name || "") } : undefined,
+            agent: r.agent ? { id: Number(r.agent.id || r.agent_id || 0), name: String(r.agent.name || "") } : undefined,
             period: String(r.period || ""),
           })));
+          // Seed the name→id cache with every saved record's agent, so re-saving a
+          // category whose picker was never opened this session still resolves correctly.
+          setKnownAgentIds(prev => {
+            const next = { ...prev };
+            for (const r of rows) {
+              if (r.agent?.name && (r.agent?.id || r.agent_id)) {
+                next[String(r.agent.name)] = Number(r.agent.id || r.agent_id);
+              }
+            }
+            return next;
+          });
         }
       } catch {}
       setSavingCategory(null);
@@ -379,7 +379,7 @@ export default function AdminHoFPage() {
                         {section.overridden ? (
                           <div className="flex-1 flex items-center gap-2">
                             <SearchableSelect
-                              options={agentOptions}
+                              loadOptions={loadHofAgentOptions}
                               value={selectedAgent}
                               onChange={(v) => handleAgentChange(si, rankIdx, v)}
                               placeholder="— Kosong / None —"
