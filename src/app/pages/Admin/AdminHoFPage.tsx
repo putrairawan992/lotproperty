@@ -20,16 +20,16 @@ export default function AdminHoFPage() {
   // download the full agent roster upfront.
   const [knownAgentIds, setKnownAgentIds] = useState<Record<string, number>>({});
   const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { id?: number; name?: string }; period: string }>>([]);
-  
+
   const [entries, setEntries] = useState([
-    { cat: "Top 5 Commission",     type: "auto",   overridden: false, visibleCount: 3, autoList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""], overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""] },
-    { cat: "Top 5 By Unit",        type: "auto",   overridden: false, visibleCount: 3, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""] },
-    { cat: "Listing Hunter",       type: "auto",   overridden: false, visibleCount: 3, autoList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama", "", "", "", "", ""], overrideList: ["Budi Santoso", "Dewi Rahma", "Rizki Pratama", "", "", "", "", ""] },
-    { cat: "Prospecting Master",   type: "auto",   overridden: false, visibleCount: 3, autoList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo", "", "", "", "", ""], overrideList: ["Siti Fatimah", "Rizki Pratama", "Eko Purnomo", "", "", "", "", ""] },
-    { cat: "Content Creator",      type: "auto",   overridden: false, visibleCount: 3, autoList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""], overrideList: ["Siti Fatimah", "Rizki Pratama", "Ahmad Fadhil", "", "", "", "", ""] },
-    { cat: "Top Primary dan KPR",        type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Rizki Pratama", "Siti Fatimah", "Budi Santoso", "", "", "", "", ""] },
-    { cat: "Rising Star",          type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Linda Kusuma", "Rendi Setiawan", "Maya Putri", "", "", "", "", ""] },
-    { cat: "Top Recruiter",        type: "manual", overridden: true,  visibleCount: 3, autoList: Array(8).fill(""),                                             overrideList: ["Rizki Pratama", "Budi Santoso", "Siti Fatimah", "", "", "", "", ""] },
+    { cat: "Top 5 Commission", type: "auto", overridden: false, visibleCount: 3, autoList: ["", "", "", "", ""], overrideList: ["", "", "", "", ""] },
+    { cat: "Top 5 By Unit", type: "auto", overridden: false, visibleCount: 3, autoList: ["", "", "", "", ""], overrideList: ["", "", "", "", ""] },
+    { cat: "Listing Hunter", type: "auto", overridden: false, visibleCount: 3, autoList: ["", "", "", "", ""], overrideList: ["", "", "", "", ""] },
+    { cat: "Prospecting Master", type: "auto", overridden: false, visibleCount: 3, autoList: ["", "", "", "", ""], overrideList: ["", "", "", "", ""] },
+    { cat: "Content Creator", type: "auto", overridden: false, visibleCount: 3, autoList: ["", "", "", "", ""], overrideList: ["", "", "", "", ""] },
+    { cat: "Top Primary dan KPR", type: "manual", overridden: true, visibleCount: 3, autoList: Array(8).fill(""), overrideList: ["", "", "", "", ""] },
+    { cat: "Rising Star", type: "manual", overridden: true, visibleCount: 3, autoList: Array(8).fill(""), overrideList: ["", "", "", "", ""] },
+    { cat: "Top Recruiter", type: "manual", overridden: true, visibleCount: 3, autoList: Array(8).fill(""), overrideList: ["", "", "", "", ""] },
   ]);
 
   const AGENT_DATA = AGENT_DATA_LIST;
@@ -100,11 +100,11 @@ export default function AdminHoFPage() {
         .sort((a, b) => a.rank - b.rank);
 
       const hasSavedRecords = saved.length > 0;
-      
+
       // If there are saved records in the DB, we wipe the overrideList and only set what is in the DB
       // Otherwise, we keep the section's overrideList (which defaults to placeholders)
       const currentOverrideList = hasSavedRecords ? Array(8).fill("") : [...section.overrideList];
-      
+
       saved.forEach(r => {
         if (r.rank >= 1 && r.rank <= 8) {
           currentOverrideList[r.rank - 1] = r.agent?.name || "";
@@ -185,12 +185,12 @@ export default function AdminHoFPage() {
         const newList = [...item.overrideList];
         newList.splice(rankIdx, 1);
         newList.push("");
-        
+
         const nextCount = Math.max((item.visibleCount || 3) - 1, 3);
-        return { 
-          ...item, 
+        return {
+          ...item,
           visibleCount: nextCount,
-          overrideList: newList 
+          overrideList: newList
         };
       }
       return item;
@@ -236,7 +236,7 @@ export default function AdminHoFPage() {
     try {
       for (let i = 0; i < listUsed.length; i++) {
         let agentName = listUsed[i];
-        
+
         // If the rank index exceeds current visible count, treat as cleared (empty)
         if (i >= (section.visibleCount || 3)) {
           agentName = "";
@@ -286,14 +286,14 @@ export default function AdminHoFPage() {
             return next;
           });
         }
-      } catch {}
+      } catch { }
       setSavingCategory(null);
     }
   };
 
   return (
     <div className="p-4 lg:p-6 max-w-4xl mx-auto space-y-6 relative">
-      
+
       {/* Toast Notif */}
       <AnimatePresence>
         {toastMsg && (
@@ -326,13 +326,13 @@ export default function AdminHoFPage() {
               <div>
                 <div className="flex items-center justify-between mb-3 border-b pb-2" style={{ borderColor: T.border }}>
                   <div className="min-w-0">
-                    <EllipsisTooltip 
-                      text={section.cat} 
-                      className="font-bold text-sm tracking-wide text-foreground uppercase truncate block" 
-                      style={{ fontFamily: "'Rajdhani', sans-serif" }} 
+                    <EllipsisTooltip
+                      text={section.cat}
+                      className="font-bold text-sm tracking-wide text-foreground uppercase truncate block"
+                      style={{ fontFamily: "'Rajdhani', sans-serif" }}
                     />
                   </div>
-                  
+
                   {/* Category Type Badge */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {section.type === "auto" ? (
@@ -365,11 +365,11 @@ export default function AdminHoFPage() {
                   {Array.from({ length: section.visibleCount || 3 }).map((_, rankIdx) => {
                     const rankNum = rankIdx + 1;
                     const selectedAgent = section.overrideList[rankIdx] || "";
-                    
+
                     return (
                       <div key={rankIdx} className="flex items-center gap-2.5 p-2 rounded-xl" style={{ backgroundColor: T.muted }}>
                         <span className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs flex-shrink-0"
-                          style={{ 
+                          style={{
                             background: rankIdx === 0 ? "linear-gradient(135deg,#E8A500,#C8922A)" : rankIdx === 1 ? "#9CA3AF" : rankIdx === 2 ? "#B87333" : T.muted,
                             color: rankIdx <= 2 ? "white" : T.text3
                           }}>
@@ -425,13 +425,13 @@ export default function AdminHoFPage() {
 
                 {/* Tambah Peringkat button */}
                 {section.overridden && (section.visibleCount || 3) < 8 && (
-                  <button 
+                  <button
                     onClick={() => handleAddRank(si)}
                     type="button"
                     className="mt-1 mb-3 text-xs font-semibold flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-xl border border-dashed hover:bg-card/60 transition-all text-[#E8A500] border-[#E8A500]/40 w-full"
                     style={{ fontFamily: "'Rajdhani', sans-serif" }}
                   >
-                    + Tambah Peringkat (Juara #{ (section.visibleCount || 3) + 1 })
+                    + Tambah Peringkat (Juara #{(section.visibleCount || 3) + 1})
                   </button>
                 )}
               </div>
