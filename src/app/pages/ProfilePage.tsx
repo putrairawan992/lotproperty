@@ -753,14 +753,23 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
 
     let blob: Blob | null = null;
     try {
-      blob = await htmlToImage.toBlob(el, {
+      const options = {
         pixelRatio: 1050 / (el.offsetWidth || SCORECARD_W),
         cacheBust: true,
         style: {
           transform: "none",
           margin: "0"
         }
-      });
+      };
+      // WebKit bug: the first foreignObject rasterization often paints without the
+      // embedded images (photo/badges come out blank). Known workaround from the
+      // html-to-image issue tracker: capture multiple times and keep the last pass —
+      // the earlier passes warm Safari's image cache. Chrome/Firefox need one pass.
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const passes = isSafari ? 3 : 1;
+      for (let i = 0; i < passes; i++) {
+        blob = await htmlToImage.toBlob(el, options);
+      }
     } finally {
       if (photoImg && originalSrc) photoImg.src = originalSrc;
     }
