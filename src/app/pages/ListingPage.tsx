@@ -150,6 +150,7 @@ export default function ListingPage() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [typeFilter, setTypeFilter] = useState("");
+  const [listingTypeFilter, setListingTypeFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const [stats, setStats] = useState({ total: 0, active: 0, inactive: 0, closed: 0 });
@@ -171,7 +172,7 @@ export default function ListingPage() {
     try {
       setApiLoading(true);
       const statusFilter = tab === "All" ? undefined : tab;
-      const payload = await api.listings.getList({ status: statusFilter, search, property_type: typeFilter || undefined, page, page_size: pageSize });
+      const payload = await api.listings.getList({ status: statusFilter, search, property_type: typeFilter || undefined, listing_type: listingTypeFilter || undefined, page, page_size: pageSize });
       const rows: ListingApiRow[] = Array.isArray(payload?.listings) ? payload.listings : [];
       setListings(rows.map(listingFromApi));
       setTotalItems(payload?.pagination?.total || 0);
@@ -216,14 +217,14 @@ export default function ListingPage() {
   }, [urlSearch]);
 
   // Tab/type/search/pageSize changes jump back to page 1 (they invalidate the current page).
-  useEffect(() => { setPage(1); }, [tab, typeFilter, search, pageSize]);
+  useEffect(() => { setPage(1); }, [tab, typeFilter, listingTypeFilter, search, pageSize]);
 
   // Debounce so typing in search doesn't hit the API on every keystroke.
   useEffect(() => {
     const t = setTimeout(loadListings, 300);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, typeFilter, search, page, pageSize]);
+  }, [tab, typeFilter, listingTypeFilter, search, page, pageSize]);
 
   if (loading) return <ListingPageSkeleton />;
 
@@ -237,9 +238,9 @@ export default function ListingPage() {
       setSuccessToast("Data listing berhasil diekspor ke Excel (Backup-Listings.xlsx)");
       const element = document.createElement("a");
       const file = new Blob([
-        "ID,Title,Type,Owner,Phone,Price,Location,Status,LandArea,BuildingArea,Floors,Certificate,Commission\n" +
+        "ID,Title,Type,ListingType,Owner,Phone,Price,Location,Status,LandArea,BuildingArea,Floors,Certificate,Commission\n" +
         listings.map(l =>
-          `${l.id},"${l.title}",${l.type},"${l.owner}","${l.phone}","${l.price}","${l.loc}",${l.status},"${l.landArea}","${l.buildingArea}",${l.floors},"${l.certificate}","${l.commission}"`
+          `${l.id},"${l.title}",${l.type},${l.listingType},"${l.owner}","${l.phone}","${l.price}","${l.loc}",${l.status},"${l.landArea}","${l.buildingArea}",${l.floors},"${l.certificate}","${l.commission}"`
         ).join("\n"),
       ], { type: "text/csv" });
       element.href = URL.createObjectURL(file);
@@ -466,6 +467,12 @@ export default function ListingPage() {
                 className="flex-1 sm:flex-none px-3 py-2 rounded-xl border text-sm outline-none bg-card min-w-0" style={{ borderColor: T.border, color: T.text2 }}>
                 <option value="">Semua Tipe</option>
                 {PROPERTY_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              </select>
+              <select value={listingTypeFilter} onChange={e => setListingTypeFilter(e.target.value)}
+                className="flex-1 sm:flex-none px-3 py-2 rounded-xl border text-sm outline-none bg-card min-w-0" style={{ borderColor: T.border, color: T.text2 }}>
+                <option value="">Dijual / Disewa</option>
+                <option value="Dijual">Dijual</option>
+                <option value="Disewa">Disewa</option>
               </select>
               <button onClick={handleExportExcel}
                 className="flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl text-sm font-bold transition-all border flex-shrink-0"
