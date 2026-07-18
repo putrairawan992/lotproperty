@@ -251,7 +251,10 @@ export const api = {
         method: "PUT",
         body: JSON.stringify(payload),
       });
-    }
+    },
+    delete: (id: number | string) => {
+      return request<any>(`/prospects/${id}`, { method: "DELETE" });
+    },
   },
 
   // Academy

@@ -524,9 +524,14 @@ export default function ListingPage() {
                     </div>
 
                     <div className="flex items-center justify-between gap-3 mb-2">
-                      <span className="text-xs px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: "var(--muted)", color: T.text2 }}>
-                        {l.type}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: "var(--muted)", color: T.text2 }}>
+                          {l.type}
+                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-md font-medium" style={{ backgroundColor: "var(--muted)", color: T.text2 }}>
+                          {l.listingType}
+                        </span>
+                      </div>
                       <p className="text-sm font-bold flex-shrink-0" style={{ fontFamily: "'Rajdhani', sans-serif", color: "#E8A500" }}>
                         {l.price}
                       </p>
@@ -570,7 +575,10 @@ export default function ListingPage() {
                             <MapPin size={10} />{l.loc} · {l.owner}
                           </p>
                         </td>
-                        <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: T.text2 }}>{l.type}</td>
+                        <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: T.text2 }}>
+                          {l.type}
+                          <span className="block text-[10px]" style={{ color: T.text3 }}>{l.listingType}</span>
+                        </td>
                         <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: T.text2 }}>
                           {l.landArea !== "—" ? `T: ${l.landArea}` : "—"} / {l.buildingArea !== "—" ? `B: ${l.buildingArea}` : "—"}
                           {l.floors !== "—" && <span className="block text-[10px] text-muted-foreground">{l.floors} Lantai</span>}
@@ -673,7 +681,7 @@ export default function ListingPage() {
                         </select>
                       </div>
                       <div>
-                        <FieldLabel>Status Listing</FieldLabel>
+                        <FieldLabel required>Status Listing</FieldLabel>
                         <select value={form.listingType} onChange={e => setForm(f => ({ ...f, listingType: e.target.value }))}
                           className="w-full px-3.5 py-2.5 rounded-xl border bg-card text-sm outline-none"
                           style={{ borderColor: T.border, color: T.text1 }}>

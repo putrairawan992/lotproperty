@@ -178,7 +178,7 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
                   {ev.xp_pool.toLocaleString("id-ID")} XP Pool
                 </p>
               )}
-              <p className="text-sm mt-2" style={{ color: hero.subtitle }}>
+              <p className="text-sm mt-2 whitespace-pre-line" style={{ color: hero.subtitle }}>
                 {ev.desc}
               </p>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4">
@@ -202,40 +202,38 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
         </div>
       </motion.div>
 
-      {/* Rewards */}
-      <div>
-        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
-          <Card className="p-5" style={{ borderColor: isDark ? "rgba(232,165,0,0.15)" : T.border }}>
-            <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: sectionLabel }}>Reward</p>
-            <div className="space-y-2">
-              {((): {rank: string; prize: string}[] => {
-                if (ev?.prizes) {
-                  try {
-                    const parsed = JSON.parse(ev.prizes);
-                    if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-                  } catch { /* fall through to default */ }
-                }
-                // Fallback default prizes if none configured
-                return [
-                  { rank: "🥇 Juara 1", prize: "Rp 80.000.000" },
-                  { rank: "🥈 Juara 2", prize: "Rp 40.000.000" },
-                  { rank: "🥉 Juara 3", prize: "Rp 20.000.000" },
-                  { rank: "🏅 Top 5", prize: "+10.000 XP" },
-                ];
-              })().map(r => (
-                <div
-                  key={r.rank}
-                  className="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                  style={{ backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}
-                >
-                  <span className="text-sm font-medium" style={{ color: T.text1 }}>{r.rank}</span>
-                  <span className="font-bold text-sm" style={{ color: "#E8A500", fontFamily: "'Rajdhani', sans-serif" }}>{r.prize}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </motion.div>
-      </div>
+      {/* Rewards — only shown when the event actually has prizes configured; no generic
+          placeholder prizes, since those would misrepresent this specific event's reward. */}
+      {(() => {
+        let prizes: { rank: string; prize: string }[] = [];
+        if (ev?.prizes) {
+          try {
+            const parsed = JSON.parse(ev.prizes);
+            if (Array.isArray(parsed) && parsed.length > 0) prizes = parsed;
+          } catch { /* leave prizes empty */ }
+        }
+        if (prizes.length === 0) return null;
+
+        return (
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+            <Card className="p-5" style={{ borderColor: isDark ? "rgba(232,165,0,0.15)" : T.border }}>
+              <p className="text-xs font-semibold mb-3 uppercase tracking-wider" style={{ color: sectionLabel }}>Reward</p>
+              <div className="space-y-2">
+                {prizes.map(r => (
+                  <div
+                    key={r.rank}
+                    className="flex items-center justify-between px-2 py-1.5 rounded-lg"
+                    style={{ backgroundColor: isDark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)" }}
+                  >
+                    <span className="text-sm font-medium" style={{ color: T.text1 }}>{r.rank}</span>
+                    <span className="font-bold text-sm" style={{ color: "#E8A500", fontFamily: "'Rajdhani', sans-serif" }}>{r.prize}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </motion.div>
+        );
+      })()}
 
       {/* Rules */}
       {(() => {
@@ -279,6 +277,9 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
         <Card className="p-5">
           <p className="text-xs font-semibold mb-4 uppercase tracking-wider" style={{ color: sectionLabel }}>Top Peserta Saat Ini</p>
+          {leaderboard.length === 0 && (
+            <p className="text-sm text-center py-4" style={{ color: T.text3 }}>Belum ada peserta.</p>
+          )}
           <div className="space-y-2.5">
             {leaderboard.map((a: any, i: number) => {
               const rankNum = i + 1;

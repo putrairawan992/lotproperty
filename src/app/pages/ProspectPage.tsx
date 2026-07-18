@@ -293,11 +293,16 @@ export default function ProspectPage() {
 
   const closeDetail = () => navigate("/prospect");
 
-  const deleteProspect = (id: number) => {
-    setProspects(prev => prev.filter(p => p.id !== id));
+  const deleteProspect = async (id: number) => {
     setOpenMenuId(null);
-    if (detailId === String(id)) closeDetail();
-    triggerToast("Prospect berhasil dihapus");
+    try {
+      await api.prospects.delete(id);
+      setProspects(prev => prev.filter(p => p.id !== id));
+      if (detailId === String(id)) closeDetail();
+      triggerToast("Prospect berhasil dihapus");
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal menghapus prospect");
+    }
   };
 
   const handleSave = async () => {
