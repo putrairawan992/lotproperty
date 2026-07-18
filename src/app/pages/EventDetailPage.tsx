@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronRight, Flame, Users, Calendar, Trophy, Check, AlertCircle } from "lucide-react";
+import { ChevronRight, Flame, Calendar, Trophy, Check, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../components/Card";
 import { T, useTheme } from "../types";
@@ -49,7 +49,6 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
   }, []);
 
   const ev = eventDetail?.event;
-  const leaderboard = eventDetail?.leaderboard || [];
 
   const getDaysRemaining = () => {
     if (!ev.end_date) return "—";
@@ -183,9 +182,6 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
               </p>
               <div className="flex flex-wrap items-center gap-3 sm:gap-4 mt-4">
                 <div className="flex items-center gap-1.5 text-xs" style={{ color: hero.subtitle }}>
-                  <Users size={13} /> {leaderboard.length} Peserta
-                </div>
-                <div className="flex items-center gap-1.5 text-xs" style={{ color: hero.subtitle }}>
                   <Calendar size={13} /> {getDaysRemaining()}
                 </div>
               </div>
@@ -273,61 +269,6 @@ export default function EventDetailPage({ onBack }: { onBack: () => void }) {
         );
       })()}
 
-      {/* Leaderboard mini */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-        <Card className="p-5">
-          <p className="text-xs font-semibold mb-4 uppercase tracking-wider" style={{ color: sectionLabel }}>Top Peserta Saat Ini</p>
-          {leaderboard.length === 0 && (
-            <p className="text-sm text-center py-4" style={{ color: T.text3 }}>Belum ada peserta.</p>
-          )}
-          <div className="space-y-2.5">
-            {leaderboard.map((a: any, i: number) => {
-              const rankNum = i + 1;
-              return (
-                <motion.div
-                  key={a.agent_id || i}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl border"
-                  style={{
-                    backgroundColor: a.is_me
-                      ? (isDark ? "rgba(232,165,0,0.08)" : "#FFFAED")
-                      : (isDark ? "rgba(255,255,255,0.03)" : T.card),
-                    borderColor: a.is_me ? "rgba(232,165,0,0.35)" : T.border,
-                  }}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.35 + i * 0.06 }}
-                >
-                  <div
-                    className="w-7 h-7 rounded-xl flex items-center justify-center font-bold text-sm flex-shrink-0"
-                    style={{
-                      background: rankNum === 1
-                        ? "linear-gradient(135deg,#E8A500,#C8922A)"
-                        : rankNum === 2
-                          ? "#9CA3AF"
-                          : rankNum === 3
-                            ? "#B87333"
-                            : (isDark ? "rgba(255,255,255,0.08)" : "#F3F4F6"),
-                      color: rankNum <= 3 ? "white" : (isDark ? "#C8B89A" : "#6B7280"),
-                      fontFamily: "'Rajdhani', sans-serif",
-                    }}
-                  >
-                    {rankNum <= 3 ? (rankNum === 1 ? "🥇" : rankNum === 2 ? "🥈" : "🥉") : rankNum}
-                  </div>
-                  <span className="flex-1 text-sm font-semibold" style={{ color: T.text1 }}>{a.name}</span>
-                  {a.is_me && (
-                    <span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{ backgroundColor: "#E8A500", color: "white", fontSize: 10 }}>
-                      Kamu
-                    </span>
-                  )}
-                  <span className="font-bold text-sm flex-shrink-0" style={{ color: "#E8A500", fontFamily: "'Rajdhani', sans-serif" }}>
-                    {a.units} unit
-                  </span>
-                </motion.div>
-              );
-            })}
-          </div>
-        </Card>
-      </motion.div>
     </div>
   );
 }
