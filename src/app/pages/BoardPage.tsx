@@ -59,13 +59,19 @@ export default function BoardPage() {
   useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filter]);
 
   // Infinite scroll: load next page when the user scrolls near the bottom.
+  // The app scrolls inside <main class="overflow-y-auto"> (see App.tsx), not the window.
   useEffect(() => {
+    const scroller = document.querySelector("main.overflow-y-auto") || window;
     const onScroll = () => {
-      if (window.innerHeight + window.scrollY < document.documentElement.scrollHeight - 300) return;
+      const { scrollTop, scrollHeight, clientHeight } =
+        scroller === window
+          ? { scrollTop: window.scrollY, scrollHeight: document.documentElement.scrollHeight, clientHeight: window.innerHeight }
+          : (scroller as HTMLElement);
+      if (scrollTop + clientHeight < scrollHeight - 300) return;
       setVisibleCount(prev => (prev < filteredPosts.length ? prev + PAGE_SIZE : prev));
     };
-    window.addEventListener("scroll", onScroll);
-    return () => window.removeEventListener("scroll", onScroll);
+    scroller.addEventListener("scroll", onScroll);
+    return () => scroller.removeEventListener("scroll", onScroll);
   }, [filteredPosts.length]);
 
   const getInitials = (nameStr?: string) => {
