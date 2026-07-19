@@ -3,12 +3,14 @@ import { motion, AnimatePresence } from "motion/react";
 import { MessageSquare, Plus, Calendar, AlertCircle, Check, Trash2, ShieldAlert } from "lucide-react";
 import Card from "../components/Card";
 import AgentAvatar from "../components/AgentAvatar";
+import AgentProfileSheet from "../components/AgentProfileSheet";
 import { T, useTheme } from "../types";
 import EllipsisTooltip from "../components/EllipsisTooltip";
 import { api } from "../services/api";
 
 interface Post {
   id: string | number;
+  agentId: string;
   name: string;
   photo?: string;
   initials: string;
@@ -21,6 +23,7 @@ interface Post {
 
 const mapApiPost = (item: any): Post => ({
   id: item.id,
+  agentId: String(item.agent_id ?? item.id),
   name: item.name || "Unknown Agent",
   photo: item.photo || undefined,
   initials: item.initials || "AG",
@@ -31,18 +34,39 @@ const mapApiPost = (item: any): Post => ({
   isMe: !!item.is_me,
 });
 
+const PAGE_SIZE = 10;
+
 
 export default function BoardPage() {
   const { isDark, isGuest, user, onLoginRequest } = useTheme();
   const [posts, setPosts] = useState<Post[]>([]);
   const [content, setContent] = useState("");
   const [category, setCategory] = useState<"WTB" | "WTR" | "INFO">("WTB");
+  const [filter, setFilter] = useState<"ALL" | "WTB" | "WTR" | "INFO">("ALL");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const [sheetAgentId, setSheetAgentId] = useState<string | null>(null);
   const [toast, setToast] = useState("");
   const [postsTodayCount, setPostsTodayCount] = useState(0);
   const [isActive, setIsActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | number | null>(null);
+
+  const filteredPosts = filter === "ALL" ? posts : posts.filter(p => p.category === filter);
+  const visiblePosts = filteredPosts.slice(0, visibleCount);
+
+  // Reset pagination when the filter changes.
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [filter]);
+
+  // Infinite scroll: load next page when the user scrolls near the bottom.
+  useEffect(() => {
+    const onScroll = () => {
+      if (window.innerHeight + window.scrollY < document.documentElement.scrollHeight - 300) return;
+      setVisibleCount(prev => (prev < filteredPosts.length ? prev + PAGE_SIZE : prev));
+    };
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [filteredPosts.length]);
 
   const getInitials = (nameStr?: string) => {
     if (!nameStr) return "A";
@@ -321,20 +345,42 @@ export default function BoardPage() {
       </div>
       )}
 
+      {/* Category Filter */}
+      <div className="flex gap-1.5 mb-4 overflow-x-auto">
+        {(["ALL", "WTB", "WTR", "INFO"] as const).map(cat => {
+          const active = filter === cat;
+          const styles = cat === "ALL" ? null : getCategoryStyles(cat);
+          return (
+            <button
+              key={cat}
+              onClick={() => setFilter(cat)}
+              className="px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide whitespace-nowrap transition-all border"
+              style={{
+                backgroundColor: active ? (styles?.text || "#E8A500") : "transparent",
+                borderColor: active ? (styles?.text || "#E8A500") : "var(--border)",
+                color: active ? "white" : T.text3,
+              }}
+            >
+              {cat === "ALL" ? "SEMUA" : styles!.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Posts Feed Stream */}
       <div className="space-y-4 relative">
         {loading ? (
           <div className="p-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-2xl">
             <p className="text-sm font-semibold">Memuat postingan board...</p>
           </div>
-        ) : posts.length === 0 ? (
+        ) : filteredPosts.length === 0 ? (
           <div className="p-12 text-center text-muted-foreground border-2 border-dashed border-border/40 rounded-2xl">
             <MessageSquare size={32} className="mx-auto mb-2 opacity-35" />
             <p className="text-sm font-semibold">Belum ada postingan aktif</p>
             <p className="text-xs mt-1">Jadilah yang pertama menyiarkan info WTB/WTR Anda!</p>
           </div>
         ) : (
-          posts.map((post, i) => {
+          visiblePosts.map((post, i) => {
             const styles = getCategoryStyles(post.category);
             return (
               <motion.div
@@ -345,7 +391,7 @@ export default function BoardPage() {
                 className="relative"
               >
                 {/* Visual Threads Line connecting items */}
-                {i < posts.length - 1 && (
+                {i < visiblePosts.length - 1 && (
                   <div
                     className="absolute left-5 top-12 bottom-0 w-0.5 pointer-events-none"
                     style={{ backgroundColor: isDark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)" }}
@@ -361,19 +407,19 @@ export default function BoardPage() {
 
                   <div className="flex gap-3 relative z-10">
                     {/* User Avatar */}
-                    <div className="flex-shrink-0">
+                    <button onClick={() => setSheetAgentId(post.agentId)} className="flex-shrink-0 cursor-pointer">
                       <AgentAvatar initials={post.initials} photo={post.photo} size={40} isMe={post.isMe} />
-                    </div>
+                    </button>
 
                     {/* Post content and details */}
                     <div className="flex-1 min-w-0">
                       {/* Name & Tier header */}
                       <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <EllipsisTooltip 
-                            text={post.name} 
-                            className="font-extrabold text-sm truncate block" 
-                            style={{ color: T.text1, fontFamily: "'Rajdhani', sans-serif" }} 
+                        <button onClick={() => setSheetAgentId(post.agentId)} className="flex items-center gap-1.5 flex-wrap cursor-pointer">
+                          <EllipsisTooltip
+                            text={post.name}
+                            className="font-extrabold text-sm truncate block"
+                            style={{ color: T.text1, fontFamily: "'Rajdhani', sans-serif" }}
                           />
                           <span
                             className="text-[9px] px-1.5 py-0.5 rounded font-black border uppercase tracking-wider flex-shrink-0"
@@ -386,7 +432,7 @@ export default function BoardPage() {
                           >
                             {styles.label}
                           </span>
-                        </div>
+                        </button>
                         <div className="flex items-center gap-2">
                           <p className="text-[10px] text-muted-foreground font-mono">
                             {formatTimeAgo(post.createdAt)}
@@ -424,7 +470,12 @@ export default function BoardPage() {
             );
           })
         )}
+        {visibleCount < filteredPosts.length && (
+          <p className="text-center text-xs text-muted-foreground py-2">Memuat postingan lainnya...</p>
+        )}
       </div>
+
+      <AgentProfileSheet agentId={sheetAgentId} onClose={() => setSheetAgentId(null)} />
     </div>
   );
 }
