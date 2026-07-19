@@ -1280,7 +1280,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
               </h3>
             </div>
 
-            <div className="grid grid-cols-2 @sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 @lg:grid-cols-3 gap-3">
               {[
                 { l: "Total Commission", v: profileCard.commission, icon: DollarSign, color: "#E8A500" },
                 { l: "Total Transactions", v: profileCard.totalTransactions, icon: TrendingUp, color: "#16A34A" },
@@ -1291,7 +1291,7 @@ export default function ProfilePage({ onLogout, agentId }: { onLogout?: () => vo
               ].map((s, i) => (
                 <div
                   key={i}
-                  className={`flex items-center gap-3.5 p-3.5 rounded-2xl border border-border/30 bg-muted/10 hover:bg-muted/20 transition-all ${i === 0 ? "col-span-2 @sm:col-span-1" : ""}`}
+                  className={`flex items-center gap-3.5 p-3.5 rounded-2xl border border-border/30 bg-muted/10 hover:bg-muted/20 transition-all ${i === 0 ? "col-span-2 @lg:col-span-1" : ""}`}
                 >
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: s.color + "15" }}>
                     <s.icon size={18} style={{ color: s.color }} />
