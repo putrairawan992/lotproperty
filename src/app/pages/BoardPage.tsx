@@ -413,15 +413,15 @@ export default function BoardPage() {
 
                   <div className="flex gap-3 relative z-10">
                     {/* User Avatar */}
-                    <button onClick={() => setSheetAgentId(post.agentId)} className="flex-shrink-0 cursor-pointer">
+                    <div onClick={() => setSheetAgentId(post.agentId)} role="button" tabIndex={0} className="flex-shrink-0 cursor-pointer">
                       <AgentAvatar initials={post.initials} photo={post.photo} size={40} isMe={post.isMe} />
-                    </button>
+                    </div>
 
                     {/* Post content and details */}
                     <div className="flex-1 min-w-0">
                       {/* Name & Tier header */}
                       <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <button onClick={() => setSheetAgentId(post.agentId)} className="flex items-center gap-1.5 flex-wrap cursor-pointer">
+                        <div onClick={() => setSheetAgentId(post.agentId)} role="button" tabIndex={0} className="flex items-center gap-1.5 flex-wrap cursor-pointer">
                           <EllipsisTooltip
                             text={post.name}
                             className="font-extrabold text-sm truncate block"
@@ -438,7 +438,7 @@ export default function BoardPage() {
                           >
                             {styles.label}
                           </span>
-                        </button>
+                        </div>
                         <div className="flex items-center gap-2">
                           <p className="text-[10px] text-muted-foreground font-mono">
                             {formatTimeAgo(post.createdAt)}
