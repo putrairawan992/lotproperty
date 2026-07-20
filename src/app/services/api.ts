@@ -284,7 +284,17 @@ export const api = {
       if (opts.search) params.set("search", opts.search);
       params.set("page", String(opts.page || 1));
       params.set("page_size", String(opts.pageSize || 20));
-      return request<{ data: any[]; total: number; urgent_count: number; upcoming_count: number }>(`/checkouts?${params}`);
+      return request<{ data: any[]; total: number; past_count: number; urgent_count: number; upcoming_count: number; future_count: number }>(`/checkouts?${params}`);
+    },
+    // Sama seperti getList tapi tanpa batas window 45 hari — seluruh histori
+    // (masa lalu + masa depan), untuk tab admin "Semua Data Checkout".
+    getAllList: (opts: { search?: string; page?: number; pageSize?: number } = {}) => {
+      const params = new URLSearchParams();
+      if (opts.search) params.set("search", opts.search);
+      params.set("page", String(opts.page || 1));
+      params.set("page_size", String(opts.pageSize || 20));
+      params.set("range", "all");
+      return request<{ data: any[]; total: number; past_count: number; urgent_count: number; upcoming_count: number; future_count: number }>(`/checkouts?${params}`);
     },
   },
 
