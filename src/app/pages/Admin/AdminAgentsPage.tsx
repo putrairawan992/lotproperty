@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail, MoreVertical, Trash2, Edit3, ImagePlus } from "lucide-react";
+import { Search, Users, Network, X, ChevronRight, ChevronDown, MapPin, Calendar, Award, Check, ShieldAlert, AlertTriangle, Phone, Mail, MoreVertical, Trash2, Edit3, ImagePlus, Eye, EyeOff } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import AdminPagination from "../../components/AdminPagination";
@@ -307,6 +307,7 @@ export default function AdminAgentsPage() {
   const [editEmail, setEditEmail] = useState("");
   const [editPhone, setEditPhone] = useState("");
   const [editPassword, setEditPassword] = useState("");
+  const [showEditPassword, setShowEditPassword] = useState(false);
   const [editRole, setEditRole] = useState("");
   const [editMentorId, setEditMentorId] = useState<number | null>(null);
   const [editMentorLabel, setEditMentorLabel] = useState("");
@@ -524,6 +525,7 @@ export default function AdminAgentsPage() {
     setEditEmail(a.email);
     setEditPhone(a.phone || "");
     setEditPassword("");
+    setShowEditPassword(false);
     setEditRole(a.role || "");
     setEditMentorId(a.mentor_id || 0);
     setEditMentorLabel("");
@@ -1440,8 +1442,14 @@ export default function AdminAgentsPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Password (kosongkan jika tidak diubah)</label>
-                  <input type="password" value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password"
-                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                  <div className="relative">
+                    <input type={showEditPassword ? "text" : "password"} value={editPassword} onChange={e => setEditPassword(e.target.value)} placeholder="••••••••" autoComplete="new-password"
+                      className="w-full px-3 py-2.5 pr-10 rounded-xl border text-sm outline-none bg-card" style={{ borderColor: T.border, color: T.text1 }} />
+                    <button type="button" onClick={() => setShowEditPassword(prev => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5" style={{ color: T.text3 }}>
+                      {showEditPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold mb-1.5" style={{ color: T.text2 }}>Role (kosongkan jika tidak diubah)</label>
