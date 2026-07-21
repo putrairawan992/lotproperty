@@ -457,7 +457,7 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
     if (!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.phone.trim()) return;
     if (recruitForm.ktm && recruitForm.ktm.length !== 16) return;
     try {
-      await api.quests.submitRecruit(recruitForm.name.trim(), recruitForm.email.trim(), recruitForm.phone.trim(), recruitForm.ktm.trim());
+      await api.quests.submitRecruit(recruitForm.name.trim(), recruitForm.email.trim().toLowerCase(), recruitForm.phone.trim(), recruitForm.ktm.trim());
       setSkillQuests(prev => prev.map(q => q.id === "new_recruit" ? { ...q, status: "pending" } : q));
       setShowRecruitModal(false);
       setRecruitForm({ name: "", email: "", phone: "", ktm: "" });

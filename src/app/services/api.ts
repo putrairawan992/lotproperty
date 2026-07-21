@@ -65,9 +65,11 @@ export const api = {
   // Authentication
   auth: {
     login: async (email: string, password: string) => {
+      // Backend membandingkan email apa adanya (case-sensitive) — normalisasi ke
+      // lowercase di sini biar login tidak gagal cuma karena user ketik huruf besar.
       const data = await request<{ token: string; user: { id: number; name: string; email: string; role: string } }>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
       setAuthToken(data.token);
       return data;

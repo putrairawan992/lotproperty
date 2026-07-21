@@ -566,7 +566,7 @@ export default function AdminAgentsPage() {
     try {
       const payload: any = {};
       if (editName !== editModal.name) payload.name = editName;
-      if (editEmail !== editModal.email) payload.email = editEmail;
+      if (editEmail !== editModal.email) payload.email = editEmail.trim().toLowerCase();
       if (editPhone !== (editModal.phone || "")) payload.phone = editPhone;
       if (editPassword) payload.password = editPassword;
       if (editRole) payload.role = editRole;
@@ -590,7 +590,7 @@ export default function AdminAgentsPage() {
       setAgents(prev => prev.map(a => a.id === editModal.id ? {
         ...a,
         name: editName || a.name,
-        email: editEmail || a.email,
+        email: payload.email || a.email,
         phone: editPhone,
         mentor_id: nextMentorId > 0 ? nextMentorId : null,
         role: editRole || a.role,
@@ -628,7 +628,7 @@ export default function AdminAgentsPage() {
       }
       await api.admin.createAgent({
         name: newName,
-        email: newEmail,
+        email: newEmail.trim().toLowerCase(),
         phone: newPhone || undefined,
         password: newPassword,
         role: newRole,
