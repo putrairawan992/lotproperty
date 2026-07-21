@@ -133,7 +133,7 @@ export default function RegisterPage({ onBack, onSubmit }: { onBack: () => void;
 
       await api.auth.register({
         name: form.name,
-        email: form.email,
+        email: form.email.trim().toLowerCase(),
         phone: form.phone,
         password: form.password,
         photo_url: photoUrl,
