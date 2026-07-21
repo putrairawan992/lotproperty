@@ -219,10 +219,12 @@ export const api = {
         body: JSON.stringify(payload),
       });
     },
-    update: (id: number | string, status: string) => {
+    // payload bisa {status} saja (aksi cepat Set Inactive/Tandai Closed) atau
+    // seluruh field listing (form Edit) — backend cuma apply field yang dikirim.
+    update: (id: number | string, payload: any) => {
       return request<any>(`/listings/${id}`, {
         method: "PUT",
-        body: JSON.stringify({ status }),
+        body: JSON.stringify(payload),
       });
     },
     delete: (id: number | string) => {

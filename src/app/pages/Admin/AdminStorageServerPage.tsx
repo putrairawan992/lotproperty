@@ -48,6 +48,12 @@ export default function AdminStorageServerPage() {
   const [backups, setBackups] = useState<BackupItem[]>([]);
   const [backupLoading, setBackupLoading] = useState(true);
   const [runningBackup, setRunningBackup] = useState(false);
+  const [toastMsg, setToastMsg] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const triggerToast = (text: string, error?: boolean) => {
+    setToastMsg({ text, error });
+    setTimeout(() => setToastMsg(null), 3000);
+  };
   const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -91,8 +97,9 @@ export default function AdminStorageServerPage() {
     try {
       await api.admin.runBackup();
       await loadBackups();
-    } catch {
-      // failure surfaces implicitly: list won't gain a new entry
+      triggerToast("Backup berhasil dijalankan!");
+    } catch (error) {
+      triggerToast(error instanceof Error ? error.message : "Gagal menjalankan backup", true);
     } finally {
       setRunningBackup(false);
     }
@@ -124,6 +131,14 @@ export default function AdminStorageServerPage() {
 
   return (
     <div className="p-4 lg:p-6 max-w-4xl mx-auto space-y-5">
+      {toastMsg && (
+        <div
+          className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-semibold text-white"
+          style={{ backgroundColor: toastMsg.error ? "#DC2626" : "#16A34A" }}
+        >
+          {toastMsg.text}
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>Storage Server</h1>
         <span className="text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5"

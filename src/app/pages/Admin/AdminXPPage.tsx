@@ -21,6 +21,12 @@ export default function AdminXPPage() {
   const [reason, setReason] = useState("");
   const [history, setHistory] = useState<XPHistoryItem[]>([]);
   const [saving, setSaving] = useState(false);
+  const [toastMsg, setToastMsg] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const triggerToast = (text: string, error?: boolean) => {
+    setToastMsg({ text, error });
+    setTimeout(() => setToastMsg(null), 3000);
+  };
 
   // Server-side search + pagination — scrolling the dropdown loads more pages
   // instead of downloading the entire agent roster upfront.
@@ -89,8 +95,10 @@ export default function AdminXPPage() {
       setSelectedAgentLabel("");
       setAmount("");
       setReason("");
-    } catch {
+      triggerToast("XP adjustment berhasil diterapkan!");
+    } catch (error) {
       // Keep form state when request fails.
+      triggerToast(error instanceof Error ? error.message : "Gagal menerapkan XP adjustment", true);
     } finally {
       setSaving(false);
     }
@@ -98,6 +106,14 @@ export default function AdminXPPage() {
 
   return (
     <div className="p-4 lg:p-6 max-w-4xl mx-auto space-y-5">
+      {toastMsg && (
+        <div
+          className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-semibold text-white"
+          style={{ backgroundColor: toastMsg.error ? "#DC2626" : "#16A34A" }}
+        >
+          {toastMsg.text}
+        </div>
+      )}
       <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>XP Adjustment</h1>
 
       <Card className="p-5">

@@ -540,10 +540,11 @@ export default function AttendancePage() {
               </div>
               <motion.button
                 onClick={() => submitAttendance("qr", qrCode || `LOT-AGENT-${today}`)}
-                className="w-full py-3 rounded-xl font-bold text-sm"
+                disabled={isSubmitting}
+                className="w-full py-3 rounded-xl font-bold text-sm disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{ backgroundColor: T.muted, color: T.text2, fontFamily: "'Rajdhani', sans-serif", fontSize: 15 }}
                 whileTap={{ scale: 0.97 }}>
-                ✅ Klaim Attendance via QR
+                {isSubmitting ? "Memproses..." : "✅ Klaim Attendance via QR"}
               </motion.button>
             </div>
             <div className="bg-card rounded-2xl border p-4" style={{ borderColor: T.border }}>
@@ -658,16 +659,17 @@ export default function AttendancePage() {
                       <p className="text-xs" style={{ color: T.text3 }}>{m.time}</p>
                     </div>
                     <motion.button
-                      className="px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0"
+                      className="px-3 py-1.5 rounded-lg text-xs font-bold flex-shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
                       style={{ backgroundColor: m.color, color: "white", fontFamily: "'Rajdhani', sans-serif" }}
                       whileTap={{ scale: 0.95 }}
+                      disabled={isSubmitting}
                       onClick={async () => {
                         const ok = await submitAttendance("meeting", m.link);
                         if (ok) {
                           window.open(m.link, "_blank", "noopener,noreferrer");
                         }
                       }}>
-                      Join
+                      {isSubmitting ? "..." : "Join"}
                     </motion.button>
                   </motion.div>
                 ))}

@@ -142,6 +142,8 @@ export default function ProspectPage() {
   const editMode = getQueryParam("edit") === "1";
 
   const [showAdd, setShowAdd] = useState(false);
+  const [savingNewProspect, setSavingNewProspect] = useState(false);
+  const [savingDetail, setSavingDetail] = useState(false);
   const [successToast, setSuccessToast] = useState("");
   const [openMenuId, setOpenMenuId] = useState<number | null>(null);
   const [menuAnchor, setMenuAnchor] = useState<{ left: number; top?: number; bottom?: number; openUp: boolean } | null>(null);
@@ -311,6 +313,7 @@ export default function ProspectPage() {
       triggerToast("Tanggal dan jam reminder wajib diisi!");
       return;
     }
+    if (savingNewProspect) return;
 
     const initials = newForm.name.trim().split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
     const today = new Date();
@@ -320,6 +323,7 @@ export default function ProspectPage() {
       : "";
     const logTime = nowLogTime();
 
+    setSavingNewProspect(true);
     try {
       const when = newNeedsReminder
         ? new Date(`${newForm.reminderDate}T${newForm.reminderTime}:00`)
@@ -344,6 +348,8 @@ export default function ProspectPage() {
       }
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal menambahkan prospect");
+    } finally {
+      setSavingNewProspect(false);
     }
   };
 
@@ -353,6 +359,7 @@ export default function ProspectPage() {
       triggerToast("Tanggal dan jam reminder wajib diisi!");
       return;
     }
+    if (savingDetail) return;
 
     const reminderStr = editForm.reminderDate
       ? ` Reminder: ${formatDateDisplay(editForm.reminderDate)} ${editForm.reminderTime}`
@@ -370,6 +377,7 @@ export default function ProspectPage() {
       ],
     };
 
+    setSavingDetail(true);
     try {
       const nextDate = needsReminder
         ? new Date(`${editForm.reminderDate}T${editForm.reminderTime}:00`)
@@ -387,6 +395,8 @@ export default function ProspectPage() {
       navigate(`/prospect?detail=${updated.id}`);
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal menyimpan perubahan");
+    } finally {
+      setSavingDetail(false);
     }
   };
 
@@ -593,14 +603,14 @@ export default function ProspectPage() {
                   )}
                 </div>
                 <div className="flex-shrink-0 p-5 border-t" style={{ borderColor: T.border }}>
-                  <button onClick={handleSave} disabled={!canSaveNew}
-                    className="w-full py-3 rounded-xl font-bold transition-all text-center text-white"
+                  <button onClick={handleSave} disabled={!canSaveNew || savingNewProspect}
+                    className="w-full py-3 rounded-xl font-bold transition-all text-center text-white disabled:cursor-not-allowed"
                     style={{
-                      backgroundColor: canSaveNew ? "#E8A500" : "var(--border)",
+                      backgroundColor: canSaveNew && !savingNewProspect ? "#E8A500" : "var(--border)",
                       fontFamily: "'Rajdhani', sans-serif", fontSize: 16,
-                      cursor: canSaveNew ? "pointer" : "not-allowed",
+                      cursor: canSaveNew && !savingNewProspect ? "pointer" : "not-allowed",
                     }}>
-                    Simpan Prospect
+                    {savingNewProspect ? "Menyimpan..." : "Simpan Prospect"}
                   </button>
                 </div>
               </motion.div>
@@ -947,10 +957,11 @@ export default function ProspectPage() {
                   <button
                     type="button"
                     onClick={handleSaveDetail}
-                    className="w-full py-3 rounded-xl font-bold text-white transition-all"
+                    disabled={savingDetail}
+                    className="w-full py-3 rounded-xl font-bold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{ backgroundColor: "#E8A500", fontFamily: "'Rajdhani', sans-serif", fontSize: 16, letterSpacing: "0.04em" }}
                   >
-                    Simpan Perubahan
+                    {savingDetail ? "Menyimpan..." : "Simpan Perubahan"}
                   </button>
                 )}
               </div>

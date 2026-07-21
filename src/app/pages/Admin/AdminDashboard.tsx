@@ -64,6 +64,13 @@ export default function AdminDashboard() {
   const [commissionCounts, setCommissionCounts] = useState({ pending: 0, approved: 0, xpEarnedApproved: 0 });
   const [logs, setLogs] = useState<LogDataItem[]>([]);
   const [eventsCount, setEventsCount] = useState(0);
+  const [agentActionId, setAgentActionId] = useState<number | null>(null);
+  const [toastMsg, setToastMsg] = useState<{ text: string; error?: boolean } | null>(null);
+
+  const triggerToast = (text: string, error?: boolean) => {
+    setToastMsg({ text, error });
+    setTimeout(() => setToastMsg(null), 3000);
+  };
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -147,17 +154,31 @@ export default function AdminDashboard() {
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(amount || 0);
 
   const handleApproveAgent = async (id: number) => {
+    if (agentActionId) return; // guard against spam-click
+    setAgentActionId(id);
     try {
       await api.admin.updateAgentStatus(id, "approve");
       await loadDashboard();
-    } catch {}
+      triggerToast("Agent berhasil disetujui");
+    } catch {
+      triggerToast("Gagal menyetujui agent", true);
+    } finally {
+      setAgentActionId(null);
+    }
   };
 
   const handleSuspendAgent = async (id: number) => {
+    if (agentActionId) return;
+    setAgentActionId(id);
     try {
       await api.admin.updateAgentStatus(id, "suspend");
       await loadDashboard();
-    } catch {}
+      triggerToast("Agent berhasil ditolak");
+    } catch {
+      triggerToast("Gagal menolak agent", true);
+    } finally {
+      setAgentActionId(null);
+    }
   };
 
   const stats = [
@@ -172,6 +193,14 @@ export default function AdminDashboard() {
 
   return (
     <div className="p-4 lg:p-6 max-w-6xl mx-auto space-y-6">
+      {toastMsg && (
+        <div
+          className="fixed top-16 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-2 text-sm font-semibold text-white border"
+          style={{ backgroundColor: toastMsg.error ? "#DC2626" : "#16A34A", borderColor: toastMsg.error ? "rgba(220,38,38,0.2)" : "rgba(22,163,74,0.2)" }}
+        >
+          {toastMsg.text}
+        </div>
+      )}
       <div>
         <h1 style={{ fontFamily: "'Rajdhani', sans-serif", fontWeight: 700, fontSize: 24, color: T.text1 }}>
           Dashboard Admin
@@ -230,19 +259,19 @@ export default function AdminDashboard() {
                   <p className="text-xs" style={{ color: T.text3 }}>{a.office ? `${a.office} · ` : ""}{a.joined}</p>
                 </div>
                 <div className="flex gap-1.5">
-                  <button onClick={() => handleApproveAgent(a.id)} className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-                    style={{ 
-                      backgroundColor: isDark ? "rgba(52, 211, 153, 0.15)" : "#DCFCE7", 
-                      color: isDark ? "#34D399" : "#16A34A" 
+                  <button onClick={() => handleApproveAgent(a.id)} disabled={agentActionId === a.id} className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all hover:opacity-80 disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: isDark ? "rgba(52, 211, 153, 0.15)" : "#DCFCE7",
+                      color: isDark ? "#34D399" : "#16A34A"
                     }}>
-                    Approve
+                    {agentActionId === a.id ? "..." : "Approve"}
                   </button>
-                  <button onClick={() => handleSuspendAgent(a.id)} className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all hover:opacity-80"
-                    style={{ 
-                      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2", 
-                      color: isDark ? "#F87171" : "#DC2626" 
+                  <button onClick={() => handleSuspendAgent(a.id)} disabled={agentActionId === a.id} className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all hover:opacity-80 disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{
+                      backgroundColor: isDark ? "rgba(239, 68, 68, 0.15)" : "#FEE2E2",
+                      color: isDark ? "#F87171" : "#DC2626"
                     }}>
-                    Tolak
+                    {agentActionId === a.id ? "..." : "Tolak"}
                   </button>
                 </div>
               </div>

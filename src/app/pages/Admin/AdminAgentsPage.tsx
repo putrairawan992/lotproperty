@@ -313,6 +313,9 @@ export default function AdminAgentsPage() {
   const [editMentorLabel, setEditMentorLabel] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [reviewingSubmissionId, setReviewingSubmissionId] = useState<number | null>(null);
+  const [resettingPasswordId, setResettingPasswordId] = useState<number | null>(null);
+  const [statusUpdatingId, setStatusUpdatingId] = useState<number | null>(null);
   // Create Agent modal
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newName, setNewName] = useState("");
@@ -469,6 +472,8 @@ export default function AdminAgentsPage() {
   }, [recruitSearch]);
 
   const reviewRecruitSubmission = async (id: number, status: "Approved" | "Rejected") => {
+    if (reviewingSubmissionId) return; // guard against spam-click double approve/reject
+    setReviewingSubmissionId(id);
     try {
       const res = await api.admin.reviewRecruitSubmission(id, status);
       if (status === "Approved" && res?.agent_email && res?.generated_password) {
@@ -480,19 +485,27 @@ export default function AdminAgentsPage() {
       await loadRecruitPendingCount();
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal memproses pengajuan", true);
+    } finally {
+      setReviewingSubmissionId(null);
     }
   };
 
   const resetAgentPassword = async (agentId: number) => {
+    if (resettingPasswordId) return;
+    setResettingPasswordId(agentId);
     try {
       const res = await api.admin.resetAgentPassword(agentId);
       setNewCredentials({ email: res.email, password: res.new_password });
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal reset password", true);
+    } finally {
+      setResettingPasswordId(null);
     }
   };
 
   const updateStatus = async (id: number, status: string) => {
+    if (statusUpdatingId) return; // guard against spam-click double status change
+    setStatusUpdatingId(id);
     const action = status === "Active" ? "reactivate" : status === "Suspended" ? "suspend" : "approve";
     try {
       await api.admin.updateAgentStatus(id, action as "approve" | "suspend" | "reactivate");
@@ -500,6 +513,8 @@ export default function AdminAgentsPage() {
       triggerToast(`Status agent berhasil diubah menjadi ${status}`);
     } catch {
       triggerToast("Gagal mengubah status agent", true);
+    } finally {
+      setStatusUpdatingId(null);
     }
     setOpenDropdownId(null);
   };
@@ -1239,23 +1254,26 @@ export default function AdminAgentsPage() {
                         {s.status === "Pending" ? (
                           <>
                             <button onClick={() => reviewRecruitSubmission(s.id, "Rejected")}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                              disabled={reviewingSubmissionId === s.id}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                               style={{ borderColor: "rgba(220,38,38,0.3)", color: "#DC2626" }}>
                               Tolak
                             </button>
                             <button onClick={() => reviewRecruitSubmission(s.id, "Approved")}
-                              className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all"
+                              disabled={reviewingSubmissionId === s.id}
+                              className="px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                               style={{ backgroundColor: "#16A34A" }}>
-                              Approve
+                              {reviewingSubmissionId === s.id ? "Memproses..." : "Approve"}
                             </button>
                           </>
                         ) : (
                           <>
                             {s.status === "Approved" && s.created_agent_id && (
                               <button onClick={() => resetAgentPassword(s.created_agent_id)}
-                                className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all"
+                                disabled={resettingPasswordId === s.created_agent_id}
+                                className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all disabled:opacity-60 disabled:cursor-not-allowed"
                                 style={{ borderColor: T.border, color: T.text2 }}>
-                                Reset & Salin Password
+                                {resettingPasswordId === s.created_agent_id ? "Memproses..." : "Reset & Salin Password"}
                               </button>
                             )}
                             <span className="px-3 py-1.5 rounded-lg text-xs font-bold"

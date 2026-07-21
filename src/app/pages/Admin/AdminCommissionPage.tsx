@@ -113,6 +113,13 @@ export default function AdminCommissionPage() {
   const [updatingHelpId, setUpdatingHelpId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState("");
 
+  // Loading guards — prevent spam-click double-submits on approve/reject actions.
+  const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectSubmitting, setRejectSubmitting] = useState(false);
+  const [approvingAll, setApprovingAll] = useState(false);
+  const [bulkApproving, setBulkApproving] = useState(false);
+  const [bulkRejectSubmitting, setBulkRejectSubmitting] = useState(false);
+
   // Action Dropdown State
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null);
@@ -210,32 +217,47 @@ export default function AdminCommissionPage() {
 
   // Commission Actions
   const approveCommission = async (id: string) => {
+    if (approvingId) return; // guard against spam-click while one is in flight
+    setApprovingId(id);
     try {
       await api.admin.reviewCommission(id, "Approved");
       setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+      // Only close the detail modal if it's still showing THIS claim — never
+      // close it on failure, so the admin can see the error and retry.
+      setDetailClaim(prev => (prev?.id === id ? null : prev));
       triggerToast("Klaim komisi disetujui!");
       await loadData();
     } catch {
       triggerToast("Gagal menyetujui klaim");
+    } finally {
+      setApprovingId(null);
     }
   };
 
   const rejectCommission = async (id: string, reason: string) => {
+    if (rejectSubmitting) return;
+    setRejectSubmitting(true);
     try {
       await api.admin.reviewCommission(id, "Rejected", reason);
       setSelectedIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+      // Only clear/close on success — a failed reject keeps the modal (and the
+      // reason the admin typed) intact so they can see the error and retry.
+      setRejectId(null);
+      setRejectReason("");
       triggerToast("Klaim komisi ditolak");
       await loadData();
     } catch {
       triggerToast("Gagal menolak klaim");
+    } finally {
+      setRejectSubmitting(false);
     }
-    setRejectId(null);
-    setRejectReason("");
   };
 
   // Bulk actions — one backend request each (server loops internally), instead
   // of the frontend firing N sequential/chunked HTTP calls.
   const approveAllCommissions = async () => {
+    if (approvingAll) return;
+    setApprovingAll(true);
     try {
       const res = await api.admin.approveAllPendingCommissions();
       setPage(1);
@@ -243,6 +265,8 @@ export default function AdminCommissionPage() {
       triggerToast(`${res.succeeded} klaim pending disetujui!${res.failed ? ` (${res.failed} gagal)` : ""}`);
     } catch {
       triggerToast("Gagal menyetujui semua klaim");
+    } finally {
+      setApprovingAll(false);
     }
   };
 
@@ -304,7 +328,9 @@ export default function AdminCommissionPage() {
   }, [isAllSelected, pendingFiltered]);
 
   const approveSelected = async () => {
+    if (bulkApproving) return;
     const ids = [...selectedIds];
+    setBulkApproving(true);
     try {
       const res = await api.admin.bulkReviewCommissions(ids, "Approved");
       setSelectedIds(new Set());
@@ -312,11 +338,15 @@ export default function AdminCommissionPage() {
       triggerToast(`${res.succeeded} klaim disetujui!${res.failed ? ` (${res.failed} gagal)` : ""}`);
     } catch {
       triggerToast("Gagal menyetujui klaim terpilih");
+    } finally {
+      setBulkApproving(false);
     }
   };
 
   const rejectSelected = async (reason: string) => {
+    if (bulkRejectSubmitting) return;
     const ids = [...selectedIds];
+    setBulkRejectSubmitting(true);
     try {
       const res = await api.admin.bulkReviewCommissions(ids, "Rejected", reason);
       setSelectedIds(new Set());
@@ -326,6 +356,8 @@ export default function AdminCommissionPage() {
       triggerToast(`${res.succeeded} klaim ditolak!${res.failed ? ` (${res.failed} gagal)` : ""}`);
     } catch {
       triggerToast("Gagal menolak klaim terpilih");
+    } finally {
+      setBulkRejectSubmitting(false);
     }
   };
 
@@ -372,12 +404,13 @@ export default function AdminCommissionPage() {
           {activeMainTab === "komisi" && commissionSubTab === "Pending" && pendingClaimsCount > 0 && (
             <button
               onClick={approveAllCommissions}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all flex-shrink-0 cursor-pointer"
+              disabled={approvingAll}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-xs transition-all flex-shrink-0 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               style={{ backgroundColor: "#16A34A", color: "white", fontFamily: "'Rajdhani', sans-serif" }}
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = "#15803D")}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = "#16A34A")}
             >
-              <Check size={14} /> Approve All ({pendingClaimsCount})
+              <Check size={14} /> {approvingAll ? "Memproses..." : `Approve All (${pendingClaimsCount})`}
             </button>
           )}
         </div>
@@ -489,11 +522,11 @@ export default function AdminCommissionPage() {
                         </button>
                         {commissionSubTab === "Pending" && (
                           <>
-                            <button onClick={() => setRejectId(c.id)} className="flex-1 py-2 rounded-xl text-xs font-bold border border-red-500 text-red-500 cursor-pointer hover:bg-red-500/10 transition-colors">
+                            <button onClick={() => setRejectId(c.id)} disabled={approvingId === c.id} className="flex-1 py-2 rounded-xl text-xs font-bold border border-red-500 text-red-500 cursor-pointer hover:bg-red-500/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
                               Tolak
                             </button>
-                            <button onClick={() => approveCommission(c.id)} className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700 transition-colors">
-                              Approve
+                            <button onClick={() => approveCommission(c.id)} disabled={approvingId === c.id} className="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed">
+                              {approvingId === c.id ? "Memproses..." : "Approve"}
                             </button>
                           </>
                         )}
@@ -516,10 +549,11 @@ export default function AdminCommissionPage() {
                     <div className="flex-1" />
                     <button
                       onClick={approveSelected}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700 transition-colors"
+                      disabled={bulkApproving}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-[#16A34A] cursor-pointer hover:bg-green-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                       style={{ fontFamily: "'Rajdhani', sans-serif" }}
                     >
-                      <Check size={14} /> Approve Selected
+                      <Check size={14} /> {bulkApproving ? "Memproses..." : "Approve Selected"}
                     </button>
                     <button
                       onClick={() => setBulkRejectMode(true)}
@@ -624,7 +658,8 @@ export default function AdminCommissionPage() {
                                   {commissionSubTab === "Pending" && (
                                     <>
                                       <button onClick={() => { approveCommission(c.id); setOpenDropdownId(null); }}
-                                        className="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-muted flex items-center gap-2 transition-colors cursor-pointer"
+                                        disabled={approvingId === c.id}
+                                        className="w-full text-left px-4 py-2 text-xs font-semibold hover:bg-muted flex items-center gap-2 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                                         style={{ color: "#16A34A" }}>
                                         <Check size={13} /> Approve
                                       </button>
@@ -756,8 +791,10 @@ export default function AdminCommissionPage() {
               style={{ borderColor: T.border, color: T.text1 }}
             />
             <div className="flex justify-end gap-3 mt-4">
-              <button onClick={() => { setBulkRejectMode(false); setBulkRejectReason(""); }} className="px-4 py-2 border rounded-xl text-xs font-semibold cursor-pointer" style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
-              <button onClick={() => rejectSelected(bulkRejectReason)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-red-700">Tolak {selectedIds.size} Klaim</button>
+              <button onClick={() => { setBulkRejectMode(false); setBulkRejectReason(""); }} disabled={bulkRejectSubmitting} className="px-4 py-2 border rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
+              <button onClick={() => rejectSelected(bulkRejectReason)} disabled={bulkRejectSubmitting} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                {bulkRejectSubmitting ? "Memproses..." : `Tolak ${selectedIds.size} Klaim`}
+              </button>
             </div>
           </div>
         </div>
@@ -766,7 +803,7 @@ export default function AdminCommissionPage() {
       {/* Reject Reason Dialog (Commissions) */}
       {rejectId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div onClick={() => setRejectId(null)} className="absolute inset-0 bg-black/60" />
+          <div onClick={() => !rejectSubmitting && setRejectId(null)} className="absolute inset-0 bg-black/60" />
           <div className="bg-card w-full max-w-md rounded-3xl border shadow-2xl relative z-10 p-6" style={{ borderColor: T.border }}>
             <h3 className="font-bold text-lg font-display text-left mb-3" style={{ color: T.text1 }}>Tolak Klaim Komisi</h3>
             <textarea
@@ -777,8 +814,10 @@ export default function AdminCommissionPage() {
               style={{ borderColor: T.border, color: T.text1 }}
             />
             <div className="flex justify-end gap-3 mt-4">
-              <button onClick={() => setRejectId(null)} className="px-4 py-2 border rounded-xl text-xs font-semibold cursor-pointer" style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
-              <button onClick={() => rejectCommission(rejectId, rejectReason)} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-red-700">Tolak Klaim</button>
+              <button onClick={() => setRejectId(null)} disabled={rejectSubmitting} className="px-4 py-2 border rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed" style={{ borderColor: T.border, color: T.text3 }}>Batal</button>
+              <button onClick={() => rejectCommission(rejectId, rejectReason)} disabled={rejectSubmitting} className="px-4 py-2 bg-red-500 text-white rounded-xl text-xs font-bold cursor-pointer hover:bg-red-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                {rejectSubmitting ? "Memproses..." : "Tolak Klaim"}
+              </button>
             </div>
           </div>
         </div>
@@ -844,8 +883,13 @@ export default function AdminCommissionPage() {
 
             {detailClaim.status === "Pending" && (
               <div className="px-6 py-4 border-t flex justify-end gap-3 flex-shrink-0" style={{ borderColor: T.border }}>
-                <button onClick={() => { setRejectId(detailClaim.id); setDetailClaim(null); }} className="px-4 py-2 rounded-xl text-xs font-bold border border-red-500 text-red-500 hover:bg-red-500/10">Tolak</button>
-                <button onClick={() => { approveCommission(detailClaim.id); setDetailClaim(null); }} className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#16A34A] hover:bg-green-700">Approve</button>
+                <button onClick={() => { setRejectId(detailClaim.id); setDetailClaim(null); }} disabled={approvingId === detailClaim.id} className="px-4 py-2 rounded-xl text-xs font-bold border border-red-500 text-red-500 hover:bg-red-500/10 disabled:opacity-60 disabled:cursor-not-allowed">Tolak</button>
+                {/* Closing on approve is handled inside approveCommission itself (only on
+                    success) — do NOT also close it here, or a failed approval silently
+                    closes the modal and hides the error toast from the admin. */}
+                <button onClick={() => approveCommission(detailClaim.id)} disabled={approvingId === detailClaim.id} className="px-4 py-2 rounded-xl text-xs font-bold text-white bg-[#16A34A] hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed">
+                  {approvingId === detailClaim.id ? "Memproses..." : "Approve"}
+                </button>
               </div>
             )}
           </div>

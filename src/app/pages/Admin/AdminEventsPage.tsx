@@ -293,6 +293,7 @@ export default function AdminEventsPage() {
       handleToggleForm();
     } catch (err) {
       notify(err instanceof Error ? err.message : "Gagal menyimpan event", "error");
+    } finally {
       setSaving(false);
     }
   };

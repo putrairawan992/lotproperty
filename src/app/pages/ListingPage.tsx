@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search, Plus, MapPin, MoreHorizontal, X, Download, Check,
-  ChevronRight, Eye, ToggleLeft, Archive, Trash2, MessageCircle, Home
+  ChevronRight, Eye, Pencil, ToggleLeft, Archive, Trash2, MessageCircle, Home
 } from "lucide-react";
 import Card from "../components/Card";
 import AdminPagination from "../components/AdminPagination";
@@ -149,6 +149,8 @@ export default function ListingPage() {
 
   const [listings, setListings] = useState<Listing[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [savingListing, setSavingListing] = useState(false);
   const [typeFilter, setTypeFilter] = useState("");
   const [listingTypeFilter, setListingTypeFilter] = useState("");
   const [page, setPage] = useState(1);
@@ -258,37 +260,73 @@ export default function ListingPage() {
     form.price.trim() &&
     form.type.trim();
 
+  const closePanel = () => {
+    setShowPanel(false);
+    setForm(EMPTY_FORM);
+    setEditingId(null);
+  };
+
+  const openEditListing = (l: Listing) => {
+    setOpenMenuId(null);
+    setForm({
+      owner: l.owner,
+      phone: l.phone,
+      address: l.address,
+      price: l.price ? formatThousands(String(parseIDR(l.price))) : "",
+      type: l.type,
+      listingType: l.listingType,
+      landArea: l.landArea !== "—" ? String(parseIDR(l.landArea)) : "",
+      buildingArea: l.buildingArea !== "—" ? String(parseIDR(l.buildingArea)) : "",
+      floors: l.floors !== "—" ? String(parseIDR(l.floors)) : "",
+      certificate: l.certificate !== "—" ? l.certificate : "",
+      commission: l.commission !== "—" ? l.commission : "",
+      notes: l.notes !== "—" ? l.notes : "",
+    });
+    setEditingId(l.id);
+    setShowPanel(true);
+  };
+
   const handleSaveListing = async () => {
-    if (!isFormValid) return;
+    if (!isFormValid || savingListing) return;
+    setSavingListing(true);
+
+    const payload = {
+      owner_name: form.owner.trim(),
+      phone: form.phone.trim(),
+      address: form.address.trim(),
+      price: parseIDR(form.price),
+      property_type: form.type,
+      listing_type: form.listingType,
+      luas_tanah: form.landArea.trim() ? parseIDR(form.landArea) : 0,
+      luas_bangunan: form.buildingArea.trim() ? parseIDR(form.buildingArea) : 0,
+      jumlah_lantai: form.floors.trim() ? parseIDR(form.floors) : 0,
+      certificate: form.certificate.trim(),
+      commission_percent: form.commission.trim(),
+      notes: form.notes.trim(),
+    };
 
     try {
-      const res = await api.listings.create({
-        owner_name: form.owner.trim(),
-        phone: form.phone.trim(),
-        address: form.address.trim(),
-        price: parseIDR(form.price),
-        property_type: form.type,
-        listing_type: form.listingType,
-        luas_tanah: form.landArea.trim() ? parseIDR(form.landArea) : 0,
-        luas_bangunan: form.buildingArea.trim() ? parseIDR(form.buildingArea) : 0,
-        jumlah_lantai: form.floors.trim() ? parseIDR(form.floors) : 0,
-        certificate: form.certificate.trim(),
-        commission_percent: form.commission.trim(),
-        notes: form.notes.trim(),
-      });
+      if (editingId) {
+        await api.listings.update(editingId, payload);
+        closePanel();
+        setSuccessToast("Listing berhasil diperbarui");
+        await loadListings();
+      } else {
+        const res = await api.listings.create(payload);
+        closePanel();
+        setSuccessToast("Listing baru berhasil ditambahkan!");
+        await loadListings();
+        await refreshUser();
 
-      setShowPanel(false);
-      setForm(EMPTY_FORM);
-      setSuccessToast("Listing baru berhasil ditambahkan!");
-      await loadListings();
-      await refreshUser();
-
-      const xpEarned = Number(res?.xp_earned || 0);
-      if (xpEarned > 0) {
-        showQuestComplete({ name: "New Listing", xp: xpEarned, overkill: !!res?.is_overkill });
+        const xpEarned = Number(res?.xp_earned || 0);
+        if (xpEarned > 0) {
+          showQuestComplete({ name: "New Listing", xp: xpEarned, overkill: !!res?.is_overkill });
+        }
       }
     } catch (error) {
-      setSuccessToast(error instanceof Error ? error.message : "Gagal menambahkan listing");
+      setSuccessToast(error instanceof Error ? error.message : (editingId ? "Gagal memperbarui listing" : "Gagal menambahkan listing"));
+    } finally {
+      setSavingListing(false);
     }
 
     setTimeout(() => setSuccessToast(""), 3000);
@@ -308,7 +346,7 @@ export default function ListingPage() {
 
   const updateStatus = async (id: string, status: Listing["status"]) => {
     try {
-      await api.listings.update(id, status);
+      await api.listings.update(id, { status });
       setListings(prev => prev.map(l => l.id === id ? { ...l, status } : l));
       setOpenMenuId(null);
       setSuccessToast(`Status listing diubah menjadi ${status}`);
@@ -387,6 +425,7 @@ export default function ListingPage() {
           >
             {[
               { label: "Lihat Detail", icon: Eye, action: () => openDetail(listing.id) },
+              { label: "Edit", icon: Pencil, action: () => openEditListing(listing) },
               { label: listing.status === "Active" ? "Set Inactive" : "Set Active", icon: ToggleLeft, action: () => updateStatus(listing.id, listing.status === "Active" ? "Inactive" : "Active") },
               { label: "Tandai Closed", icon: Archive, action: () => updateStatus(listing.id, "Closed"), hide: listing.status === "Closed" },
               { label: "Hapus", icon: Trash2, action: () => deleteListing(listing.id), danger: true },
@@ -627,7 +666,7 @@ export default function ListingPage() {
         <AnimatePresence>
           {showPanel && (
             <div className="fixed inset-0 z-[60] flex justify-end">
-              <div className="absolute inset-0 bg-black/45" onClick={() => setShowPanel(false)} aria-hidden />
+              <div className="absolute inset-0 bg-black/45" onClick={closePanel} aria-hidden />
               <motion.div
                 className="relative z-10 w-full h-full flex flex-col bg-card shadow-2xl"
                 style={{ maxWidth: 420 }}
@@ -636,8 +675,8 @@ export default function ListingPage() {
                 onClick={e => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between px-5 py-4 border-b flex-shrink-0" style={{ borderColor: T.border }}>
-                  <h3 className="font-bold font-display text-lg" style={{ color: T.text1 }}>Tambah New Listing</h3>
-                  <button onClick={() => setShowPanel(false)} style={{ color: T.text3 }}><X size={20} /></button>
+                  <h3 className="font-bold font-display text-lg" style={{ color: T.text1 }}>{editingId ? "Edit Listing" : "Tambah New Listing"}</h3>
+                  <button onClick={closePanel} style={{ color: T.text3 }}><X size={20} /></button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-5 space-y-5 min-h-0">
@@ -762,17 +801,17 @@ export default function ListingPage() {
                 <div className="flex-shrink-0 p-5 border-t bg-card" style={{ borderColor: T.border }}>
                   <button
                     onClick={handleSaveListing}
-                    disabled={!isFormValid}
-                    className="w-full py-3 rounded-xl font-bold transition-all text-white text-center"
+                    disabled={!isFormValid || savingListing}
+                    className="w-full py-3 rounded-xl font-bold transition-all text-white text-center disabled:cursor-not-allowed"
                     style={{
-                      backgroundColor: isFormValid ? "#E8A500" : "var(--border)",
+                      backgroundColor: isFormValid && !savingListing ? "#E8A500" : "var(--border)",
                       fontFamily: "'Rajdhani', sans-serif",
                       fontSize: 16,
                       letterSpacing: "0.04em",
-                      cursor: isFormValid ? "pointer" : "not-allowed",
+                      cursor: isFormValid && !savingListing ? "pointer" : "not-allowed",
                     }}
                   >
-                    Simpan Listing
+                    {savingListing ? "Menyimpan..." : editingId ? "Simpan Perubahan" : "Simpan Listing"}
                   </button>
                 </div>
               </motion.div>

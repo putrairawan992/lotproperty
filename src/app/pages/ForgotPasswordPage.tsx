@@ -38,10 +38,18 @@ export default function ForgotPasswordPage({
     setToastMsg("");
     setSending(true);
     try {
+      // Backend always replies 200 regardless of whether the email is
+      // registered (anti-enumeration) — a thrown error here means the
+      // request itself genuinely failed (network/server error), not that
+      // the email doesn't exist. Only show the "sent" screen once we know
+      // the request actually went through.
       await api.auth.forgotPassword(email.trim());
-    } catch {}
-    setSending(false);
-    setSubmitted(true);
+      setSubmitted(true);
+    } catch (error) {
+      setToastMsg(error instanceof Error ? error.message : "Gagal mengirim link reset. Coba lagi.");
+    } finally {
+      setSending(false);
+    }
   };
 
   if (submitted) {

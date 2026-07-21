@@ -268,6 +268,9 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const [eventCameraActive, setEventCameraActive] = useState(false);
   const [eventCode, setEventCode] = useState("");
   const [submittingEventCode, setSubmittingEventCode] = useState(false);
+  const [submittingRecruit, setSubmittingRecruit] = useState(false);
+  const [submittingContent, setSubmittingContent] = useState(false);
+  const [submittingPromo, setSubmittingPromo] = useState(false);
 
   const [successToast, setSuccessToast] = useState("");
   const [toastIsError, setToastIsError] = useState(false);
@@ -456,6 +459,8 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   const handleRecruitSubmit = async () => {
     if (!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.phone.trim()) return;
     if (recruitForm.ktm && recruitForm.ktm.length !== 16) return;
+    if (submittingRecruit) return;
+    setSubmittingRecruit(true);
     try {
       await api.quests.submitRecruit(recruitForm.name.trim(), recruitForm.email.trim().toLowerCase(), recruitForm.phone.trim(), recruitForm.ktm.trim());
       setSkillQuests(prev => prev.map(q => q.id === "new_recruit" ? { ...q, status: "pending" } : q));
@@ -464,6 +469,8 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       triggerToast("Bukti rekrutmen berhasil dikirim! Menunggu approval Admin.");
     } catch (error) {
       triggerToast(error instanceof Error ? error.message : "Gagal mengirim bukti rekrutmen", true);
+    } finally {
+      setSubmittingRecruit(false);
     }
   };
 
@@ -487,8 +494,9 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   };
 
   const handleContentSubmit = async () => {
-    if (!contentUrl.trim()) return;
+    if (!contentUrl.trim() || submittingContent) return;
     setContentError("");
+    setSubmittingContent(true);
     try {
       const res = await api.quests.submitContent(contentUrl.trim());
       const xp = Number(res?.xp_earned || 0);
@@ -505,12 +513,15 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       // Shown inline in the modal (not the page-level toast) so it never visually
       // overlaps the still-open "Submit Link Konten" modal.
       setContentError(error instanceof Error ? error.message : "Gagal submit konten");
+    } finally {
+      setSubmittingContent(false);
     }
   };
 
   const handlePromoSubmit = async () => {
-    if (!promoUrl.trim()) return;
+    if (!promoUrl.trim() || submittingPromo) return;
     setPromoError("");
+    setSubmittingPromo(true);
     try {
       const res = await api.quests.submitPromotion(promoUrl.trim());
       const xp = Number(res?.xp_earned || 0);
@@ -527,6 +538,8 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       // Shown inline in the modal (not the page-level toast) so it never visually
       // overlaps the still-open "Listing Promotion" modal.
       setPromoError(error instanceof Error ? error.message : "Gagal submit promosi listing");
+    } finally {
+      setSubmittingPromo(false);
     }
   };
 
@@ -862,10 +875,10 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               </div>
               <div className="px-6 py-4 border-t flex gap-2 justify-end bg-muted/10" style={{ borderColor: T.border }}>
                 <button onClick={() => setShowRecruitModal(false)} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
-                <button onClick={handleRecruitSubmit} disabled={!recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.phone.trim() || (recruitForm.ktm.length > 0 && recruitForm.ktm.length !== 16)}
-                  className="px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 text-white animate-pulse"
-                  style={{ backgroundColor: recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.phone.trim() && (recruitForm.ktm.length === 0 || recruitForm.ktm.length === 16) ? "#E8A500" : "var(--border)", cursor: recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.phone.trim() && (recruitForm.ktm.length === 0 || recruitForm.ktm.length === 16) ? "pointer" : "not-allowed" }}>
-                  <Send size={14} /> Submit Bukti
+                <button onClick={handleRecruitSubmit} disabled={submittingRecruit || !recruitForm.name.trim() || !recruitForm.email.trim() || !recruitForm.phone.trim() || (recruitForm.ktm.length > 0 && recruitForm.ktm.length !== 16)}
+                  className="px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 text-white animate-pulse disabled:cursor-not-allowed"
+                  style={{ backgroundColor: !submittingRecruit && recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.phone.trim() && (recruitForm.ktm.length === 0 || recruitForm.ktm.length === 16) ? "#E8A500" : "var(--border)", cursor: !submittingRecruit && recruitForm.name.trim() && recruitForm.email.trim() && recruitForm.phone.trim() && (recruitForm.ktm.length === 0 || recruitForm.ktm.length === 16) ? "pointer" : "not-allowed" }}>
+                  <Send size={14} /> {submittingRecruit ? "Mengirim..." : "Submit Bukti"}
                 </button>
               </div>
             </motion.div>
@@ -935,10 +948,10 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               </div>
               <div className="px-6 py-4 border-t flex gap-2 justify-end bg-muted/10" style={{ borderColor: T.border }}>
                 <button onClick={closeContentModal} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
-                <button onClick={handleContentSubmit} disabled={!contentUrl.trim()}
-                  className="px-5 py-2 rounded-xl text-sm font-bold transition-all text-white"
-                  style={{ backgroundColor: contentUrl.trim() ? "#E8A500" : "var(--border)", cursor: contentUrl.trim() ? "pointer" : "not-allowed" }}>
-                  Klaim XP
+                <button onClick={handleContentSubmit} disabled={submittingContent || !contentUrl.trim()}
+                  className="px-5 py-2 rounded-xl text-sm font-bold transition-all text-white disabled:cursor-not-allowed"
+                  style={{ backgroundColor: !submittingContent && contentUrl.trim() ? "#E8A500" : "var(--border)", cursor: !submittingContent && contentUrl.trim() ? "pointer" : "not-allowed" }}>
+                  {submittingContent ? "Mengirim..." : "Klaim XP"}
                 </button>
               </div>
             </motion.div>
@@ -1004,10 +1017,10 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
               </div>
               <div className="px-6 py-4 border-t flex gap-2 justify-end bg-muted/10" style={{ borderColor: T.border }}>
                 <button onClick={closePromoModal} className="px-4 py-2 rounded-xl text-sm font-semibold transition-all" style={{ color: T.text3 }}>Batal</button>
-                <button onClick={handlePromoSubmit} disabled={!promoUrl.trim()}
-                  className="px-5 py-2 rounded-xl text-sm font-bold transition-all text-white"
-                  style={{ backgroundColor: promoUrl.trim() ? "#E8A500" : "var(--border)", cursor: promoUrl.trim() ? "pointer" : "not-allowed" }}>
-                  Klaim XP
+                <button onClick={handlePromoSubmit} disabled={submittingPromo || !promoUrl.trim()}
+                  className="px-5 py-2 rounded-xl text-sm font-bold transition-all text-white disabled:cursor-not-allowed"
+                  style={{ backgroundColor: !submittingPromo && promoUrl.trim() ? "#E8A500" : "var(--border)", cursor: !submittingPromo && promoUrl.trim() ? "pointer" : "not-allowed" }}>
+                  {submittingPromo ? "Mengirim..." : "Klaim XP"}
                 </button>
               </div>
             </motion.div>

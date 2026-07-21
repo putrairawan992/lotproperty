@@ -50,7 +50,7 @@ function EventBannerSlide({
       >
         {/* Mobile: stacked, nothing overlapping the image */}
         <div className="sm:hidden">
-          <img src={event.banner} alt={event.title} className="w-full aspect-[16/9] object-cover block" />
+          <img src={event.banner} alt={event.title} className="w-full h-auto object-contain block" />
           <div className="p-3 space-y-2.5">
             <span className="inline-block bg-[#E53E3E] text-white px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-lg shadow-md tracking-wider">
               SPESIAL EVENT
@@ -94,7 +94,7 @@ function EventBannerSlide({
           <img
             src={event.banner}
             alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover z-0"
+            className="absolute inset-0 w-full h-full object-contain z-0"
           />
           <div
             className="absolute inset-0 z-10"

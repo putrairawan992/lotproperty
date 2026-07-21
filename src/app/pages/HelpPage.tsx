@@ -27,6 +27,7 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
   const [fbSubject, setFbSubject] = useState("");
   const [fbMessage, setFbMessage] = useState("");
   const [fbError, setFbError] = useState("");
+  const [submittingFb, setSubmittingFb] = useState(false);
   const [fbHistory, setFbHistory] = useState<any[]>([]);
 
   const formatDate = (v: string) => {
@@ -72,7 +73,9 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
       showToast("Subjek dan isi pesan kritik/saran wajib diisi!");
       return;
     }
+    if (submittingFb) return;
     setFbError("");
+    setSubmittingFb(true);
 
     try {
       const res = await api.help.submitFeedback({
@@ -95,6 +98,8 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
       showToast("Feedback kritik & saran berhasil dikirim ke Management!");
     } catch (err: any) {
       showToast(err?.message || "Gagal mengirim feedback.");
+    } finally {
+      setSubmittingFb(false);
     }
   };
 
@@ -528,8 +533,8 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                         style={{ borderColor: T.border }} />
                     </div>
 
-                    <button type="submit" className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md">
-                      Kirim Feedback
+                    <button type="submit" disabled={submittingFb} className="w-full py-3 rounded-xl bg-[#E8A500] hover:bg-[#CC9200] text-black font-bold text-xs uppercase tracking-wider transition-all shadow-md disabled:opacity-60 disabled:cursor-not-allowed">
+                      {submittingFb ? "Mengirim..." : "Kirim Feedback"}
                     </button>
                   </form>
                 </Card>
