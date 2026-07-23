@@ -30,17 +30,17 @@ function EventBannerSlide({
   const xpFormatted = event.xpPool.toLocaleString("id-ID");
 
   // A custom-uploaded banner already carries its own full design (title, dates,
-  // checklist, etc. baked into the image). On mobile there's no room to also
-  // overlay text/badges on top of it without colliding — so on mobile it's a
-  // plain stacked layout: image in normal flow (nothing on top of it), then
-  // the badge and CTA sit BELOW it. On sm+ there's enough room for the richer
-  // absolute-overlay design, so that stays as before.
+  // checklist, etc. baked into the image) — overlaying a SECOND title/tagline
+  // on top of it (the old sm+ design) just duplicated the same text and made
+  // it unreadable. So at every breakpoint: image in normal flow (nothing drawn
+  // on top of it except the small corner ribbon), then Periode/XP badges and
+  // the CTA sit BELOW it — same structure as mobile, just roomier on desktop.
   const hasCustomBanner = Boolean(event.banner);
 
   if (hasCustomBanner) {
     return (
       <Card
-        className="overflow-hidden shadow-md event-banner p-0 sm:p-5 sm:relative sm:min-h-[220px] md:min-h-[260px] sm:flex sm:flex-col sm:justify-between"
+        className="overflow-hidden shadow-md event-banner p-0"
         style={{
           borderColor: isDark ? "#C8922A35" : "#E8A50035",
           background: isDark
@@ -48,125 +48,44 @@ function EventBannerSlide({
             : "linear-gradient(135deg, #FFF9F2 0%, #F5F7FA 100%)",
         }}
       >
-        {/* Mobile: stacked, nothing overlapping the image */}
-        <div className="sm:hidden">
+        <div className="relative">
           <img src={event.banner} alt={event.title} className="w-full h-auto object-contain block" />
-          <div className="p-3 space-y-2.5">
-            <span className="inline-block bg-[#E53E3E] text-white px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-lg shadow-md tracking-wider">
-              SPESIAL EVENT
-            </span>
-
-            <div className="flex items-center gap-2">
-              <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-card/60 min-w-0" style={{ borderColor: T.border }}>
-                <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: T.text3 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                </svg>
-                <div className="min-w-0">
-                  <p style={{ fontSize: 7, color: T.text3, textTransform: "uppercase", lineHeight: 1 }}>Periode</p>
-                  <p className="font-bold text-[10px] leading-tight truncate" style={{ color: T.text1 }}>{period}</p>
-                </div>
-              </div>
-
-              <div className="flex-1 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border bg-card/60 min-w-0" style={{ borderColor: T.border }}>
-                <span className="text-[9px] font-black text-[#E8A500] flex-shrink-0" style={{ fontFamily: "var(--font-display)" }}>XP</span>
-                <div className="min-w-0">
-                  <p style={{ fontSize: 7, color: T.text3, textTransform: "uppercase", lineHeight: 1 }}>Hadiah</p>
-                  <p className="font-bold text-[10px] leading-tight truncate text-[#E8A500]">{xpFormatted} XP</p>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => onEventDetail ? onEventDetail(event.id) : onNav("event")}
-              className="w-full px-4 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#E8A500] hover:bg-[#CC9200] text-black transition-all shadow-md active:scale-95"
-              style={{ fontFamily: "var(--font-display)" }}
-            >
-              Lihat Detail <ChevronRight size={14} />
-            </button>
+          <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#E53E3E] text-white px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-extrabold uppercase rounded-lg -rotate-6 transform shadow-md tracking-wider">
+            SPESIAL EVENT
           </div>
         </div>
 
-        {/* sm+: richer absolute-overlay design */}
-        <div className="hidden sm:block relative flex-1">
-          <img
-            src={event.banner}
-            alt={event.title}
-            className="absolute inset-0 w-full h-full object-contain z-0"
-          />
-          <div
-            className="absolute inset-0 z-10"
-            style={{
-              background: isDark
-                ? "linear-gradient(90deg, rgba(23,14,8,0.65) 0%, rgba(23,14,8,0.30) 50%, rgba(16,12,22,0.02) 100%)"
-                : "linear-gradient(90deg, rgba(255,249,242,0.65) 0%, rgba(255,249,242,0.30) 50%, rgba(245,247,250,0.02) 100%)"
-            }}
-          />
-
-          <div className="absolute top-2 left-2 bg-[#E53E3E] text-white px-2 py-0.5 text-[9px] font-extrabold uppercase rounded-lg -rotate-6 transform shadow-md z-20 tracking-wider">
-            SPESIAL EVENT
-          </div>
-
-          <div className="relative z-10 h-full flex flex-col justify-between">
-            <div>
-              <p className="font-extrabold tracking-wider text-[11px] md:text-xs mb-0.5" style={{ color: T.text3, letterSpacing: "0.08em" }}>
-                {event.subtitle}
-              </p>
-              <h3
-                className="font-black text-2xl md:text-3xl italic uppercase tracking-wide leading-none mb-2"
-                style={{
-                  fontFamily: "var(--font-display)",
-                  color: event.accentColor,
-                  textShadow: isDark ? `0 2px 10px ${event.accentColor}4D` : "none",
-                }}
-              >
-                {event.heading}
-              </h3>
-              <p className="text-xs md:text-sm max-w-[50%] mb-4" style={{ color: T.text2, lineHeight: 1.25 }}>
-                {event.tagline}{" "}
-                {event.taglineHighlight && (
-                  <strong className="text-[#E8A500]">{event.taglineHighlight}</strong>
-                )}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2 mt-auto">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-card/60 backdrop-blur-sm" style={{ borderColor: T.border }}>
-                  <svg className="w-4 h-4 flex-shrink-0" style={{ color: T.text3 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </svg>
-                  <div className="text-left">
-                    <p style={{ fontSize: 7, color: T.text3, textTransform: "uppercase", lineHeight: 1 }}>Periode</p>
-                    <p className="font-bold text-[10px] md:text-xs leading-tight" style={{ color: T.text1 }}>{period}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border bg-card/60 backdrop-blur-sm" style={{ borderColor: T.border }}>
-                  <div className="w-5 h-5 flex items-center justify-center rounded-lg bg-[#E8A500]/10 border border-[#E8A500]/20 flex-shrink-0">
-                    <span className="text-[9px] font-black text-[#E8A500]" style={{ fontFamily: "var(--font-display)" }}>XP</span>
-                  </div>
-                  <div className="text-left">
-                    <p style={{ fontSize: 7, color: T.text3, textTransform: "uppercase", lineHeight: 1 }}>Hadiah</p>
-                    <p className="font-bold text-[10px] md:text-xs leading-tight text-[#E8A500]">{xpFormatted} XP</p>
-                  </div>
-                </div>
+        <div className="p-3 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex-1 sm:flex-none flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border bg-card/60 min-w-0" style={{ borderColor: T.border }}>
+              <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: T.text3 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                <line x1="16" y1="2" x2="16" y2="6" />
+                <line x1="8" y1="2" x2="8" y2="6" />
+                <line x1="3" y1="10" x2="21" y2="10" />
+              </svg>
+              <div className="min-w-0">
+                <p style={{ fontSize: 7, color: T.text3, textTransform: "uppercase", lineHeight: 1 }}>Periode</p>
+                <p className="font-bold text-[10px] sm:text-xs leading-tight truncate" style={{ color: T.text1 }}>{period}</p>
               </div>
+            </div>
 
-              <button
-                onClick={() => onEventDetail ? onEventDetail(event.id) : onNav("event")}
-                className="ml-auto px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#E8A500] hover:bg-[#CC9200] text-black transition-all shadow-md active:scale-95"
-                style={{ fontFamily: "var(--font-display)" }}
-              >
-                Lihat Detail <ChevronRight size={14} />
-              </button>
+            <div className="flex-1 sm:flex-none flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border bg-card/60 min-w-0" style={{ borderColor: T.border }}>
+              <span className="text-[9px] sm:text-[10px] font-black text-[#E8A500] flex-shrink-0" style={{ fontFamily: "var(--font-display)" }}>XP</span>
+              <div className="min-w-0">
+                <p style={{ fontSize: 7, color: T.text3, textTransform: "uppercase", lineHeight: 1 }}>Hadiah</p>
+                <p className="font-bold text-[10px] sm:text-xs leading-tight truncate text-[#E8A500]">{xpFormatted} XP</p>
+              </div>
             </div>
           </div>
+
+          <button
+            onClick={() => onEventDetail ? onEventDetail(event.id) : onNav("event")}
+            className="w-full sm:w-auto sm:ml-auto px-4 sm:px-5 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#E8A500] hover:bg-[#CC9200] text-black transition-all shadow-md active:scale-95 flex-shrink-0"
+            style={{ fontFamily: "var(--font-display)" }}
+          >
+            Lihat Detail <ChevronRight size={14} />
+          </button>
         </div>
       </Card>
     );
