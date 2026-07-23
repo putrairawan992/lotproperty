@@ -48,14 +48,27 @@ function EventBannerSlide({
             : "linear-gradient(135deg, #FFF9F2 0%, #F5F7FA 100%)",
         }}
       >
-        <div className="relative">
-          <img src={event.banner} alt={event.title} className="w-full h-auto object-contain block" />
+        <div className="relative h-[170px] sm:h-[220px] md:h-[260px] bg-black/10">
+          <img src={event.banner} alt={event.title} className="w-full h-full object-contain block" />
           <div className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-[#E53E3E] text-white px-2 py-0.5 sm:px-2.5 sm:py-1 text-[9px] sm:text-[10px] font-extrabold uppercase rounded-lg -rotate-6 transform shadow-md tracking-wider">
             SPESIAL EVENT
           </div>
         </div>
 
-        <div className="p-3 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4">
+        <div className="px-3 pt-2.5 sm:px-5 sm:pt-4">
+          <h3
+            className="font-black text-base sm:text-xl md:text-2xl italic uppercase tracking-wide leading-tight truncate"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: event.accentColor,
+              textShadow: isDark ? `0 2px 10px ${event.accentColor}4D` : "none",
+            }}
+          >
+            {event.title}
+          </h3>
+        </div>
+
+        <div className="p-3 sm:p-5 pt-2 sm:pt-3 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex-1 sm:flex-none flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg sm:rounded-xl border bg-card/60 min-w-0" style={{ borderColor: T.border }}>
               <svg className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" style={{ color: T.text3 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
