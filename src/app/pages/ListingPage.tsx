@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Search, Plus, MapPin, MoreHorizontal, X, Download, Check,
-  ChevronRight, Eye, Pencil, ToggleLeft, Archive, Trash2, MessageCircle, Home
+  ChevronRight, Eye, Pencil, ToggleLeft, Archive, Trash2, MessageCircle, Home, StickyNote
 } from "lucide-react";
 import Card from "../components/Card";
 import AdminPagination from "../components/AdminPagination";
@@ -591,6 +591,13 @@ export default function ListingPage() {
                         <RemindBadge r={l.remind} d={l.days} />
                       </div>
                     </div>
+
+                    {l.notes !== "—" && (
+                      <div className="flex items-start gap-1.5 mt-2 pt-2 border-t" style={{ borderColor: T.border }}>
+                        <StickyNote size={12} className="flex-shrink-0 mt-0.5" style={{ color: T.text3 }} />
+                        <p className="text-[11px] leading-snug line-clamp-2" style={{ color: T.text2 }}>{l.notes}</p>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -615,11 +622,17 @@ export default function ListingPage() {
                         onMouseEnter={e => (e.currentTarget.style.backgroundColor = "var(--muted)")}
                         onMouseLeave={e => (e.currentTarget.style.backgroundColor = "transparent")}
                       >
-                        <td className="px-4 py-3 min-w-[220px]">
+                        <td className="px-4 py-3 min-w-[220px] max-w-[280px]">
                           <p className="text-sm font-medium" style={{ color: T.text1 }}>{l.title}</p>
                           <p className="text-xs flex items-center gap-1" style={{ color: T.text3 }}>
                             <MapPin size={10} />{l.loc} · {l.owner}
                           </p>
+                          {l.notes !== "—" && (
+                            <p className="text-xs flex items-start gap-1 mt-1" style={{ color: T.text2 }} title={l.notes}>
+                              <StickyNote size={10} className="flex-shrink-0 mt-0.5" />
+                              <span className="truncate">{l.notes}</span>
+                            </p>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: T.text2 }}>
                           {l.type}
