@@ -376,17 +376,21 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
         return item;
       }));
 
+      const totalModules = Array.isArray(academyRes) ? academyRes.length : 0;
       const completedModules = Array.isArray(academyRes) ? academyRes.filter((m: any) => m.status === "Completed").length : 0;
       setSkillQuests(prev => prev.map(item => {
         if (item.id === "new_recruit") {
-          const progress = Math.min(Number(activeAgent?.total_recruits || 0), 1);
-          const done = progress >= item.total;
-          const status = !done && statusRes?.has_pending_recruit ? "pending" : undefined;
-          return { ...item, progress, done, status };
+          // Unlimited quest — no daily/weekly/lifetime cap on the backend, so
+          // this row must never show as permanently "done". total is always
+          // one more than the current count, so progress can never reach it.
+          const progress = Number(activeAgent?.total_recruits || 0);
+          const status = statusRes?.has_pending_recruit ? "pending" : undefined;
+          return { ...item, progress, total: progress + 1, done: false, status };
         }
         if (item.id === "academy") {
-          const progress = Math.min(completedModules, 5);
-          return { ...item, progress, done: progress >= item.total };
+          // total reflects however many modules actually exist (not a hardcoded cap) —
+          // "done" here is genuinely correct once every real module is completed.
+          return { ...item, progress: completedModules, total: totalModules || 1, done: totalModules > 0 && completedModules >= totalModules };
         }
         return item;
       }));
@@ -483,7 +487,10 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
       const xp = Number(res?.xp_earned || 0);
       setShowEventModal(false);
       setEventCode("");
-      setSkillQuests(prev => prev.map(q => q.id === "event_participation" ? { ...q, progress: 1, done: true } : q));
+      // Unlimited quest — an agent can join any number of different active
+      // events, each with its own code (the backend already rejects re-using
+      // the same code). Never mark this row "done", or the Go button would
+      // permanently disappear after the first event ever joined.
       showQuestComplete({ name: "Event Participation", xp: xp || 1000 });
       await refreshUser();
     } catch (error) {
