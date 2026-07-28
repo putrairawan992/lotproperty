@@ -369,12 +369,20 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
           return { ...item, progress, done: progress >= item.total };
         }
         if (item.id === "prospect_clearance") {
-          const overdue = Number(statusRes?.overdue_reminders_count || 0);
-          const progress = overdue === 0 ? 1 : 0;
-          return { ...item, progress, done: progress >= item.total };
+          // done + XP grant now computed server-side (requires actually having
+          // prospects, not just "zero overdue" which is trivially true for an
+          // agent with none at all) — see GetQuestStatus in quests.go.
+          const done = Boolean(statusRes?.prospect_clearance_done);
+          return { ...item, progress: done ? 1 : 0, done };
         }
         return item;
       }));
+
+      const clearanceXP = Number(statusRes?.prospect_clearance_xp_earned || 0);
+      if (clearanceXP > 0) {
+        showQuestComplete({ name: "Prospect Clearance", xp: clearanceXP });
+        await refreshUser();
+      }
 
       const totalModules = Array.isArray(academyRes) ? academyRes.length : 0;
       const completedModules = Array.isArray(academyRes) ? academyRes.filter((m: any) => m.status === "Completed").length : 0;
