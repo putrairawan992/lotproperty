@@ -159,10 +159,31 @@ export default function AdminHoFPage() {
 
   const handleToggleBypass = (index: number) => {
     setEntries(prev => prev.map((item, idx) => {
-      if (idx === index && item.type === "auto") {
-        return { ...item, overridden: !item.overridden };
+      if (idx !== index || item.type !== "auto") return item;
+
+      const turningOn = !item.overridden;
+
+      // Saat bypass dinyalakan, form diisi dulu dengan hasil kalkulasi sistem supaya
+      // admin tinggal mengubah yang perlu saja. Hanya dilakukan kalau form masih
+      // kosong — jangan sampai menimpa pilihan yang sudah diisi admin sebelumnya.
+      const isEmpty = item.overrideList.every(name => !name);
+      if (!turningOn || !isEmpty) {
+        return { ...item, overridden: turningOn };
       }
-      return item;
+
+      // Kalau sistem memang belum punya data, hasilnya tetap kosong seperti sebelumnya.
+      const systemEntries = entriesFromApi(item.cat);
+      const prefilled = Array(8).fill("");
+      systemEntries.slice(0, 8).forEach((entry, rankIdx) => {
+        if (entry.name && entry.name !== "—") prefilled[rankIdx] = entry.name;
+      });
+
+      return {
+        ...item,
+        overridden: true,
+        overrideList: prefilled,
+        visibleCount: Math.min(Math.max(systemEntries.length, 3), 8),
+      };
     }));
   };
 
