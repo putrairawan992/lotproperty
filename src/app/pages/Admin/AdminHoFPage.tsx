@@ -19,7 +19,8 @@ export default function AdminHoFPage() {
   // an agent's display name back to its numeric ID at save time, without ever needing to
   // download the full agent roster upfront.
   const [knownAgentIds, setKnownAgentIds] = useState<Record<string, number>>({});
-  const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { id?: number; name?: string }; period: string }>>([]);
+  // `auto: true` = hasil kalkulasi sistem dari server, bukan data yang disimpan admin.
+  const [hofRecords, setHofRecords] = useState<Array<{ category: string; rank: number; agent?: { id?: number; name?: string }; period: string; auto?: boolean; score?: string }>>([]);
 
   const [entries, setEntries] = useState([
     { cat: "Top 5 Commission", type: "auto", overridden: false, visibleCount: 3, autoList: ["", "", "", "", ""], overrideList: ["", "", "", "", ""] },
@@ -62,6 +63,8 @@ export default function AdminHoFPage() {
             rank: Number(r.rank || 0),
             agent: r.agent ? { id: Number(r.agent.id || r.agent_id || 0), name: String(r.agent.name || "") } : undefined,
             period: String(r.period || ""),
+            auto: Boolean(r.auto),
+            score: String(r.score || ""),
           })));
           // Seed the name→id cache with every saved record's agent, so re-saving a
           // category whose picker was never opened this session still resolves correctly.
@@ -99,13 +102,16 @@ export default function AdminHoFPage() {
         ]) === section.cat)
         .sort((a, b) => a.rank - b.rank);
 
-      const hasSavedRecords = saved.length > 0;
+      // Record `auto` hanya untuk ditampilkan di baris (System) — bukan data tersimpan,
+      // jadi tidak boleh menyalakan mode bypass atau mengisi form override.
+      const savedManual = saved.filter(r => !r.auto);
+      const hasSavedRecords = savedManual.length > 0;
 
       // If there are saved records in the DB, we wipe the overrideList and only set what is in the DB
       // Otherwise, we keep the section's overrideList (which defaults to placeholders)
       const currentOverrideList = hasSavedRecords ? Array(8).fill("") : [...section.overrideList];
 
-      saved.forEach(r => {
+      savedManual.forEach(r => {
         if (r.rank >= 1 && r.rank <= 8) {
           currentOverrideList[r.rank - 1] = r.agent?.name || "";
         }
@@ -127,7 +133,9 @@ export default function AdminHoFPage() {
     }));
   }, [hofRecords]);
 
-  const entriesFromApi = (cat: string): string[] => {
+  // Nama + angka dasarnya (mis. "12 listing"), supaya admin bisa mengaudit hasil
+  // kalkulasi sistem sebelum memutuskan perlu override manual atau tidak.
+  const entriesFromApi = (cat: string): Array<{ name: string; score: string }> => {
     return hofRecords
       .filter((r) => normalizeHofCategory(r.category, [
         "Top 5 Commission",
@@ -141,7 +149,7 @@ export default function AdminHoFPage() {
       ]) === cat)
       .sort((a, b) => a.rank - b.rank)
       .slice(0, 8)
-      .map((r) => r.agent?.name || "—");
+      .map((r) => ({ name: r.agent?.name || "—", score: r.score || "" }));
   };
 
   const triggerToast = (msg: string) => {
@@ -273,6 +281,8 @@ export default function AdminHoFPage() {
             rank: Number(r.rank || 0),
             agent: r.agent ? { id: Number(r.agent.id || r.agent_id || 0), name: String(r.agent.name || "") } : undefined,
             period: String(r.period || ""),
+            auto: Boolean(r.auto),
+            score: String(r.score || ""),
           })));
           // Seed the name→id cache with every saved record's agent, so re-saving a
           // category whose picker was never opened this session still resolves correctly.
@@ -414,8 +424,14 @@ export default function AdminHoFPage() {
                             )}
                           </div>
                         ) : (
-                          <div className="flex-1 text-left px-2 py-1 text-xs font-semibold text-muted-foreground bg-card/40 rounded-lg border border-dashed" style={{ borderColor: T.border }}>
-                            {entriesFromApi(section.cat)[rankIdx] || "—"} <span className="text-[10px] font-normal text-muted-foreground/60">(System)</span>
+                          <div className="flex-1 flex items-center gap-2 text-left px-2 py-1 text-xs font-semibold text-muted-foreground bg-card/40 rounded-lg border border-dashed" style={{ borderColor: T.border }}>
+                            <span className="truncate">{entriesFromApi(section.cat)[rankIdx]?.name || "—"}</span>
+                            {entriesFromApi(section.cat)[rankIdx]?.score ? (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0" style={{ backgroundColor: "rgba(34,197,94,0.1)", color: "#16A34A" }}>
+                                {entriesFromApi(section.cat)[rankIdx].score}
+                              </span>
+                            ) : null}
+                            <span className="text-[10px] font-normal text-muted-foreground/60 ml-auto flex-shrink-0">(System)</span>
                           </div>
                         )}
                       </div>
@@ -436,12 +452,20 @@ export default function AdminHoFPage() {
                 )}
               </div>
 
-              <button onClick={() => handleSaveCategory(section)}
-                disabled={savingCategory === section.cat}
-                className="w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#E8A500] hover:bg-[#CC9200] text-black transition-all shadow-sm"
-                style={{ fontFamily: "'Rajdhani', sans-serif" }}>
-                <Save size={13} /> {savingCategory === section.cat ? "Menyimpan..." : `Simpan ${section.cat}`}
-              </button>
+              {section.type === "auto" && !section.overridden ? (
+                // Tanpa bypass tidak ada yang bisa disimpan — tombol Simpan di sini hanya
+                // akan mengirim daftar kosong dan justru menghapus data periode ini.
+                <p className="text-[11px] text-center text-muted-foreground py-2 px-3">
+                  Peringkat dihitung otomatis oleh sistem. Nyalakan bypass untuk menentukan manual.
+                </p>
+              ) : (
+                <button onClick={() => handleSaveCategory(section)}
+                  disabled={savingCategory === section.cat}
+                  className="w-full py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 bg-[#E8A500] hover:bg-[#CC9200] text-black transition-all shadow-sm"
+                  style={{ fontFamily: "'Rajdhani', sans-serif" }}>
+                  <Save size={13} /> {savingCategory === section.cat ? "Menyimpan..." : `Simpan ${section.cat}`}
+                </button>
+              )}
             </Card>
           );
         })}

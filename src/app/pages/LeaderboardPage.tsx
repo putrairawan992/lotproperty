@@ -11,7 +11,7 @@ import HofSection from "../components/HofSection";
 import AgentProfileSheet from "../components/AgentProfileSheet";
 import { T, Rarity, useTheme } from "../types";
 import { useTabQuery } from "../routes";
-import { HOF_TABS } from "../appData";
+import { HOF_TABS, DYNAMIC_PERIODS } from "../appData";
 import { api } from "../services/api";
 
 function getBadgeRarity(name: string): Rarity {
@@ -67,12 +67,34 @@ export default function LeaderboardPage() {
   const mapHof = (hofRes: any[]) => {
     const grouped: Record<string, any[]> = {};
     HOF_TABS.forEach(tab => { grouped[tab] = []; });
+
+    // Satu kategori bisa punya record dari banyak periode sekaligus. Halaman ini
+    // tidak punya pemilih periode, jadi ambil periode terbaru saja — kalau semua
+    // periode ikut masuk, juara #1 muncul berulang kali dalam satu podium.
+    // DYNAMIC_PERIODS urut dari yang terbaru, jadi index kecil = lebih baru.
+    const periodOrder = (p: unknown) => {
+      const idx = DYNAMIC_PERIODS.indexOf(String(p || ""));
+      return idx === -1 ? Number.MAX_SAFE_INTEGER : idx;
+    };
+
+    const latestPeriod: Record<string, string> = {};
     hofRes.forEach((rec: any) => {
       const cat = rec.category;
       if (!HOF_TABS.includes(cat as any)) return;
+      if (!(cat in latestPeriod) || periodOrder(rec.period) < periodOrder(latestPeriod[cat])) {
+        latestPeriod[cat] = String(rec.period || "");
+      }
+    });
+
+    hofRes.forEach((rec: any) => {
+      const cat = rec.category;
+      if (!HOF_TABS.includes(cat as any)) return;
+      if (String(rec.period || "") !== latestPeriod[cat]) return;
       const initials = (rec.agent?.name || "A").split(" ").map((w: any) => w[0]).join("").slice(0, 2).toUpperCase();
       grouped[cat].push({ rank: rec.rank, name: rec.agent?.name || "Unknown", initials, photo: rec.agent?.photo_url, level: rec.agent?.level || "Agent", subtitle: rec.agent?.title || "", value: rec.notes || "HOF" });
     });
+
+    HOF_TABS.forEach(tab => { grouped[tab].sort((a, b) => a.rank - b.rank); });
     return grouped;
   };
 
