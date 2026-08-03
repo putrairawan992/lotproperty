@@ -443,6 +443,7 @@ export default function App() {
     return (
       <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: handleShowQuestComplete }}>
         <AdminApp role={adminRole} onLogout={handleLogout} />
+        <UpdateAvailableToast />
       </ThemeCtx.Provider>
     );
   }
@@ -498,6 +499,7 @@ export default function App() {
     return (
       <ThemeCtx.Provider value={{ isDark, toggle: toggleDark, isGuest: false, onLoginRequest: handleLoginRequest, user, refreshUser, unreadNotifCount, setUnreadNotifCount, showQuestComplete: handleShowQuestComplete }}>
         {renderAuth()}
+        <UpdateAvailableToast />
       </ThemeCtx.Provider>
     );
   }
