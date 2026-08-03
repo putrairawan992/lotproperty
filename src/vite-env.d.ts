@@ -1,5 +1,8 @@
 /// <reference types="vite/client" />
 
+// ID build yang sedang berjalan, dibekukan lewat `define` di vite.config.ts.
+declare const __APP_BUILD_ID__: string;
+
 // Type declarations for image assets
 declare module '*.png' {
   const src: string;

@@ -14,6 +14,7 @@ import BottomTabs from "./components/BottomTabs";
 import LevelUpModal from "./components/LevelUpModal";
 import QuestCompleteModal from "./components/QuestCompleteModal";
 import AgentProfileSheet from "./components/AgentProfileSheet";
+import UpdateAvailableToast from "./components/UpdateAvailableToast";
 
 // Pages (Agent)
 import LoginPage from "./pages/LoginPage";
@@ -677,6 +678,9 @@ export default function App() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Notifikasi deploy baru — global, tidak tergantung halaman/status login */}
+        <UpdateAvailableToast />
       </div>
     </ThemeCtx.Provider>
   );
