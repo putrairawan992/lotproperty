@@ -10,7 +10,7 @@ import { T } from "../types";
 // Sengaja tidak auto-reload: agent yang sedang mengisi form panjang (listing,
 // prospect) tidak boleh kehilangan isian karena reload tiba-tiba. Cukup toast
 // dengan tombol, dia yang memutuskan kapan.
-const CHECK_INTERVAL_MS = 3 * 60 * 1000;
+const CHECK_INTERVAL_MS = 3000; // TEMP FOR TESTING — reverted after verification
 
 export default function UpdateAvailableToast() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
