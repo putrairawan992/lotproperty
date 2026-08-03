@@ -8,11 +8,11 @@ export type Rarity = "mythic" | "legendary" | "epic" | "rare" | "common";
 export const FAQ_DATA = [
   { 
     q: "Bagaimana cara mendapatkan XP dan apa saja batas maksimumnya?", 
-    a: "XP diperoleh dari berbagai aktivitas produktif agen: Daily Login (+100 XP), input New Listing (+100 XP, Cap 300 XP/hari), upload New Content (+300 XP, Cap 300 XP/hari), Listing Promotion (+100 XP, Cap 300 XP/hari), input New Prospect (+100 XP, Cap 2.500 XP/minggu), menyelesaikan video Academy (+200 XP/video), dan New Recruit (+5.000 XP). Detail lengkap dapat dilihat di XP Guide."
+    a: "XP diperoleh dari berbagai aktivitas produktif agen: Daily Login (+100 XP), input New Listing (+100 XP, Cap 300 XP/hari), upload New Content (+300 XP, Cap 300 XP/hari), Listing Promotion (+100 XP, Cap 300 XP/hari), input New Prospect (+100 XP, Cap 2.000 XP/minggu), menyelesaikan video Academy (+200 XP/video), dan New Recruit (+5.000 XP). Detail lengkap dapat dilihat di XP Guide."
   },
-  { 
-    q: "Mengapa input New Prospect dibatasi maksimal 2.500 XP per minggu?", 
-    a: "Berdasarkan SOP LOT Property Group, batas mingguan 2.500 XP (setara 25 prospek baru per minggu) diterapkan untuk memastikan kualitas data prospek yang dimasukkan valid, terverifikasi, dan menghindari manipulasi atau spam database oleh agen." 
+  {
+    q: "Mengapa input New Prospect dibatasi maksimal 2.000 XP per minggu?",
+    a: "Berdasarkan SOP LOT Property Group, batas mingguan 2.000 XP (setara 20 prospek baru per minggu) diterapkan untuk memastikan kualitas data prospek yang dimasukkan valid, terverifikasi, dan menghindari manipulasi atau spam database oleh agen. Prospect berikutnya tetap dapat diinput dan tetap menambah progress badge, serta tetap memperoleh bonus Quest Overkill."
   },
   { 
     q: "Bagaimana cara melakukan klaim komisi (Commission Claim)?", 

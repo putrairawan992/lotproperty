@@ -319,7 +319,7 @@ export default function HelpPage({ onNav }: { onNav: (p: Page) => void }) {
                       { label: "New Listing",          xp: "+100 XP",    cap: "300 XP/hari",   icon: "🏢", color: "#E8A500" },
                       { label: "New Content",          xp: "+300 XP",    cap: "1×/hari",       icon: "📱", color: "#7B2FBE" },
                       { label: "Listing Promotion",    xp: "+100 XP",    cap: "300 XP/hari",   icon: "📣", color: "#16A34A" },
-                      { label: "New Prospect",         xp: "+100 XP",    cap: "1.000 XP/minggu",icon:"👥", color: "#C8922A" },
+                      { label: "New Prospect",         xp: "+100 XP",    cap: "2.000 XP/minggu",icon:"👥", color: "#C8922A" },
                       { label: "Prospect Clearance",   xp: "+1.000 XP",  cap: "1×/minggu",     icon: "✅", color: "#16A34A" },
                       { label: "New Recruit",          xp: "+5.000 XP",  cap: "—",             icon: "🤝", color: "#DC2626" },
                       { label: "Complete Module",      xp: "+200 XP",    cap: "Tidak ada batas",icon:"🎓", color: "#1A6FC4" },

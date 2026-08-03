@@ -250,8 +250,8 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
   ]);
 
   const [weeklyQuests, setWeeklyQuests] = useState<QuestItem[]>([
-    { name: "New Prospect", progress: 4, total: 10, xp: 100, note: "Max 1.000 XP/minggu (100 XP per Prospect)", id: "new_prospect" },
-    { name: "Prospect Clearance", progress: 0, total: 1, xp: 1000, note: "Tidak ada reminder overdue", id: "prospect_clearance" },
+    { name: "New Prospect", progress: 4, total: 20, xp: 100, note: "Max 2.000 XP/minggu (100 XP per Prospect)", id: "new_prospect" },
+    { name: "Prospect Clearance", progress: 0, total: 1, xp: 1000, note: "Semua prospect sudah berstatus Deal atau Lost", id: "prospect_clearance" },
   ]);
 
   const [skillQuests, setSkillQuests] = useState<QuestItem[]>([
@@ -369,9 +369,10 @@ export default function QuestPage({ onNav }: { onNav?: (p: Page) => void }) {
           return { ...item, progress, done: progress >= item.total };
         }
         if (item.id === "prospect_clearance") {
-          // done + XP grant now computed server-side (requires actually having
-          // prospects, not just "zero overdue" which is trivially true for an
-          // agent with none at all) — see GetQuestStatus in quests.go.
+          // Status dan pemberian XP dihitung di server: semua prospect harus sudah
+          // berstatus Deal/Lost dan agent harus punya minimal satu prospect. XP-nya
+          // juga bisa sudah diberikan di luar halaman ini (saat menutup prospect atau
+          // membuka Home) — lihat evaluateProspectClearance di quests.go.
           const done = Boolean(statusRes?.prospect_clearance_done);
           return { ...item, progress: done ? 1 : 0, done };
         }
