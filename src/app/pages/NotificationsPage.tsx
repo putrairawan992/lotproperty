@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Award, Target, AlertCircle, Trophy, DollarSign, Pin, CalendarClock, Home as HomeIcon } from "lucide-react";
+import { Award, Target, AlertCircle, Trophy, DollarSign, Pin, CalendarClock, Home as HomeIcon, PartyPopper } from "lucide-react";
 import { NotificationsPageSkeleton } from "../components/Skeletons";
 import useLoading from "../hooks/useLoading";
 import { useTabQuery } from "../routes";
@@ -105,9 +105,10 @@ export default function NotificationsPage() {
     system:      { icon: <AlertCircle size={16} />,  bg: isDark ? "rgba(220,38,38,0.12)" : "#FEE2E2", color: "#DC2626", label: "System" },
     leaderboard: { icon: <Trophy size={16} />,       bg: isDark ? "rgba(112,64,208,0.12)" : "#F5F0FD", color: "#7B2FBE", label: "Leaderboard" },
     commission:  { icon: <DollarSign size={16} />,   bg: isDark ? "rgba(22,163,74,0.12)" : "#DCFCE7", color: "#16A34A", label: "Commission" },
+    event:       { icon: <PartyPopper size={16} />,  bg: isDark ? "rgba(232,165,0,0.12)" : "#FFF7E6", color: "#E8A500", label: "Event" },
   };
 
-  const tabs = ["All", "Checkout", "Achievement", "System", "Leaderboard", "Commission"];
+  const tabs = ["All", "Checkout", "Achievement", "System", "Leaderboard", "Commission", "Event"];
 
   const formatCheckoutDate = (s: string) => {
     const d = new Date(s);

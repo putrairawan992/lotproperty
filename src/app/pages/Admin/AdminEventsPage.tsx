@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage, X, Pencil, Loader2, ImagePlus } from "lucide-react";
+import { Zap, Calendar, Award, Check, AlertCircle, Plus, Trash2, Upload, FileImage, X, Pencil, Loader2, ImagePlus, ClipboardCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import Card from "../../components/Card";
 import { DateInput } from "../../components/DateTimeInput";
@@ -8,9 +8,10 @@ import { T } from "../../types";
 import { api } from "../../services/api";
 import { ALL_BADGES } from "../ProfilePage";
 import AdminQuestParticipationTab from "./AdminQuestParticipationTab";
+import AdminEventSubmissionsTab from "./AdminEventSubmissionsTab";
 
 export default function AdminEventsPage() {
-  const [tab, setTab] = useState<"banner" | "quest">("banner");
+  const [tab, setTab] = useState<"banner" | "quest" | "submissions">("banner");
   const [events, setEvents] = useState<any[]>([]);
   const [dbBadges, setDbBadges] = useState<any[]>([]);
 
@@ -393,10 +394,20 @@ export default function AdminEventsPage() {
           }}>
           <Zap size={13} /> Quest Participation
         </button>
+        <button onClick={() => setTab("submissions")}
+          className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer"
+          style={{
+            backgroundColor: tab === "submissions" ? "var(--card)" : "transparent",
+            color: tab === "submissions" ? "#E8A500" : T.text3,
+          }}>
+          <ClipboardCheck size={13} /> Submissions
+        </button>
       </div>
 
       {tab === "quest" ? (
         <AdminQuestParticipationTab />
+      ) : tab === "submissions" ? (
+        <AdminEventSubmissionsTab />
       ) : (
       <>
       {/* Modal Form */}
